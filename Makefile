@@ -1,2 +1,2 @@
-main: main.c
-	gcc $^ -o $@
+main: main.c lexer.c
+	gcc -I./ $^ -o $@

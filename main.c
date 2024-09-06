@@ -3,20 +3,12 @@
 #include <string.h>
 
 
-enum Token {
-    TK_IDEN,
-    TK_INT,
-    TK_EQ,
-    TK_COLON,
-    TK_LBRAC,
-    TK_RRBRC,
-    TK_DOT,
-    Tk_ASSIGN,
-    COMMA,
-};
+
 void usage(const char* prog_name) {
     fprintf(stderr, "Usage: %s [input_file] -o [output_file]\n", prog_name);
 }
+
+
 #define RETURN(x) do { exit_code = x; goto out;} while (0)
 int main(int argc, char** argv) {
     int exit_code = 0;
@@ -48,7 +40,7 @@ int main(int argc, char** argv) {
 
 
     printf("|%s|\n", buf);
-    
+        
 
     
 out:
