@@ -8,6 +8,10 @@ typedef struct {
     size_t 	col;
 } Loc;
 typedef enum {
+    TK_ERR = -2,
+    TK_EOF = -1,
+    TK_NULL = 0,
+
     TK_IDEN,
     TK_INT,
 
@@ -18,8 +22,6 @@ typedef enum {
     TK_DOT,
     TK_COMMA,
 
-    TK_NULL,
-    TK_EOF,
 } TokenType;
 typedef union {
     size_t 	integer;
