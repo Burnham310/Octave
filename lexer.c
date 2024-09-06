@@ -52,12 +52,16 @@ Token match_single(Lexer *self) {
 
 }
 Token match_multiple(Lexer *self) {
-    
+   assert(0 && "unimplemented"); 
 }	
 Token match_num(Lexer *self) {
-
+   assert(0 && "unimplemented"); 
 }
 Token match_iden(Lexer *self) {
-    
+   assert(0 && "unimplemented"); 
 }
-void lexer_deinit(Lexer *lexer) {}
+void lexer_deinit(Lexer *lexer) {
+   assert(0 && "unimplemented"); 
+
+
+}
