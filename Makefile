@@ -1,4 +1,4 @@
 
-bin/main: main.c lexer.c
+bin/main: main.c lexer.c ast.c
 	mkdir -p bin
-	gcc -I./ $^ -o $@
+	gcc -Iinclude $^ -o $@
