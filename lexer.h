@@ -15,24 +15,41 @@ typedef enum {
     TK_IDEN,
     TK_INT,
 
-    TK_EQ,
-    TK_COLON,
-    TK_LBRAC,
-    TK_RRBRC,
-    TK_DOT,
-    TK_COMMA,
 
 } TokenType;
+typedef struct {
+    const char* ptr;
+    int len;
+} Slice;
 typedef union {
-    size_t 	integer;
-    char* 	str;
+    ssize_t 	integer;
+    Slice 	str;
 } TokenData;
 typedef struct {
     TokenType 	type;
     TokenData 	data;
     size_t	off;
 } Token;
-
+#define TOKEN_DEBUG(tk) do { \
+    switch (tk.type) { \
+	case TK_ERR: \
+	    printf("ERR"); \
+	    break; \
+	case TK_EOF: \
+	    printf("EOF"); \
+	    break;	\
+	case TK_NULL: \
+	    printf("NULL"); \
+	case TK_IDEN:	\
+	    printf("ID %.*s", tk.data.str.len, tk.data.str.ptr);	\
+	    break;	\
+	case TK_INT:	\
+	    printf("INT_CONST %zi", tk.data.integer); \
+	    break; \
+	default: \
+	    printf("%c", tk.type); \
+    } \
+} while(0);
 typedef struct {
     const char* src;
     size_t 	src_len;
@@ -43,11 +60,14 @@ typedef struct {
 Lexer lexer_init(const char* src, size_t src_len, const char* path);
 void skip_ws(Lexer *lexer); 
 // return 0 if no more character left
+
 char next_char(Lexer* self); 
 Token match_single(Lexer *self);
 Token match_multiple(Lexer *self);
 Token match_num(Lexer *self);
 Token match_iden(Lexer *self);
+Token lexer_next(Lexer *self);
+Token lexer_peek(Lexer *self);
 
 void lexer_deinit(Lexer *lexer);
 #endif
