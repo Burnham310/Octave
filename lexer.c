@@ -141,6 +141,7 @@ Token lexer_next(Lexer *self) {
 	(tk = match_num(self)).type 	> 0 ? tk : 
 	(tk = match_iden(self)).type 	> 0 ? tk : tk;
 }
+
 Token lexer_peek(Lexer *self) {
    assert(0 && "unimplemented"); 
 }

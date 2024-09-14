@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     int exit_code = 0;
     if (argc != 4) RETURN(1);
     input_path = argv[1];
-    if (strcmp(argv[2], "-o") != 0) RETURN(2);;
+    if (strcmp(argv[2], "-o") != 0) RETURN(2);
     output_path = argv[3];
 
        if ((input_f = fopen(input_path, "r")) == NULL) {
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
     
     Token tk;
     while ((tk = lexer_next(&lexer)).type > 0) { 
-	TOKEN_DEBUG(tk);
+	TOKEN_DEBUG(tk)
 	printf("\n");
     }
 
