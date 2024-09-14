@@ -6,12 +6,12 @@
 
 #define eprintf(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
 #define report(lexer, off, fmt, ...) do {Loc __loc = off_to_loc(lexer->src, lexer->src_len, off); eprintf("%s:%zu:%zu "fmt"\n", lexer->path, __loc.row, __loc.col, __VA_ARGS__); } while (0)
-Lexer lexer_init(const char* src, size_t src_len, const char* path) {
-    Lexer lexer = {.src = src, .src_len = src_len, .off = 0, .path = path, .peekbuf = TK_NULL};
+Lexer lexer_init(const char* src, const size_t src_len, const char* path) {
+    Lexer lexer = {.src = src, .src_len = src_len, .off = 0, .path = path, .peakbuf = {0}};
 
     return lexer;
 }
-Loc off_to_loc(const char* src, size_t src_len, size_t off) {
+Loc off_to_loc(const char* src, const size_t src_len, const size_t off) {
     Loc loc = {.row = 1, .col = 1};
     assert(off < src_len);
     for (size_t i = 0; i < off; ++i) {
@@ -25,23 +25,26 @@ Loc off_to_loc(const char* src, size_t src_len, size_t off) {
     return loc;
     
 }
+
 void rewind_char(Lexer* self) {
     self->off--;
 }
+
 void skip_ws(Lexer *lexer) {
     while (lexer->off < lexer->src_len) {
-	char c = lexer->src[lexer->off];
-	switch (c) {
-	    case '\n':
-	    case ' ':
-	    case '\t':
-		break;
-	    default:
-		return;
-	}
+		char c = lexer->src[lexer->off];
+		switch (c) {
+		    case '\n':
+		    case ' ':
+		    case '\t':
+				break;
+		    default:
+				return;
+		}
 	lexer->off++;
     }
 }
+
 // return 0 if no more character left
 char next_char(Lexer* self) {
     if (self->off >= self->src_len) return 0;
@@ -70,7 +73,7 @@ Token match_single(Lexer *self) {
 	    RETURN_TK(TK_NULL);
 	
     }
-    return tk;
+    //return tk;
 
 }
 Token match_multiple(Lexer *self) {
@@ -91,7 +94,7 @@ Token match_num(Lexer *self) {
 	    continue;
 	} else {
 	    // TODO report error
-	    report(self, self->off, "invalid character '%c' (%d) in interger", c, c);
+	    report(self, self->off, "invalid character '%c' (%d) in integer", c, c);
 	    RETURN_TK(TK_ERR);
 	}
     }
@@ -101,7 +104,7 @@ Token match_num(Lexer *self) {
     return tk;
 
 }
-Token match_iden(Lexer *self) {
+Token match_ident(Lexer *self) {
     Token tk = {.off = self->off};
     char c = next_char(self);
     if (!isalpha(c) && c != '_') {
@@ -117,32 +120,39 @@ Token match_iden(Lexer *self) {
 	    continue;
 	} else {
 	    // TODO report error
-	    report(self, self->off, "invalid character '%c' (%d) in interger", c, c);
+	    report(self, self->off, "invalid character '%c' (%d) in integer", c, c);
 	    RETURN_TK(TK_ERR);
 	}
     }
 
-    tk.type = TK_IDEN;
+    tk.type = TK_IDENT;
     tk.data.str = (Slice) {.ptr = self->src + tk.off, .len = self->off - tk.off};
     return tk;
 
 }
-void lexer_deinit(Lexer *lexer) {
-   assert(0 && "unimplemented"); 
-
-
+void lexer_uninit(Lexer *lexer) {
+   return;
 }
 
 Token lexer_next(Lexer *self) {
+	if (self->peakbuf.type > 0) {
+		const Token tk = self->peakbuf;
+		self->peakbuf.type = TK_NULL;
+		return tk;
+	}
     skip_ws(self);
     Token tk;
     return
 	(tk = match_single(self)).type 	> 0 ? tk :
 	(tk = match_num(self)).type 	> 0 ? tk : 
-	(tk = match_iden(self)).type 	> 0 ? tk : tk;
+	(tk = match_ident(self)).type 	> 0 ? tk : tk;
 }
 
-Token lexer_peek(Lexer *self) {
-   assert(0 && "unimplemented"); 
+Token lexer_peak(Lexer *self) {
+	if (self->peakbuf.type > 0) return self->peakbuf;
+	const Token tk = lexer_next(self);
+	self->peakbuf = tk;;
+	return tk;
 }
+
 

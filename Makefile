@@ -1,7 +1,7 @@
 
 bin/main: main.c lexer.c ast.c
 	mkdir -p bin
-	gcc -Iinclude $^ -o $@
+	gcc -Iinclude $^ -o $@ -g
 
 # make target 'all' to compile all the files
 all: bin/main

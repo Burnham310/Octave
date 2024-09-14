@@ -15,7 +15,7 @@ char* buf;
  
 
 #define RETURN(x) do { exit_code = x; goto out;} while (0)
-int main(int argc, char** argv) {
+int main(const int argc, char** argv) {
     int exit_code = 0;
     if (argc != 4) RETURN(1);
     input_path = argv[1];
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
     }
     
 
-    Lexer lexer = (Lexer) {.src = buf, .off = 0, .path = input_path, .src_len = input_size, .peekbuf = (Token) {.type = TK_NULL}};
+    Lexer lexer = lexer_init(buf, input_size, input_path);
 
     
     Token tk;

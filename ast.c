@@ -1,7 +1,7 @@
 #include "ast.h"
 #include <stdio.h>
 
-AstNode *create_int_literal(ssize_t value)
+AstNode *create_int_literal(const ssize_t value)
 {
     AstNode *node = (AstNode *)malloc(sizeof(AstNode));
     node->type = AST_INT;
@@ -17,7 +17,7 @@ AstNode *create_identifier(const char *name)
     return node;
 }
 
-AstNode *create_binary_expr(OperatorType op, AstNode *left, AstNode *right)
+AstNode *create_binary_expr(const OperatorType op, AstNode *left, AstNode *right)
 {
     AstNode *node = (AstNode *)malloc(sizeof(AstNode));
     node->type = AST_BINARY;

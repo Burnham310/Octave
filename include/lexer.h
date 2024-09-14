@@ -15,10 +15,8 @@ typedef enum {
     TK_EOF = -1,
     TK_NULL = 0,
 
-    TK_IDEN,
+    TK_IDENT,
     TK_INT,
-
-
 } TokenType;
 typedef struct {
     const char* ptr;
@@ -43,7 +41,7 @@ typedef struct {
 	    break;	\
 	case TK_NULL: \
 	    printf("NULL"); \
-	case TK_IDEN:	\
+	case TK_IDENT:	\
 	    printf("ID %.*s", tk.data.str.len, tk.data.str.ptr);	\
 	    break;	\
 	case TK_INT:	\
@@ -58,7 +56,7 @@ typedef struct {
     size_t 	src_len;
     size_t	off;
     const char*	path;
-    Token 	peekbuf;
+    Token 	peakbuf;
 } Lexer;
 Lexer lexer_init(const char* src, size_t src_len, const char* path);
 void skip_ws(Lexer *lexer); 
@@ -68,9 +66,10 @@ char next_char(Lexer* self);
 Token match_single(Lexer *self);
 Token match_multiple(Lexer *self);
 Token match_num(Lexer *self);
-Token match_iden(Lexer *self);
+Token match_ident(Lexer *self);
 Token lexer_next(Lexer *self);
-Token lexer_peek(Lexer *self);
+Token lexer_peak(Lexer *self);
 
-void lexer_deinit(Lexer *lexer);
+void lexer_uninit(Lexer *lexer);
 #endif
+
