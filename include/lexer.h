@@ -20,7 +20,7 @@ typedef enum {
 } TokenType;
 typedef struct {
     const char* ptr;
-    int len;
+    size_t len;
 } Slice;
 typedef union {
     ssize_t 	integer;

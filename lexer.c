@@ -66,7 +66,7 @@ Token match_single(Lexer *self) {
 	case ',':
 	case ':':
 	case ';':
-	    tk.type = c;
+	    tk.type = (unsigned char) c;
 	    return tk;
 	default:
 	    rewind_char(self);
@@ -141,17 +141,21 @@ Token lexer_next(Lexer *self) {
 		return tk;
 	}
     skip_ws(self);
-    Token tk;
-	return
-	(tk = match_single(self)).type 	> 0 ? tk : tk = TK_NULL
-	(tk = match_num(self)).type 	> 0 ? tk : tk = TK_NULL
-	(tk = match_ident(self)).type 	> 0 ? tk : tk;
+
+    Token tk = match_single(self);
+    if (tk.type > 0) return tk;
+
+    tk = match_num(self);
+    if (tk.type > 0) return tk;
+
+    tk = match_ident(self);
+    return tk;
 }
 
 Token lexer_peak(Lexer *self) {
 	if (self->peakbuf.type > 0) return self->peakbuf;
 	const Token tk = lexer_next(self);
-	self->peakbuf = tk;;
+	self->peakbuf = tk;
 	return tk;
 }
 
