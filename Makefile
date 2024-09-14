@@ -1,10 +1,10 @@
 
-main_: main.c lexer.c
+bin/main: main.c lexer.c ast.c
 	mkdir -p bin
-	gcc -I./ $^ -o $@
+	gcc -Iinclude $^ -o $@
 
 # make target 'all' to compile all the files
-all: main_
+all: bin/main
 
 # make target 'clean' to remove all the compiled files
 clean:
