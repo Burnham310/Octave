@@ -142,9 +142,9 @@ Token lexer_next(Lexer *self) {
 	}
     skip_ws(self);
     Token tk;
-    return
-	(tk = match_single(self)).type 	> 0 ? tk :
-	(tk = match_num(self)).type 	> 0 ? tk : 
+	return
+	(tk = match_single(self)).type 	> 0 ? tk : tk = TK_NULL
+	(tk = match_num(self)).type 	> 0 ? tk : tk = TK_NULL
 	(tk = match_ident(self)).type 	> 0 ? tk : tk;
 }
 
