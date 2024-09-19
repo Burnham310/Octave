@@ -13,7 +13,7 @@ int main()
 
     for (int i = 0; i < sizeof(notes) / sizeof(notes[0]); ++i)
     {
-        Note cur_note = {
+        MidiNote cur_note = {
             .channel = DEFAULT_CHANNEL,
             .length = EIGHTH_NOTE,
             .pitch = notes[i],

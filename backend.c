@@ -61,7 +61,7 @@ void init_midi_output(const char *filename)
     write_word(midi_fp, DEFAULT_DEVISION); // ticks per quarter note
 }
 
-static void write_note_event(Note *note)
+static void write_note_event(MidiNote *note)
 {
     // fk
     write_var_len(midi_fp, 0);
@@ -80,9 +80,9 @@ static void write_note_event(Note *note)
     write_byte(midi_fp, note->velocity); // Velocity (volume)
 }
 
-void add_note_to_track(Track *track, Note *note)
+void add_note_to_track(Track *track, MidiNote *note)
 {
-    track->notes = realloc(track->notes, (track->note_count + 1) * sizeof(Note));
+    track->notes = realloc(track->notes, (track->note_count + 1) * sizeof(MidiNote));
     if (!track->notes)
     {
         perror("Failed to add note to track");
@@ -133,4 +133,12 @@ void set_tempo(FILE *file, unsigned int bpm)
     write_byte(file, 0x03); // always 3 bytes
 
     write_dword(file, tempo);
+}
+
+int note_length(NoteLength l) {
+    int d = 400;
+    for (int i = 0; i < l; i++) {
+	d /= 2;
+    }
+    return d;
 }

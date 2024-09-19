@@ -4,12 +4,14 @@
 
 typedef enum
 {
-    WHOLE_NOTE = 400,
-    HALF_NOTE = 200,
-    QUARTER_NOTE = 100,
-    EIGHTH_NOTE = 50,
-    SIXTEENTH_NOTE = 25
+    WHOLE_NOTE,
+    HALF_NOTE,
+    QUARTER_NOTE,
+    EIGHTH_NOTE,
+    SIXTEENTH_NOTE,
 } NoteLength;
+
+int note_length(NoteLength l);
 
 typedef struct
 {
@@ -17,11 +19,11 @@ typedef struct
     NoteLength length;
     unsigned char velocity; // volume
     unsigned char channel;
-} Note;
+} MidiNote;
 
 typedef struct
 {
-    Note *notes;
+    MidiNote *notes;
     int note_count;
 } Track;
 
@@ -32,7 +34,7 @@ typedef struct
 #define DEFAULT_CHANNEL 0
 
 void init_midi_output(const char *filename); // init the MIDI output
-void add_note_to_track(Track *track, Note *note);
+void add_note_to_track(Track *track, MidiNote *note);
 void close_midi_output(); // finalize and close the MIDI output
 void write_track(Track *track);
 

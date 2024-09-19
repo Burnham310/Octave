@@ -4,6 +4,7 @@
 
 #include "lexer.h"
 #include "ast.h"
+#include "backend.h"
 
 void usage(const char *prog_name)
 {
@@ -13,6 +14,7 @@ char *input_path, *output_path;
 FILE *input_f;
 FILE *output_f;
 char *buf;
+Pgm pgm;
 
 #define RETURN(x)      \
     do                 \
@@ -58,26 +60,39 @@ int main(const int argc, char **argv)
     // }	
     // lexer = lexer_init(buf, input_size, input_path);
 
-    Pgm pgm = parse_ast(&lexer);
+    pgm = parse_ast(&lexer);
     if (!pgm.success) {
 	eprintf("Failed to parse ast\n");
 	RETURN(1);
     }
-    printf("main decl: %zu\n", pgm.main);
     Decl main = pgm.decls.ptr[pgm.main];
     Sec main_sec =  pgm.secs.ptr[main.sec];
+    init_midi_output(output_path);
+
+    Track track = {
+	.note_count = 0,
+    };
+    unsigned char cmajor[] = {60, 62, 64, 65, 67, 69, 71, 72};
+
     for (int i = 0; i < main_sec.notes.len; ++i) {
-	Note n = main_sec.notes.ptr[i];
-	printf("Note: %zi.%zu ", n.pitch, n.dots);
+	Note note = main_sec.notes.ptr[i];
+	printf("%zi.%zu => %i\n", note.pitch, note.dots, cmajor[note.pitch - 1]);
+	MidiNote midi_note = {
+	    .channel = DEFAULT_CHANNEL,
+	    .length = note_length(note.dots - 1),
+	    .pitch = cmajor[note.pitch - 1],
+	    .velocity = DEFAULT_VELOCITY,
+	};
+	add_note_to_track(&track, &midi_note);
     }
-    printf("\n");
-    
+    write_track(&track);
+    close_midi_output();
+
+
 
 out:
     if (input_f)
-        fclose(input_f);
-    if (output_f)
-        fclose(output_f);
+	fclose(input_f);
     free(buf);
     if (exit_code != 0)
         usage(argv[0]);

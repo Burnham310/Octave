@@ -1,4 +1,4 @@
-SRC = main.c lexer.c ast.c
+SRC = main.c lexer.c ast.c backend.c
 OBJ = $(SRC:.c=.o)
 
 OUT_DIR = bin
