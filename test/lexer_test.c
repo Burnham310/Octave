@@ -34,6 +34,10 @@ int main(const int argc, char **argv)
         perror("Cannot open src file");
         RETURN(1);
     }
+    // if ((output_f = fopen(output_path, "w")) == NULL) {
+    //     perror("Cannot open output file");
+    //     RETURN(1);
+    // }
 
     // get size of input buffer
     fseek(input_f, 0, SEEK_END);
@@ -52,7 +56,6 @@ int main(const int argc, char **argv)
     while ((tk = lexer_next(&lexer)).type > 0)
     {
         TOKEN_DEBUG(tk)
-        // printf("%d\n", tk.type);
         printf("\n");
     }
 
