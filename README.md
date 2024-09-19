@@ -28,7 +28,8 @@ You can also define `variables` in the beginning of a section. For example, you 
 twinkle = |c=(1_3_5) : [key=cmajor, bpm=70] : 1.., 1.., 5.., 5.., 6.., 6.., c., 4.., 4.., 3.., 3.., 2.., 2.., 1.|;
 ```
 
-Similar to the `_` operator for notes, you can let two sections play at the same time by doing `_` on them:
+Similar to the `_` operator for notes, you can letsudo apt install libglib2.0-dev
+ two sections play at the same time by doing `_` on them:
 
 ```
 melody = |[key=cmajor, bpm=70]: 1.., 1.., 5.., 5.., 6.., 6.., 1., 4.., 4.., 3.., 3.., 2.., 2.., 1.|;
@@ -64,4 +65,17 @@ You can also have if-condition:
 
 ```
 section (x: Note) = |:[key=if x == 1 then gmajor else gminor, bpm=70]: x.|;
+```
+
+## Run
+install dependencies
+
+```bash
+sudo apt-get install libsmf-dev     
+sudo apt-get install libglib2.0-dev
+```
+
+make executable via:
+```bash
+make
 ```

@@ -1,12 +1,30 @@
+SRC = main.c lexer.c ast.c
+OBJ = $(SRC:.c=.o)
 
-bin/main: main.c lexer.c ast.c
-	mkdir -p bin
-	gcc -Iinclude $^ -o $@ -g
+OUT_DIR = bin
+OUT = $(OUT_DIR)/main
 
-# make target 'all' to compile all the files
-all: bin/main
+CC = gcc
+INCLUDES = -Iinclude
+CFLAGS += -g
 
-# make target 'clean' to remove all the compiled files
+$(OUT): $(OBJ)
+	mkdir -p $(OUT_DIR)
+	$(CC) $(INCLUDES) $^ -o $@ 
+
+all: $(OUT)
+
+backend:
+	$(CC) $(CFLAGS) $(INCLUDES) backend.c -o $@ 
+
+test_backend:
+	gcc testcase/backend_test.c backend.c -Iinclude -o backend
+	./backend
+	rm backend
 clean:
-	rm -rf bin
+	rm -rf $(OUT_DIR) $(OBJ)
 
+%.o: %.c
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+.PHONY: all clean
