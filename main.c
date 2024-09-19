@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "lexer.h"
+#include "ast.h"
 
 void usage(const char *prog_name)
 {
@@ -48,13 +49,29 @@ int main(const int argc, char **argv)
 
     Lexer lexer = lexer_init(buf, input_size, input_path);
 
-    Token tk;
-    while ((tk = lexer_next(&lexer)).type > 0)
-    {
-        TOKEN_DEBUG(tk)
-        // printf("%d\n", tk.type);
-        printf("\n");
+    // Token tk;
+    // while ((tk = lexer_next(&lexer)).type > 0)
+    // {
+    //     TOKEN_DEBUG(tk)
+    //     // printf("%d\n", tk.type);
+    //     printf("\n");
+    // }	
+    // lexer = lexer_init(buf, input_size, input_path);
+
+    Pgm pgm = parse_ast(&lexer);
+    if (!pgm.success) {
+	eprintf("Failed to parse ast\n");
+	RETURN(1);
     }
+    printf("main decl: %zu\n", pgm.main);
+    Decl main = pgm.decls.ptr[pgm.main];
+    Sec main_sec =  pgm.secs.ptr[main.sec];
+    for (int i = 0; i < main_sec.notes.len; ++i) {
+	Note n = main_sec.notes.ptr[i];
+	printf("Note: %zi.%zu ", n.pitch, n.dots);
+    }
+    printf("\n");
+    
 
 out:
     if (input_f)
@@ -64,5 +81,7 @@ out:
     free(buf);
     if (exit_code != 0)
         usage(argv[0]);
+    if (pgm.success)
+	ast_deinit(&pgm);
     return exit_code;
 }

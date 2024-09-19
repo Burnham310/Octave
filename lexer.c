@@ -4,15 +4,6 @@
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
-
-#define eprintf(fmt, ...) fprintf(stderr, fmt, __VA_ARGS__)
-#define report(lexer, off, fmt, ...)                                                     \
-	do                                                                                   \
-	{                                                                                    \
-		Loc __loc = off_to_loc(lexer->src, lexer->src_len, off);                         \
-		eprintf("%s:%zu:%zu " fmt "\n", lexer->path, __loc.row, __loc.col, __VA_ARGS__); \
-	} while (0)
-
 static struct lexer_state
 {
 	int is_section_begin; // section begin flag
@@ -21,6 +12,31 @@ static struct lexer_state
 	.is_section_begin = 0,
 	.is_attribute_begin = 0,
 };
+
+
+const char* ty_str(TokenType ty) {
+    
+    switch (ty) {
+	case TK_ERR:
+	    return "TK_ERR";
+	case TK_NULL:
+	    return "TK_NULL";
+	case TK_INT:
+	    return "TK_INT";
+	case TK_IDENT:
+	    return "TK_IDENT";
+	case TK_NOTE:
+	    return "TK_NOTE";
+	case ';':
+	    return ";";
+	case '=':
+	    return "=";
+	case '.':
+	    return ".";
+	default:
+	    return "TK_UNKNOWN";
+    }
+}
 
 Lexer lexer_init(const char *src, const size_t src_len, const char *path)
 {
@@ -69,7 +85,12 @@ void skip_ws(Lexer *lexer)
 		lexer->off++;
 	}
 }
+char peek_char(Lexer* self) {
+	if (self->off >= self->src_len)
+		return 0;
+	return self->src[self->off];
 
+}
 // return 0 if no more character left
 char next_char(Lexer *self)
 {
@@ -98,10 +119,8 @@ Token match_single(Lexer *self)
 	case '.':
 	case ',':
 	case '|':
-		LEXER_STATE.is_section_begin = !LEXER_STATE.is_section_begin;
 	case '=':
 	case ':':
-		LEXER_STATE.is_attribute_begin = !LEXER_STATE.is_attribute_begin;
 	case ';':
 		tk.type = (unsigned char)c;
 		return tk;
@@ -138,36 +157,49 @@ Token match_num(Lexer *self)
 			RETURN_TK(TK_ERR);
 		}
 		else
-		{
+		{	
+			rewind_char(self);
 			break;
 		}
 	}
 	tk.type = TK_INT;
-
 	tk.data.integer = strtol(self->src + tk.off, NULL, 10);
+	if ((c = peek_char(self)) == '.') {
+		int dots = 0;
+		while ((c = next_char(self)) == '.') {
+			dots += 1;
+		}
+		rewind_char(self);
+		
+		tk.type = TK_NOTE;
+		tk.data.note.pitch = tk.data.integer;
+		tk.data.note.dots = dots;
+
+	}
+	
 	return tk;
 }
 
-Token match_many(Lexer *self, const TokenType exp_token_type, const char *target)
-{
-	Token tk = {.off = self->off};
-	int len = strlen(target);
-
-	for (int i = 0; i < len; ++i)
-	{
-		if (next_char(self) != target[i])
-		{
-			do
-			{
-				rewind_char(self);
-				--i;
-			} while (i > 0);
-			RETURN_TK(TK_ERR);
-		}
-	}
-
-	RETURN_TK(exp_token_type);
-}
+// Token match_many(Lexer *self, const TokenType exp_token_type, const char *target)
+// {
+// 	Token tk = {.off = self->off};
+// 	int len = strlen(target);
+// 
+// 	for (int i = 0; i < len; ++i)
+// 	{
+// 		if (next_char(self) != target[i])
+// 		{
+// 			do
+// 			{
+// 				rewind_char(self);
+// 				--i;
+// 			} while (i > 0);
+// 			RETURN_TK(TK_ERR);
+// 		}
+// 	}
+// 
+// 	RETURN_TK(exp_token_type);
+// }
 
 
 Token match_ident(Lexer *self)
@@ -183,20 +215,16 @@ Token match_ident(Lexer *self)
 
 	while ((c = next_char(self)) != 0)
 	{
-		if (c == ' ' || c == '\t' || c == '\n' || c == '=' || c == ',')
-		{
-			rewind_char(self);
-			break;
-		}
-		else if (isalpha(c) || c == '_')
+		if (isalpha(c) || c == '_')
 		{
 			continue;
 		}
 		else
 		{
-			// TODO report error
-			report(self, self->off, "invalid character '%c' (%d) in ident", c, c);
-			RETURN_TK(TK_ERR);
+			rewind_char(self);
+			break;
+			// report(self, self->off, "invalid character '%c' (%d) in ident", c, c);
+			// RETURN_TK(TK_ERR);
 		}
 	}
 
@@ -232,7 +260,7 @@ Token lexer_next(Lexer *self)
 	return tk;
 }
 
-Token lexer_peak(Lexer *self)
+Token lexer_peek(Lexer *self)
 {
 	if (self->peakbuf.type > 0)
 		return self->peakbuf;
