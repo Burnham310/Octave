@@ -1,4 +1,4 @@
-# Created by https://www.toptal.com/developers/gitignore/api/c,windows,linux
+# Created by https://www.toptal.com/developers/gitignore/api/c,windows,linux.git
 # Edit at https://www.toptal.com/developers/gitignore?templates=c,windows,linux
 
 ### C ###
@@ -101,3 +101,5 @@ $RECYCLE.BIN/
 
 bin/
 *.mid
+.cache
+compile_commands.json

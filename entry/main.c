@@ -100,3 +100,4 @@ out:
 	ast_deinit(&pgm);
     return exit_code;
 }
+
