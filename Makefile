@@ -9,13 +9,13 @@ CC = gcc
 INCLUDES = -Iinclude
 CFLAGS += -g
 
-all: $(OUT_DIR)/main
+all: main
 $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
-$(OUT_DIR)/%: $(OBJ) $(ENTRY_DIR)/%.c | $(OUT_DIR)
-	$(CC) $(INCLUDES) $^ -o $@ 
+main: $(OBJ) $(ENTRY_DIR)/main.c
+	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 
 backend:
 	$(CC) $(CFLAGS) $(INCLUDES) backend.c -o $@ 
@@ -29,7 +29,7 @@ clean:
 
 $(OBJ_DIR)/%.o: %.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
-$(OBJ_DIR)/%.o: $(ENTRY_DIR)/%.c | $(OBJ_DIR)
-	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 .PHONY: all clean
+
+.PRECIOUS: $(OBJ_DIR)/%.o
