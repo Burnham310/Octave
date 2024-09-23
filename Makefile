@@ -14,7 +14,7 @@ $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
-main: $(OBJ) $(ENTRY_DIR)/main.c
+%: $(OBJ) $(ENTRY_DIR)/%.c | $(OUT_DIR)
 	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 
 backend:
