@@ -1,9 +1,17 @@
 
 #include "lexer.h"
+#include "utils.h"
 #include <stdio.h>
 #include <assert.h>
 #include <ctype.h>
 #include <string.h>
+
+char next_char(Lexer *self);
+Token match_single(Lexer *self);
+Token match_multiple(Lexer *self);
+Token match_num(Lexer *self);
+Token match_ident(Lexer *self);
+void skip_ws(Lexer *lexer);
 static struct lexer_state
 {
 	int is_section_begin; // section begin flag
@@ -33,6 +41,10 @@ const char* ty_str(TokenType ty) {
 	    return "=";
 	case '.':
 	    return ".";
+	case ',':
+	    return ",";
+	case ':':
+	    return ":";
 	default:
 	    return "TK_UNKNOWN";
     }
@@ -130,10 +142,7 @@ Token match_single(Lexer *self)
 	}
 	// return tk;
 }
-Token match_multiple(Lexer *self)
-{
-	assert(0 && "unimplemented");
-}
+
 Token match_num(Lexer *self)
 {
 	Token tk = {.off = self->off};
@@ -230,13 +239,24 @@ Token match_ident(Lexer *self)
 
 	tk.type = TK_IDENT;
 	tk.data.str = (Slice){.ptr = self->src + tk.off, .len = self->off - tk.off};
+	// const char* kw[] = {"key", "bpm"};
+	// TokenType kw_type[] = { TK_KEY, TK_BPM, };
+	// size_t kw_ct = sizeof(kw) / sizeof(kw[0]);
+	// for (size_t i = 0; i < kw_ct; ++i) {
+	//     if (strncmp(kw[i], tk.data.str.ptr, tk.data.str.len) == 0) {
+	// 	tk.type = kw_type[i];
+	// 	break;
+	//     }
+	// }	
 	return tk;
 }
-void lexer_uninit(Lexer *lexer)
-{
-	return;
-}
-
+typedef Token (*match_fn)(Lexer*);
+match_fn fns[] = {
+    match_single,
+    match_num,
+    match_ident,
+};
+const size_t fns_len = sizeof(fns) / sizeof(match_fn);
 Token lexer_next(Lexer *self)
 {
 	if (self->peakbuf.type > 0)
@@ -246,17 +266,12 @@ Token lexer_next(Lexer *self)
 		return tk;
 	}
 	skip_ws(self);
-
-	Token tk = match_single(self);
-	if (tk.type != 0)
-		return tk;
-
-
-	tk = match_num(self);
-	if (tk.type != 0)
-		return tk;
-
-	tk = match_ident(self);
+	
+	Token tk;
+	for (int i = 0; i < fns_len; i++) {
+	    tk = fns[i](self);
+	    if (tk.type != 0) break;
+	}
 	return tk;
 }
 

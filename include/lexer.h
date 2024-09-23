@@ -5,14 +5,6 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-#define eprintf(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
-#define report(lexer, off, fmt, ...)                                                     \
-	do                                                                                   \
-	{                                                                                    \
-		Loc __loc = off_to_loc(lexer->src, lexer->src_len, off);                         \
-		eprintf("%s:%zu:%zu " fmt "\n", lexer->path, __loc.row, __loc.col, ##__VA_ARGS__); \
-	} while (0)
-
 
 typedef struct {
     ssize_t pitch;
@@ -32,6 +24,8 @@ typedef enum
 	TK_IDENT,
 	TK_INT,
 	TK_NOTE,
+	// TK_KEY,
+	// TK_BPM,
 
 } TokenType;
 typedef struct
@@ -88,16 +82,6 @@ typedef struct
 	Token peakbuf;
 } Lexer;
 Lexer lexer_init(const char *src, size_t src_len, const char *path);
-void skip_ws(Lexer *lexer);
-// return 0 if no more character left
-
-char next_char(Lexer *self);
-Token match_single(Lexer *self);
-Token match_multiple(Lexer *self);
-Token match_num(Lexer *self);
-Token match_ident(Lexer *self);
 Token lexer_next(Lexer *self);
 Token lexer_peek(Lexer *self);
-
-void lexer_uninit(Lexer *lexer);
 #endif

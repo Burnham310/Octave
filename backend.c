@@ -46,13 +46,9 @@ static void write_var_len(FILE *file, unsigned int value)
     }
 }
 
-void init_midi_output(const char *filename)
+void init_midi_output(FILE* fp)
 {
-    if (!(midi_fp = fopen(filename, "wb")))
-    {
-        perror("Error opening file");
-    }
-
+    midi_fp = fp;
     // we will use fixed midi header at the begining
     fwrite("MThd", 1, 4, midi_fp);         // header tag
     write_dword(midi_fp, 6);               // always 6
@@ -116,7 +112,7 @@ void write_track(Track *track)
     write_dword(midi_fp, end_of_file_pos - track_length_pos - 4); // ignore length field
     fseek(midi_fp, end_of_file_pos, SEEK_SET);
 }
-
+// not used
 void close_midi_output()
 {
     fclose(midi_fp);

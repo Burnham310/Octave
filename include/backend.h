@@ -33,7 +33,7 @@ typedef struct
 #define DEFAULT_VELOCITY 64  // volumn
 #define DEFAULT_CHANNEL 0
 
-void init_midi_output(const char *filename); // init the MIDI output
+void init_midi_output(FILE* f); // init the MIDI output
 void add_note_to_track(Track *track, MidiNote *note);
 void close_midi_output(); // finalize and close the MIDI output
 void write_track(Track *track);

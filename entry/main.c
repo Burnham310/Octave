@@ -5,10 +5,11 @@
 #include "lexer.h"
 #include "ast.h"
 #include "backend.h"
+#include "utils.h"
 
 void usage(const char *prog_name)
 {
-    fprintf(stderr, "Usage: %s [input_file] -o [output_file]\n", prog_name);
+    eprintf("Usage: %s [input_file] -o [output_file]\n", prog_name);
 }
 char *input_path, *output_path;
 FILE *input_f;
@@ -37,7 +38,11 @@ int main(const int argc, char **argv)
         perror("Cannot open src file");
         RETURN(1);
     }
-
+    if ((output_f = fopen(output_path, "w")) == NULL)
+    {
+        perror("Cannot create output file");
+        RETURN(1);
+    }
     // get size of input buffer
     fseek(input_f, 0, SEEK_END);
     size_t input_size = ftell(input_f);
@@ -67,12 +72,17 @@ int main(const int argc, char **argv)
     }
     Decl main = pgm.decls.ptr[pgm.main];
     Sec main_sec =  pgm.secs.ptr[main.sec];
-    init_midi_output(output_path);
+    init_midi_output(output_f);
 
     Track track = {
 	.note_count = 0,
     };
     unsigned char cmajor[] = {60, 62, 64, 65, 67, 69, 71, 72};
+    for (int i = 0; i < main_sec.config.len; ++i) {
+
+	Formal formal = pgm.formals.ptr[main_sec.config.ptr[i]];
+	printf("formal %zu: %.*s\n", main_sec.config.ptr[i], (int)formal.ident.len, formal.ident.ptr);
+    }
 
     for (int i = 0; i < main_sec.notes.len; ++i) {
 	Note note = main_sec.notes.ptr[i];
@@ -86,13 +96,14 @@ int main(const int argc, char **argv)
 	add_note_to_track(&track, &midi_note);
     }
     write_track(&track);
-    close_midi_output();
 
 
 
 out:
     if (input_f)
 	fclose(input_f);
+    if (output_f)
+	fclose(output_f);
     free(buf);
     if (exit_code != 0)
         usage(argv[0]);
