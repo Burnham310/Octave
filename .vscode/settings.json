@@ -1,6 +1,8 @@
 {
     "files.associations": {
         "stdio.h": "c",
-        "smf.h": "c"
+        "smf.h": "c",
+        "string.h": "c",
+        "common.h": "c"
     },
 }

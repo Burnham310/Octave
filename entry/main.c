@@ -6,6 +6,8 @@
 #include "ast.h"
 #include "backend.h"
 #include "utils.h"
+#include "common.h"
+#include <assert.h>
 
 void usage(const char *prog_name)
 {
@@ -62,53 +64,79 @@ int main(const int argc, char **argv)
     //     TOKEN_DEBUG(tk)
     //     // printf("%d\n", tk.type);
     //     printf("\n");
-    // }	
+    // }
     // lexer = lexer_init(buf, input_size, input_path);
 
     pgm = parse_ast(&lexer);
-    if (!pgm.success) {
-	eprintf("Failed to parse ast\n");
-	RETURN(1);
+    if (!pgm.success)
+    {
+        eprintf("Failed to parse ast\n");
+        RETURN(1);
     }
     Decl main = pgm.decls.ptr[pgm.main];
-    Sec main_sec =  pgm.secs.ptr[main.sec];
+    Sec main_sec = pgm.secs.ptr[main.sec];
     init_midi_output(output_f);
 
     Track track = {
-	.note_count = 0,
+        .note_count = 0,
     };
-    unsigned char cmajor[] = {60, 62, 64, 65, 67, 69, 71, 72};
-    for (int i = 0; i < main_sec.config.len; ++i) {
 
-	Formal formal = pgm.formals.ptr[main_sec.config.ptr[i]];
-	printf("formal %zu: %.*s\n", main_sec.config.ptr[i], (int)formal.ident.len, formal.ident.ptr);
+    struct _conf
+    {
+        int bpm;
+        enum MidiScaleType scale;
+    } midi_conf = {
+        // default configuration
+        .bpm = 120,
+        .scale = CMAJOR,
+    };
+
+    for (int i = 0; i < main_sec.config.len; ++i)
+    {
+        Formal formal = pgm.formals.ptr[main_sec.config.ptr[i]];
+
+        if (strncmp(formal.ident.ptr, "scale", formal.ident.len) == 0)
+        {
+            assert(pgm.exprs.ptr[formal.expr].tag == EXPR_IDENT && "bpm attribute has to be a ident");
+            midi_conf.scale = getMidiKeyType(pgm.exprs.ptr[formal.expr].data.ident.ptr, pgm.exprs.ptr[formal.expr].data.ident.len);
+            assert(midi_conf.scale != ERRSCALE && "fail to set scale");
+            printf("scale => %d\n", midi_conf.scale);
+            continue;
+        }
+        if (strncmp(formal.ident.ptr, "bpm", formal.ident.len) == 0)
+        {
+            assert(pgm.exprs.ptr[formal.expr].tag == EXPR_NUM && "bpm attribute has to be a number");
+            midi_conf.bpm = pgm.exprs.ptr[formal.expr].data.num;
+            printf("bpm => %d\n", midi_conf.bpm);
+            continue;
+        }
+
+        PRINT_WARNING("unsupport configuration: '%.*s'", (int)formal.ident.len, formal.ident.ptr);
     }
 
-    for (int i = 0; i < main_sec.notes.len; ++i) {
-	Note note = main_sec.notes.ptr[i];
-	printf("%zi.%zu => %i\n", note.pitch, note.dots, cmajor[note.pitch - 1]);
-	MidiNote midi_note = {
-	    .channel = DEFAULT_CHANNEL,
-	    .length = note_length(note.dots - 1),
-	    .pitch = cmajor[note.pitch - 1],
-	    .velocity = DEFAULT_VELOCITY,
-	};
-	add_note_to_track(&track, &midi_note);
+    for (int i = 0; i < main_sec.notes.len; ++i)
+    {
+        Note note = main_sec.notes.ptr[i];
+        printf("%zi.%zu => %i\n", note.pitch, note.dots, MIDI_SCALES[midi_conf.scale][note.pitch - 1]);
+        MidiNote midi_note = {
+            .channel = DEFAULT_CHANNEL,
+            .length = note_length(note.dots - 1),
+            .pitch = MIDI_SCALES[midi_conf.scale][note.pitch - 1],
+            .velocity = DEFAULT_VELOCITY,
+        };
+        add_note_to_track(&track, &midi_note);
     }
     write_track(&track);
 
-
-
 out:
     if (input_f)
-	fclose(input_f);
+        fclose(input_f);
     if (output_f)
-	fclose(output_f);
+        fclose(output_f);
     free(buf);
     if (exit_code != 0)
         usage(argv[0]);
     if (pgm.success)
-	ast_deinit(&pgm);
+        ast_deinit(&pgm);
     return exit_code;
 }
-
