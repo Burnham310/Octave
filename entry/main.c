@@ -6,7 +6,6 @@
 #include "ast.h"
 #include "backend.h"
 #include "utils.h"
-#include <assert.h>
 
 void usage(const char *prog_name)
 {
@@ -56,7 +55,7 @@ int main(const int argc, char **argv)
     }
 
     Lexer lexer = lexer_init(buf, input_size, input_path);
-    Lexer* dummy = &lexer;
+    Lexer *dummy = &lexer;
 
     // Token tk;
     // while ((tk = lexer_next(&lexer)).type > 0)
@@ -97,30 +96,21 @@ int main(const int argc, char **argv)
 
         if (strncmp(formal.ident.ptr, "scale", formal.ident.len) == 0)
         {
-            
-            // assert(pgm.exprs.ptr[formal.expr].tag == EXPR_IDENT && "scale attribute has to be a ident");
-            if (pgm.exprs.ptr[formal.expr].tag != EXPR_IDENT) {
-                report(dummy, formal.off, "Expect identifier in `scale` attribute");
-                return 1;
-            }
+
             midi_conf.scale = getMidiKeyType(pgm.exprs.ptr[formal.expr].data.ident.ptr, pgm.exprs.ptr[formal.expr].data.ident.len);
-            assert(midi_conf.scale != ERRSCALE && "fail to set scale");
+            ASSERT(midi_conf.scale == ERRSCALE, report(dummy, formal.off, "Expect identifier in `scale` attribute"));
             printf("scale => %d\n", midi_conf.scale);
             continue;
         }
         if (strncmp(formal.ident.ptr, "bpm", formal.ident.len) == 0)
         {
-            if (pgm.exprs.ptr[formal.expr].tag != EXPR_NUM) {
-                report(dummy, formal.off, "Expect num in `bpm` attribute");
-                return 1;
-            }
             midi_conf.bpm = pgm.exprs.ptr[formal.expr].data.num;
+            ASSERT(pgm.exprs.ptr[formal.expr].tag == EXPR_NUM, report(dummy, formal.off, "Expect num in `bpm` attribute"));
             printf("bpm => %d\n", midi_conf.bpm);
             continue;
         }
-        
 
-        PRINT_WARNING("unsupport configuration: '%.*s'", (int)formal.ident.len, formal.ident.ptr);
+        WARNING(dummy, formal.off, "unsupport configuration: '%.*s'", (int)formal.ident.len, formal.ident.ptr);
     }
 
     for (int i = 0; i < main_sec.notes.len; ++i)
