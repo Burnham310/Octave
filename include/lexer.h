@@ -81,6 +81,14 @@ typedef struct
 	const char *path;
 	Token peakbuf;
 } Lexer;
+typedef struct
+{
+	const char* src;
+	size_t src_len;
+	const char *path;
+} LexerDummy;
+
+LexerDummy lexer_dummy_init(const char* src, const size_t src_len, const char *path);
 Lexer lexer_init(const char *src, size_t src_len, const char *path);
 Token lexer_next(Lexer *self);
 Token lexer_peek(Lexer *self);

@@ -10,43 +10,49 @@ typedef AstIdx FormalIdx;
 typedef AstIdx ExprIdx;
 make_slice(AstIdx);
 make_slice(Note);
-typedef struct {
+typedef struct
+{
     Slice name;
     SecIdx sec;
     size_t off;
 } Decl;
 make_slice(Decl);
 
-
-typedef union {
+typedef union
+{
     Slice ident;
     ssize_t num;
 } ExprData;
-typedef enum {
+typedef enum
+{
     EXPR_IDENT,
     EXPR_NUM,
 } ExprTag;
-typedef struct {
+typedef struct
+{
     ExprTag tag;
     ExprData data;
     size_t off;
 } Expr;
 make_slice(Expr);
 
-typedef struct {
+typedef struct
+{
     Slice ident;
     ExprIdx expr;
     size_t off;
 } Formal;
 make_slice(Formal);
 
-typedef struct {
+typedef struct
+{
     NoteSlice notes;
     SliceOf(AstIdx) config;
     size_t off;
 } Sec;
 make_slice(Sec);
-typedef struct {
+typedef struct
+{
     DeclIdx main;
     DeclSlice decls; // array of decls
     SecSlice secs;
@@ -54,15 +60,15 @@ typedef struct {
     ExprSlice exprs;
     bool success;
 } Pgm;
-typedef enum { // if > 0, then the res is an index into some array
+typedef enum
+{ // if > 0, then the res is an index into some array
     PR_ERR = -1,
     PR_NULL = 0,
 } ParseRes;
 
-
 struct Gen;
 typedef struct Gen Gen;
-Pgm parse_ast(Lexer* lexer);
-void ast_deinit(Pgm* pgm);
+Pgm parse_ast(Lexer *lexer);
+void ast_deinit(Pgm *pgm);
 
 #endif

@@ -3,6 +3,9 @@
         "stdio.h": "c",
         "smf.h": "c",
         "string.h": "c",
-        "common.h": "c"
+        "common.h": "c",
+        "assert.h": "c",
+        "cmath": "c",
+        "complex": "c"
     },
 }

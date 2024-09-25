@@ -21,35 +21,39 @@ static struct lexer_state
 	.is_attribute_begin = 0,
 };
 
+const char *ty_str(TokenType ty)
+{
 
-const char* ty_str(TokenType ty) {
-    
-    switch (ty) {
+	switch (ty)
+	{
 	case TK_ERR:
-	    return "TK_ERR";
+		return "TK_ERR";
 	case TK_NULL:
-	    return "TK_NULL";
+		return "TK_NULL";
 	case TK_INT:
-	    return "TK_INT";
+		return "TK_INT";
 	case TK_IDENT:
-	    return "TK_IDENT";
+		return "TK_IDENT";
 	case TK_NOTE:
-	    return "TK_NOTE";
+		return "TK_NOTE";
 	case ';':
-	    return ";";
+		return ";";
 	case '=':
-	    return "=";
+		return "=";
 	case '.':
-	    return ".";
+		return ".";
 	case ',':
-	    return ",";
+		return ",";
 	case ':':
-	    return ":";
+		return ":";
 	default:
-	    return "TK_UNKNOWN";
-    }
+		return "TK_UNKNOWN";
+	}
 }
-
+LexerDummy lexer_dummy_init(const char *src, const size_t src_len, const char *path)
+{
+	return (LexerDummy){.path = path, .src = src, .src_len = src_len};
+}
 Lexer lexer_init(const char *src, const size_t src_len, const char *path)
 {
 	Lexer lexer = {.src = src, .src_len = src_len, .off = 0, .path = path, .peakbuf = {0}};
@@ -97,11 +101,11 @@ void skip_ws(Lexer *lexer)
 		lexer->off++;
 	}
 }
-char peek_char(Lexer* self) {
+char peek_char(Lexer *self)
+{
 	if (self->off >= self->src_len)
 		return 0;
 	return self->src[self->off];
-
 }
 // return 0 if no more character left
 char next_char(Lexer *self)
@@ -146,9 +150,10 @@ Token match_single(Lexer *self)
 Token match_num(Lexer *self)
 {
 	Token tk = {.off = self->off};
-	
+
 	char c = next_char(self);
-	if (c == 0) RETURN_TK(TK_EOF);
+	if (c == 0)
+		RETURN_TK(TK_EOF);
 	if (!isdigit(c))
 	{
 		rewind_char(self);
@@ -166,26 +171,27 @@ Token match_num(Lexer *self)
 			RETURN_TK(TK_ERR);
 		}
 		else
-		{	
+		{
 			rewind_char(self);
 			break;
 		}
 	}
 	tk.type = TK_INT;
 	tk.data.integer = strtol(self->src + tk.off, NULL, 10);
-	if ((c = peek_char(self)) == '.') {
+	if ((c = peek_char(self)) == '.')
+	{
 		int dots = 0;
-		while ((c = next_char(self)) == '.') {
+		while ((c = next_char(self)) == '.')
+		{
 			dots += 1;
 		}
 		rewind_char(self);
-		
+
 		tk.type = TK_NOTE;
 		tk.data.note.pitch = tk.data.integer;
 		tk.data.note.dots = dots;
-
 	}
-	
+
 	return tk;
 }
 
@@ -193,7 +199,7 @@ Token match_num(Lexer *self)
 // {
 // 	Token tk = {.off = self->off};
 // 	int len = strlen(target);
-// 
+//
 // 	for (int i = 0; i < len; ++i)
 // 	{
 // 		if (next_char(self) != target[i])
@@ -206,16 +212,16 @@ Token match_num(Lexer *self)
 // 			RETURN_TK(TK_ERR);
 // 		}
 // 	}
-// 
+//
 // 	RETURN_TK(exp_token_type);
 // }
-
 
 Token match_ident(Lexer *self)
 {
 	Token tk = {.off = self->off};
 	char c = next_char(self);
-	if (c == 0) RETURN_TK(TK_EOF);
+	if (c == 0)
+		RETURN_TK(TK_EOF);
 	if (!isalpha(c) && c != '_')
 	{
 		rewind_char(self);
@@ -247,14 +253,14 @@ Token match_ident(Lexer *self)
 	// 	tk.type = kw_type[i];
 	// 	break;
 	//     }
-	// }	
+	// }
 	return tk;
 }
-typedef Token (*match_fn)(Lexer*);
+typedef Token (*match_fn)(Lexer *);
 match_fn fns[] = {
-    match_single,
-    match_num,
-    match_ident,
+	match_single,
+	match_num,
+	match_ident,
 };
 const size_t fns_len = sizeof(fns) / sizeof(match_fn);
 Token lexer_next(Lexer *self)
@@ -266,11 +272,13 @@ Token lexer_next(Lexer *self)
 		return tk;
 	}
 	skip_ws(self);
-	
+
 	Token tk;
-	for (int i = 0; i < fns_len; i++) {
-	    tk = fns[i](self);
-	    if (tk.type != 0) break;
+	for (int i = 0; i < fns_len; i++)
+	{
+		tk = fns[i](self);
+		if (tk.type != 0)
+			break;
 	}
 	return tk;
 }

@@ -3,11 +3,11 @@
 #include "ast.h"
 #include "lexer.h"
 #include "utils.h"
-DeclIdx parse_decl(Lexer* lexer, Gen* gen);
-SecIdx parse_section(Lexer* lexer, Gen* gen);
-FormalIdx parse_formal(Lexer* lexer, Gen* gen);
-ExprIdx parse_expr(Lexer* lexer, Gen* gen);
-#define try(exp)    \
+DeclIdx parse_decl(Lexer *lexer, Gen *gen);
+SecIdx parse_section(Lexer *lexer, Gen *gen);
+FormalIdx parse_formal(Lexer *lexer, Gen *gen);
+ExprIdx parse_expr(Lexer *lexer, Gen *gen);
+#define try(exp)         \
     if ((exp).type <= 0) \
     return (exp).type
 #define try_before(tk, expect, before)                                                                                       \
@@ -71,49 +71,53 @@ DeclIdx parse_decl(Lexer *lexer, Gen *gen)
         report(lexer, assign.off, "Expect section after '='");
         return PR_ERR;
     };
-    Token colon = assert_next(lexer, ';');
-    if (colon.type < 0)
-    {
-        report(lexer, gen->secs.items[sec].off, "Expect ';' at the end of a declaration");
-	// TODO free sec
-	return PR_ERR;
-
-    }
-    da_append(gen->decls, ((Decl){.name = id.data.str, .sec = sec, .off = colon.off}));
+    da_append(gen->decls, ((Decl){.name = id.data.str, .sec = sec, .off = assign.off}));
     return gen->decls.size - 1;
 }
 SecIdx parse_section(Lexer *lexer, Gen *gen)
 {
     // TODO parse var decl skipped
-    Token colon1 = try_next(lexer, ':');
+    Token bar = try_next(lexer, '|');
+    Token colon1 = assert_next(lexer, ':');
+    try_before(colon1, ':', bar);
+
     Sec sec = {0};
     try(colon1);
     // TODO parse config skipped
     ArrOf(AstIdx) formals = {0};
 
     FormalIdx formal = parse_formal(lexer, gen);
-    if (formal < 0) {
-	return PR_ERR;
-    } else if (formal > 0) {
-	da_append(formals, formal);
-	while (true) {
-	    Token comma = try_next(lexer, ',');
-	    if (comma.type < 0) {
-		return PR_ERR;
-	    } else if (comma.type == 0) {
-		break;
-	    }
-	    if ((formal = parse_formal(lexer, gen)) <= 0) {
-		report(lexer, comma.off, "Expect formal after ','");
-		return PR_ERR;
-	    }
-	    da_append(formals, formal);	
-	}
-	if (formal < 0) {
-	    // TODO free formals
-	    return PR_ERR;
-	}
-	da_move(formals, sec.config);
+    if (formal < 0)
+    {
+        return PR_ERR;
+    }
+    else if (formal > 0)
+    {
+        da_append(formals, formal);
+        while (true)
+        {
+            Token comma = try_next(lexer, ',');
+            if (comma.type < 0)
+            {
+                return PR_ERR;
+            }
+            else if (comma.type == 0)
+            {
+                break;
+            }
+            if ((formal = parse_formal(lexer, gen)) <= 0)
+            {
+                report(lexer, comma.off, "Expect formal after ','");
+                return PR_ERR;
+            }
+            da_append(formals, formal);
+        }
+        if (formal < 0)
+        {
+            // TODO free formals
+            return PR_ERR;
+        }
+        da_move(formals, sec.config);
     }
 
     Token colon2 = assert_next(lexer, ':');
@@ -126,7 +130,7 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     while ((note = try_next(lexer, TK_NOTE)).type > 0)
     {
         da_append(notes, note.data.note);
-	sec.off = note.off;
+        sec.off = note.off;
     }
     if (note.type < 0)
     {
@@ -134,7 +138,14 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
         res = note.type;
         goto out;
     }
-    
+    Token colon = assert_next(lexer, '|');
+    if (colon.type < 0)
+    {
+        report(lexer, sec.off, "Unclosed section");
+        // TODO free sec
+        return PR_ERR;
+    }
+
 out:
     da_move(notes, sec.notes);
     da_append(gen->secs, sec);
@@ -143,38 +154,40 @@ err_out:
     da_free(notes);
     return res;
 }
-FormalIdx parse_formal(Lexer* lexer, Gen* gen) {
+FormalIdx parse_formal(Lexer *lexer, Gen *gen)
+{
     Token ident = try_next(lexer, TK_IDENT);
     try(ident);
     Token assign = assert_next(lexer, '=');
     try_before(assign, '=', ident);
     ExprIdx expr = parse_expr(lexer, gen);
-    if (expr <= 0) {
-	report(lexer, assign.off, "Expect expression after '='");
-	return PR_ERR;
+    if (expr <= 0)
+    {
+        report(lexer, assign.off, "Expect expression after '='");
+        return PR_ERR;
     }
-    
 
     Formal formal = {.expr = expr, .ident = ident.data.str, .off = gen->exprs.items[expr].off};
     da_append(gen->formals, formal);
     return gen->formals.size - 1;
 }
 
-ExprIdx parse_expr(Lexer* lexer, Gen* gen) {
+ExprIdx parse_expr(Lexer *lexer, Gen *gen)
+{
     Token tk = lexer_peek(lexer);
     Expr expr = {0};
-    switch (tk.type) {
-	case TK_IDENT:
-	    expr.tag = EXPR_IDENT;
-	    expr.data.ident = tk.data.str;
-	    break;
-	case TK_INT:
-	    expr.tag = EXPR_NUM;
-	    expr.data.num = tk.data.integer;
-	    break;
-	default:
-	    return PR_NULL;
-
+    switch (tk.type)
+    {
+    case TK_IDENT:
+        expr.tag = EXPR_IDENT;
+        expr.data.ident = tk.data.str;
+        break;
+    case TK_INT:
+        expr.tag = EXPR_NUM;
+        expr.data.num = tk.data.integer;
+        break;
+    default:
+        return PR_NULL;
     }
     lexer_next(lexer);
     expr.off = tk.off;
