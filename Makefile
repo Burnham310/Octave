@@ -1,4 +1,4 @@
-SRC = lexer.c ast.c backend.c common.c
+SRC = lexer.c ast.c backend.c
 OBJ_DIR = obj
 OBJ = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRC))
 
@@ -14,9 +14,10 @@ $(OBJ_DIR):
 	mkdir -p $(OBJ_DIR)
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
-%: $(OBJ) $(ENTRY_DIR)/%.c | $(OUT_DIR)
+main: $(OBJ) $(ENTRY_DIR)/main.c | $(OUT_DIR)
 	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
-
+lexer: $(OBJ) $(ENTRY_DIR)/lexer.c | $(OUT_DIR)
+	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 backend:
 	$(CC) $(CFLAGS) $(INCLUDES) backend.c -o $@ 
 

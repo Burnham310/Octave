@@ -1,5 +1,5 @@
 #include "backend.h"
-
+#include <string.h>
 static FILE *midi_fp;
 
 // write a single byte
@@ -52,7 +52,7 @@ void init_midi_output(FILE* fp)
     // we will use fixed midi header at the begining
     fwrite("MThd", 1, 4, midi_fp);         // header tag
     write_dword(midi_fp, 6);               // always 6
-    write_word(midi_fp, 1);                // Format Type
+    write_word(midi_fp, 0);                // Format Type
     write_word(midi_fp, 1);                // Number of Tracks
     write_word(midi_fp, DEFAULT_DEVISION); // ticks per quarter note
 }
@@ -122,7 +122,7 @@ void set_tempo(FILE *file, unsigned int bpm)
 {
     unsigned int tempo = (60000000 / bpm);
 
-    write_byte(file, 0x00);
+    write_byte(file,  0x00);
 
     write_byte(file, 0xFF);
     write_byte(file, 0x51); // Tempo ident
@@ -138,3 +138,16 @@ int note_length(NoteLength l) {
     }
     return d;
 }
+
+enum MidiScaleType getMidiKeyType(const char *target, int len) {
+    const char* keys[] = {"cmajor", "cminor", "dmajor", "dminor", "emajor", "eminor"};
+    
+    for (int i = 0; i < sizeof(MIDI_SCALES)/sizeof(MIDI_SCALES[0]); ++i) {
+        if (strncmp(target, keys[i], len) == 0) return i;
+
+    }
+
+    return ERRSCALE;
+}
+
+
