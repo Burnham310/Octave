@@ -42,8 +42,21 @@
         (da).items[(da).size++] = (x);                                          \
     } while (0)
 
-#define PRINT_WARNING(fmt, ...) \
-    fprintf(stderr, "Warning: " fmt "\n", ##__VA_ARGS__)
+#define WARNING(lexer, off, fmt, ...)                                                               \
+    do                                                                                              \
+    {                                                                                               \
+        Loc __loc = off_to_loc(lexer->src, lexer->src_len, off);                                    \
+        eprintf("warning: %s:%zu:%zu " fmt "\n", lexer->path, __loc.row, __loc.col, ##__VA_ARGS__); \
+    } while (0)
+#define ASSERT(bool, task) \
+    do                     \
+    {                      \
+        if (!bool)         \
+        {                  \
+            task;          \
+            return 1;      \
+        }                  \
+    } while (0)
 // ---
 #define SliceOf(ty) ty##Slice
 #define ArrOf(ty) ty##Arr
