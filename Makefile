@@ -18,6 +18,9 @@ main: $(OBJ) $(ENTRY_DIR)/main.c | $(OUT_DIR)
 	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 lexer: $(OBJ) $(ENTRY_DIR)/lexer.c | $(OUT_DIR)
 	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
+parser: $(OBJ) $(ENTRY_DIR)/parser.c | $(OUT_DIR)
+	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
+
 backend:
 	$(CC) $(CFLAGS) $(INCLUDES) backend.c -o $@ 
 

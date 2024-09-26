@@ -7,6 +7,7 @@ DeclIdx parse_decl(Lexer *lexer, Gen *gen);
 SecIdx parse_section(Lexer *lexer, Gen *gen);
 FormalIdx parse_formal(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr(Lexer *lexer, Gen *gen);
+ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen);
 #define try(exp)         \
     if ((exp).type <= 0) \
     return (exp).type
@@ -19,6 +20,31 @@ ExprIdx parse_expr(Lexer *lexer, Gen *gen);
             return (tk).type;                                                                                                \
         }                                                                                                                    \
     } while (0)
+void expr_debug(Pgm* pgm, ExprIdx idx) {
+    Expr expr = pgm->exprs.ptr[idx];
+    switch (expr.tag) {
+	case EXPR_NUM:
+	    printf("%zi", expr.data.num);
+	    break;
+	case EXPR_IDENT:
+	    printf("%s", expr.data.ident.ptr);
+	    break;
+	case EXPR_NOTE:
+	    printf("NOTE ");
+	    expr_debug(pgm, expr.data.note.expr);
+	    printf(".%zu", expr.data.note.dots);
+	    break;
+	case EXPR_CHORD:
+	    printf("[ ");
+	    for (size_t i = 0; i < expr.data.chord_notes.len; ++i) {
+		expr_debug(pgm, expr.data.chord_notes.ptr[i]);
+		printf(" ");
+	    }
+	    printf("]");
+	    break;
+
+    }
+}
 // try to match a token of type "type". If fails, the state of the lexer is unchanged. Otherwise, the lexer is incremented and the desired token is returned
 Token try_next(Lexer *lexer, TokenType type)
 {
@@ -123,31 +149,31 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     Token colon2 = assert_next(lexer, ':');
     try_before(colon2, ':', colon1);
 
-    NoteArr notes = {0};
-    Token note;
+    ArrOf(AstIdx) notes = {0};
+    ExprIdx note;
     AstIdx res;
     sec.off = colon2.off;
-    while ((note = try_next(lexer, TK_NOTE)).type > 0)
+    while ((note = parse_expr(lexer, gen)) > 0)
     {
-        da_append(notes, note.data.note);
-        sec.off = note.off;
+        da_append(notes, note);
+        sec.off =  gen->exprs.items[note].off;
     }
-    if (note.type < 0)
+    if (note < 0)
     {
         report(lexer, sec.off, "Error while parsing notes");
-        res = note.type;
+        res = note;
         goto out;
     }
-    Token colon = assert_next(lexer, '|');
-    if (colon.type < 0)
+    Token bar2 = assert_next(lexer, '|');
+    if (bar2.type < 0)
     {
         report(lexer, sec.off, "Unclosed section");
         // TODO free sec
         return PR_ERR;
     }
-
+    printf("end of sec\n");
 out:
-    da_move(notes, sec.notes);
+    da_move(notes, sec.note_exprs);
     da_append(gen->secs, sec);
     return gen->secs.size - 1;
 err_out:
@@ -172,25 +198,74 @@ FormalIdx parse_formal(Lexer *lexer, Gen *gen)
     return gen->formals.size - 1;
 }
 
-ExprIdx parse_expr(Lexer *lexer, Gen *gen)
+
+ExprIdx parse_expr(Lexer *lexer, Gen *gen) {
+
+    ExprIdx lhs;
+    Token head = try_next(lexer, '[');
+    if (head.type < 0) return head.type;
+    else if (head.type > 0) {
+	Expr expr;
+	ExprIdx sub_expr;
+	ArrOf(AstIdx) sub_exprs = {0};
+	while ((sub_expr = parse_expr(lexer, gen)) > 0) { 
+	    da_append(sub_exprs, sub_expr);
+	}
+	if (sub_expr < 0) {
+	    report(lexer, head.off, "Expect expressions inside brackets");
+	    return sub_expr;
+	}
+	Token rbrac = assert_next(lexer, ']');
+	if (head.type < 0) {
+	    report(lexer, head.off, "Unclosed bracket in `chord`");
+	    return PR_ERR;
+	}
+	expr.tag = EXPR_CHORD;
+	expr.off = rbrac.off;
+	da_move(sub_exprs, expr.data.chord_notes);
+	da_append(gen->exprs, expr);
+	lhs = gen->exprs.size - 1;
+    } else {
+	lhs = parse_atomic_expr(lexer, gen);
+	if (lhs <= 0) return lhs;
+    }
+    Token op = try_next(lexer, TK_DOTS);
+    if (op.type < 0) return op.type;
+    else if (op.type > 0) {
+	Expr expr;
+	expr.tag = EXPR_NOTE;
+	expr.off = op.off;
+	expr.data.note.dots = op.data.integer;
+	expr.data.note.expr = lhs;
+	da_append(gen->exprs, expr);
+	lhs = gen->exprs.size - 1;
+    }
+    return lhs;
+    
+}
+ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen)
 {
     Token tk = lexer_peek(lexer);
     Expr expr = {0};
+    // used in '['
     switch (tk.type)
-    {
+    {	
     case TK_IDENT:
         expr.tag = EXPR_IDENT;
         expr.data.ident = tk.data.str;
+	lexer_next(lexer);
+	expr.off = tk.off;
         break;
     case TK_INT:
         expr.tag = EXPR_NUM;
         expr.data.num = tk.data.integer;
+	lexer_next(lexer);
+	expr.off = tk.off;
         break;
     default:
         return PR_NULL;
     }
-    lexer_next(lexer);
-    expr.off = tk.off;
+    
     da_append(gen->exprs, expr);
     return gen->exprs.size - 1;
 }
@@ -216,7 +291,7 @@ Pgm parse_ast(Lexer *lexer)
     }
     if (decl < 0)
     {
-        report(lexer, lexer->off, "Expect Decl at toplevel");
+        report(lexer, 0, "Expect Decl at toplevel");
         goto err_out;
     }
     if (!find_main)

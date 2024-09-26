@@ -20,12 +20,9 @@ typedef enum
 	TK_ERR = -2,
 	TK_EOF = -1,
 	TK_NULL = 0,
-
 	TK_IDENT,
 	TK_INT,
-	TK_NOTE,
-	// TK_KEY,
-	// TK_BPM,
+	TK_DOTS,
 
 } TokenType;
 typedef struct
@@ -66,8 +63,8 @@ const char* ty_str(TokenType ty);
 		case TK_INT:                                                  \
 									      printf("INT_CONST %zi", tk.data.integer);                 \
 		break;                                                    \
-		case TK_NOTE: \
-									      printf("NOTE_CONST %zi.%zu", tk.data.note.pitch, tk.data.note.dots); \
+		case TK_DOTS: \
+									      printf("TK_DOTS %zi", tk.data.integer); \
 		break;                                                    \
 		default:                                                      \
 									      printf("%c", tk.type);                                    \

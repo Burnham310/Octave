@@ -113,17 +113,19 @@ int main(const int argc, char **argv)
         WARNING(dummy, formal.off, "unsupport configuration: '%.*s'", (int)formal.ident.len, formal.ident.ptr);
     }
 
-    for (int i = 0; i < main_sec.notes.len; ++i)
+    for (int i = 0; i < main_sec.note_exprs.len; ++i)
     {
-        Note note = main_sec.notes.ptr[i];
-        printf("%zi.%zu => %i\n", note.pitch, note.dots, MIDI_SCALES[midi_conf.scale][note.pitch - 1]);
-        MidiNote midi_note = {
-            .channel = DEFAULT_CHANNEL,
-            .length = note_length(note.dots - 1),
-            .pitch = MIDI_SCALES[midi_conf.scale][note.pitch - 1],
-            .velocity = DEFAULT_VELOCITY,
-        };
-        add_note_to_track(&track, &midi_note);
+        ExprIdx idx = main_sec.note_exprs.ptr[i];
+	Expr expr = pgm.exprs.ptr[idx];
+	ASSERT(expr.tag == EXPR_NOTE, report(dummy, expr.off, "Expect note in this part of Section"));
+        // printf("%zi.%zu => %i\n", note.pitch, note.dots, MIDI_SCALES[midi_conf.scale][note.pitch - 1]);
+        // MidiNote midi_note = {
+        //     .channel = DEFAULT_CHANNEL,
+        //     .length = note_length(note.dots - 1),
+        //     .pitch = MIDI_SCALES[midi_conf.scale][note.pitch - 1],
+        //     .velocity = DEFAULT_VELOCITY,
+        // };
+        // add_note_to_track(&track, &midi_note);
     }
     write_track(&track);
 

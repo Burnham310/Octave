@@ -11,6 +11,7 @@ Token match_single(Lexer *self);
 Token match_multiple(Lexer *self);
 Token match_num(Lexer *self);
 Token match_ident(Lexer *self);
+Token match_dots(Lexer *self);
 void skip_ws(Lexer *lexer);
 static struct lexer_state
 {
@@ -34,18 +35,19 @@ const char *ty_str(TokenType ty)
 		return "TK_INT";
 	case TK_IDENT:
 		return "TK_IDENT";
-	case TK_NOTE:
-		return "TK_NOTE";
 	case ';':
 		return ";";
 	case '=':
 		return "=";
-	case '.':
-		return ".";
 	case ',':
 		return ",";
 	case ':':
 		return ":";
+	case '[':
+		return "[";
+	case ']':
+		return "]";
+
 	default:
 		return "TK_UNKNOWN";
 	}
@@ -132,7 +134,6 @@ Token match_single(Lexer *self)
 		RETURN_TK(TK_NULL);
 	case '[':
 	case ']':
-	case '.':
 	case ',':
 	case '|':
 	case '=':
@@ -178,19 +179,7 @@ Token match_num(Lexer *self)
 	}
 	tk.type = TK_INT;
 	tk.data.integer = strtol(self->src + tk.off, NULL, 10);
-	if ((c = peek_char(self)) == '.')
-	{
-		int dots = 0;
-		while ((c = next_char(self)) == '.')
-		{
-			dots += 1;
-		}
-		rewind_char(self);
-
-		tk.type = TK_NOTE;
-		tk.data.note.pitch = tk.data.integer;
-		tk.data.note.dots = dots;
-	}
+	
 
 	return tk;
 }
@@ -245,19 +234,35 @@ Token match_ident(Lexer *self)
 
 	tk.type = TK_IDENT;
 	tk.data.str = (Slice){.ptr = self->src + tk.off, .len = self->off - tk.off};
-	// const char* kw[] = {"key", "bpm"};
-	// TokenType kw_type[] = { TK_KEY, TK_BPM, };
-	// size_t kw_ct = sizeof(kw) / sizeof(kw[0]);
-	// for (size_t i = 0; i < kw_ct; ++i) {
-	//     if (strncmp(kw[i], tk.data.str.ptr, tk.data.str.len) == 0) {
-	// 	tk.type = kw_type[i];
-	// 	break;
-	//     }
-	// }
 	return tk;
+}
+Token match_dots(Lexer *self) {
+    Token tk;
+    char c = peek_char(self);
+    if (c != '.') {
+	RETURN_TK(TK_NULL);
+    }
+    next_char(self);
+    size_t ct = 1;
+    while ((c = next_char(self)) != 0) {
+	if (c == '.') {
+	    ct += 1;
+	} else if (isalnum(c)) {
+	    report(self, self->off, "Invalid character '%c' in sequence of dots", c);
+	    RETURN_TK(TK_ERR);
+	} else {
+	    rewind_char(self);
+	    break;
+	}
+    }
+    tk.type = TK_DOTS; 
+    tk.data.integer = ct;
+    tk.off = self->off;
+    return tk;
 }
 typedef Token (*match_fn)(Lexer *);
 match_fn fns[] = {
+	match_dots,
 	match_single,
 	match_num,
 	match_ident,
