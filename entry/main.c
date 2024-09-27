@@ -74,30 +74,28 @@ int main(const int argc, char **argv)
     }
     Decl main = pgm.decls.ptr[pgm.main];
     Sec main_sec = pgm.secs.ptr[main.sec];
-    init_midi_output(output_f);
 
-    Track track = {
-        .note_count = 0,
-    };
+    // backend initialization
+    init_midi_backend(output_f);
 
+    // default configuration
     struct _conf
     {
         int bpm;
-        enum MidiScaleType scale;
+        MidiScaleType scale;
     } midi_conf = {
-        // default configuration
         .bpm = 120,
         .scale = CMAJOR,
     };
 
+    // update configuration for section
     for (int i = 0; i < main_sec.config.len; ++i)
     {
         Formal formal = pgm.formals.ptr[main_sec.config.ptr[i]];
 
         if (strncmp(formal.ident.ptr, "scale", formal.ident.len) == 0)
         {
-
-            midi_conf.scale = getMidiKeyType(pgm.exprs.ptr[formal.expr].data.ident.ptr, pgm.exprs.ptr[formal.expr].data.ident.len);
+            midi_conf.scale = str_to_MidiKeyType(pgm.exprs.ptr[formal.expr].data.ident.ptr, pgm.exprs.ptr[formal.expr].data.ident.len);
             ASSERT(midi_conf.scale == ERRSCALE, report(dummy, formal.off, "Expect identifier in `scale` attribute"));
             printf("scale => %d\n", midi_conf.scale);
             continue;
@@ -113,22 +111,56 @@ int main(const int argc, char **argv)
         WARNING(dummy, formal.off, "unsupport configuration: '%.*s'", (int)formal.ident.len, formal.ident.ptr);
     }
 
+    // add event to track
     for (int i = 0; i < main_sec.note_exprs.len; ++i)
     {
         ExprIdx idx = main_sec.note_exprs.ptr[i];
-	Expr expr = pgm.exprs.ptr[idx];
-	ASSERT(expr.tag == EXPR_NOTE, report(dummy, expr.off, "Expect note in this part of Section"));
-        // printf("%zi.%zu => %i\n", note.pitch, note.dots, MIDI_SCALES[midi_conf.scale][note.pitch - 1]);
-        // MidiNote midi_note = {
-        //     .channel = DEFAULT_CHANNEL,
-        //     .length = note_length(note.dots - 1),
-        //     .pitch = MIDI_SCALES[midi_conf.scale][note.pitch - 1],
-        //     .velocity = DEFAULT_VELOCITY,
-        // };
-        // add_note_to_track(&track, &midi_note);
-    }
-    write_track(&track);
+        Expr expr = pgm.exprs.ptr[idx];
+        ASSERT(expr.tag == EXPR_NOTE, report(dummy, expr.off, "Expect note in this part of Section"));
 
+        Expr pitch_expr = pgm.exprs.ptr[expr.data.note.expr];
+
+        if (pitch_expr.tag == EXPR_NUM)
+        {
+            MidiNote midi_note = {
+                .channel = DEFAULT_CHANNEL,
+                .length = expr.data.note.dots,
+                .pitch = pitch_expr.data.num,
+                .velocity = DEFAULT_VELOCITY,
+            };
+            add_midi_event(NoteOnEvent(midi_conf.scale, &midi_note));
+            add_midi_event(NoteOffEvent(midi_conf.scale, &midi_note));
+        }
+        else if (pitch_expr.tag == EXPR_CHORD)
+        {
+            size_t chord_len = pitch_expr.data.chord_notes.len;
+            struct _MidiEvent note_off_buf[chord_len];
+            for (size_t i = 0; i < chord_len; ++i)
+            {
+                AstIdx chrod_pitch_idx = pitch_expr.data.chord_notes.ptr[i];
+                Expr chrod_pitch_expr = pgm.exprs.ptr[chrod_pitch_idx];
+                MidiNote midi_note = {
+                    .channel = DEFAULT_CHANNEL,
+                    .length = expr.data.note.dots,
+                    .pitch = chrod_pitch_expr.data.num,
+                    .velocity = DEFAULT_VELOCITY,
+                };
+                add_midi_event(NoteOnEvent(midi_conf.scale, &midi_note));
+                note_off_buf[i] = NoteOffEvent(midi_conf.scale, &midi_note);
+            }
+
+            // inject note off events
+            for (size_t i = 0; i < chord_len; ++i)
+                add_midi_event(note_off_buf[i]);
+        }
+        else
+            report(dummy, expr.off, "unknown bug");
+    }
+
+    // dump events to file
+    dump_midi_to_file();
+    // free backend
+    free_midi_backend();
 out:
     if (input_f)
         fclose(input_f);

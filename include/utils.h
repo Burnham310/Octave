@@ -1,5 +1,8 @@
 #ifndef UTILS_H_
 #define UTILS_H_
+
+#include "backend.h"
+
 #define eprintf(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define report(lexer, off, fmt, ...)                                                       \
     do                                                                                     \
@@ -74,3 +77,5 @@
         size_t size; \
     } ArrOf(ty)
 #endif
+
+MidiScaleType str_to_MidiKeyType(const char *target, int len);

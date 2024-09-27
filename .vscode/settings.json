@@ -6,6 +6,15 @@
         "common.h": "c",
         "assert.h": "c",
         "cmath": "c",
-        "complex": "c"
+        "complex": "c",
+        "array": "c",
+        "bitset": "c",
+        "string_view": "c",
+        "initializer_list": "c",
+        "utility": "c",
+        "backend.h": "c",
+        "stdlib.h": "c",
+        "utils.h": "c",
+        "ratio": "c"
     },
 }

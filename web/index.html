@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Octave Music Editor</title>
+    <script
+        src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
+</head>
+
+<body>
+    <h1>Octave Music Editor and Player</h1>
+
+    <!-- File input to upload an Octave file -->
+    <input type="file" id="fileInput" />
+    <textarea id="editor" rows="10" cols="50">Edit your Octave code here...</textarea>
+
+    <!-- Button to compile and generate MIDI -->
+    <button onclick="compileOctave()">Compile and Play MIDI</button>
+
+    <!-- Magenta.js MIDI player and visualizer -->
+    <midi-player id="midiPlayer" sound-font visualizer="#myVisualizer"></midi-player>
+    <midi-visualizer type="piano-roll" id="myVisualizer"></midi-visualizer>
+
+    <script src="octc.js"></script>
+    <script>
+        function compileOctave() {
+            const input = document.getElementById('editor').value;
+            const inputFile = 'stage3.oct';  // Virtual input file
+            const outputFile = 'stage3.mid'; // Virtual output file
+
+            // Write the Octave code into a virtual input file
+            FS.writeFile(inputFile, input);
+
+            // Call the WebAssembly-compiled main function to simulate CLI behavior
+            Module.callMain([inputFile, '-o', outputFile]);
+
+            // Read the generated MIDI file from the virtual filesystem
+            const midiData = FS.readFile(outputFile, { encoding: 'binary' });
+
+            // Create a Blob from the MIDI data
+            const blob = new Blob([midiData], { type: 'audio/midi' });
+
+            // Generate a URL for the Blob
+            const url = URL.createObjectURL(blob);
+
+            // Update the <midi-player> src to the generated Blob URL for playback
+            const midiPlayer = document.querySelector('midi-player');
+            midiPlayer.src = url;  // Set the src to the Blob URL dynamically
+        }
+    </script>
+<midi-player sound-font visualizer="#myVisualizer"></midi-player>
+<midi-visualizer type="piano-roll" id="myVisualizer"></midi-visualizer>
+
+</body>
+
+</html>
