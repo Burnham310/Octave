@@ -121,7 +121,7 @@ int main(const int argc, char **argv)
         Expr pitch_expr = pgm.exprs.ptr[expr.data.note.expr];
 
         if (pitch_expr.tag == EXPR_NUM)
-        { 
+        {
             MidiNote midi_note = {
                 .channel = DEFAULT_CHANNEL,
                 .length = expr.data.note.dots,
@@ -137,10 +137,12 @@ int main(const int argc, char **argv)
             struct _MidiEvent note_off_buf[chord_len];
             for (size_t i = 0; i < chord_len; ++i)
             {
+                AstIdx chrod_pitch_idx = pitch_expr.data.chord_notes.ptr[i];
+                Expr chrod_pitch_expr = pgm.exprs.ptr[chrod_pitch_idx];
                 MidiNote midi_note = {
                     .channel = DEFAULT_CHANNEL,
                     .length = expr.data.note.dots,
-                    .pitch = pitch_expr.data.chord_notes.ptr[i],
+                    .pitch = chrod_pitch_expr.data.num,
                     .velocity = DEFAULT_VELOCITY,
                 };
                 add_midi_event(NoteOnEvent(midi_conf.scale, &midi_note));

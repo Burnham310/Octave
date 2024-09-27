@@ -22,6 +22,7 @@ struct _MidiEvent
 
 #define _get_array_len(arr) sizeof(arr) / sizeof(arr[0])
 #define NoteLenRatio(note_length) note_length / 100
+
 struct _MidiTrack
 {
     size_t cap;
