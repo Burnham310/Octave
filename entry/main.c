@@ -150,8 +150,12 @@ int main(const int argc, char **argv)
             }
 
             // inject note off events
-            for (size_t i = 0; i < chord_len; ++i)
+	    add_midi_event(note_off_buf[0]);
+	    
+            for (size_t i = 1; i < chord_len; ++i) {
+		note_off_buf[i].delta_time = 0;
                 add_midi_event(note_off_buf[i]);
+	    }
         }
         else
             report(dummy, expr.off, "unknown bug");
