@@ -28,8 +28,14 @@ test_backend:
 	gcc testcase/backend_test.c backend.c -Iinclude -o backend
 	./backend
 	rm backend
+
+webasm:
+	emcc $(SRC) $(ENTRY_DIR)/main.c $(INCLUDES) -o web/octc.js -s WASM=1 -s EXPORTED_FUNCTIONS='["_main"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["callMain"]'
+	echo "web generate successfully!"
+
 clean:
 	rm -rf $(OUT_DIR) $(OBJ_DIR)
+
 
 $(OBJ_DIR)/%.o: %.c | $(OBJ_DIR)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
