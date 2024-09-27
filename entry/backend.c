@@ -1,29 +1,40 @@
 #include "backend.h"
+#include "string.h"
 
 int main()
 {
-    unsigned char notes[] = {60, 60, 67, 67, 69, 69, 67}; // twinkle
-    const char *output_file = "output.mid";
+    FILE *fp = fopen("twinkle.mid", "w");
 
-    init_midi_output("twinkle.mid");
+    unsigned char notes[] = {1, 1, 5, 5, 6, 6, 5}; // twinkle
+    MidiScaleType scaleType = CMAJOR;
 
-    Track track = {
-        .note_count = 0,
-    };
+    init_midi_backend(fp);
 
-    for (int i = 0; i < sizeof(notes) / sizeof(notes[0]); ++i)
+    for (int i = 0; i < sizeof(notes) / sizeof(notes[0]) * 100; ++i)
     {
         MidiNote cur_note = {
             .channel = DEFAULT_CHANNEL,
             .length = EIGHTH_NOTE,
-            .pitch = notes[i],
+            .pitch = notes[i % 7],
             .velocity = DEFAULT_VELOCITY,
         };
-        add_note_to_track(&track, &cur_note);
+
+        MidiNote chord_note = {
+            .channel = DEFAULT_CHANNEL,
+            .length = EIGHTH_NOTE,
+            .pitch = notes[(6 - i) % 7],
+            .velocity = DEFAULT_VELOCITY,
+        };
+
+        add_midi_event(NoteOnEvent(scaleType, &cur_note));
+        add_midi_event(NoteOnEvent(scaleType, &chord_note));
+
+        add_midi_event(NoteOffEvent(scaleType, &cur_note));
+        add_midi_event(NoteOffEvent(scaleType, &chord_note));
     }
 
-    write_track(&track);
-    close_midi_output();
+    dump_midi_to_file();
+    free_midi_backend();
 
-    return 0;
+    fclose(fp);
 }

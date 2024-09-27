@@ -3,6 +3,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define DEFAULT_DEVISION 480 // ticks per quarter note
+#define DEFAULT_VELOCITY 64  // volumn
+#define DEFAULT_CHANNEL 0
+
+struct _MidiEvent
+{
+    enum MidiEventType
+    {
+        _NoteOnEvent,
+        _NoteOffEvent,
+    } eventType;
+    int delta_time;
+    void *data;
+    void (*callbacks[5])(int delta_time, void *data);
+    void (*destroyer)(void *data);
+};
+
+#define _get_array_len(arr) sizeof(arr) / sizeof(arr[0])
+#define NoteLenRatio(note_length) note_length / 100
+struct _MidiTrack
+{
+    size_t cap;
+    size_t event_count;
+    struct _MidiEvent *events;
+};
+
 typedef enum
 {
     WHOLE_NOTE,
@@ -10,25 +36,19 @@ typedef enum
     QUARTER_NOTE,
     EIGHTH_NOTE,
     SIXTEENTH_NOTE,
-} NoteLength;
+} MidiNoteLength;
 
-int note_length(NoteLength l);
+#define NoteLenRatio(note_length) note_length / 100
 
 typedef struct
 {
     unsigned char pitch;
-    NoteLength length;
+    MidiNoteLength length;
     unsigned char velocity; // volume
     unsigned char channel;
 } MidiNote;
 
-typedef struct
-{
-    MidiNote *notes;
-    int note_count;
-} Track;
-
-enum MidiScaleType
+typedef enum
 {
     CMAJOR,
     CMINOR,
@@ -38,40 +58,22 @@ enum MidiScaleType
     EMINOR,
 
     ERRSCALE = -1,
+} MidiScaleType;
 
-};
+// initialize the midi backend
+void init_midi_backend(FILE *fp);
 
-enum MidiScaleType getMidiKeyType(const char *target, int len);
+// add event to the midi track, e.g. NoteOn_event, NoteOff_event
+void add_midi_event(struct _MidiEvent event);
 
-static unsigned char MIDI_SCALES[][8] = {
-    // C Major scale: C D E F G A B C
-    {60, 62, 64, 65, 67, 69, 71, 72},
+// dump all events to the file
+void dump_midi_to_file();
 
-    // C Minor scale: C D Eb F G Ab Bb C
-    {60, 62, 63, 65, 67, 68, 70, 72},
+// free the backend
+void free_midi_backend();
 
-    // D Major scale: D E F# G A B C# D
-    {62, 64, 66, 67, 69, 71, 73, 74},
+// note on event, must follow with the noteoff event with same note specified
+struct _MidiEvent NoteOnEvent(MidiScaleType scaleType, MidiNote *note);
 
-    // D Minor scale: D E F G A Bb C D
-    {62, 64, 65, 67, 69, 70, 72, 74},
-
-    // E Major scale: E F# G# A B C# D# E
-    {64, 66, 68, 69, 71, 73, 75, 76},
-
-    // E Minor scale: E F# G A B C D E
-    {64, 66, 67, 69, 71, 72, 74, 76},
-};
-
-#define NoteLenRatio(note_length) note_length / 100
-
-#define DEFAULT_DEVISION 480 // ticks per quarter note
-#define DEFAULT_VELOCITY 64  // volumn
-#define DEFAULT_CHANNEL 0
-
-void init_midi_output(FILE *f); // init the MIDI output
-void add_note_to_track(Track *track, MidiNote *note);
-void close_midi_output(); // finalize and close the MIDI output
-void write_track(Track *track);
-
-void set_tempo(FILE *file, unsigned int bpm); // bpm
+// note off event
+struct _MidiEvent NoteOffEvent(MidiScaleType scaleType, MidiNote *note);
