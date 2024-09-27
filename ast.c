@@ -315,8 +315,14 @@ err_out:
     pgm.success = false;
     return pgm;
 }
+void ast_get_expr(Pgm* pgm, AstIdx i);
+void ast_get_decl(Pgm* pgm, AstIdx i);
+void ast_get_sec(Pgm* pgm, AstIdx i);
+void ast_get_form(Pgm* pgm, AstIdx i);
 void ast_deinit(Pgm *pgm)
 {
     free(pgm->secs.ptr);
     free(pgm->decls.ptr);
+    free(pgm->formals.ptr);
+    free(pgm->exprs.ptr);
 }
