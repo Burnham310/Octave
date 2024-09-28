@@ -25,7 +25,7 @@ backend:
 	$(CC) $(CFLAGS) $(INCLUDES) backend.c -o $@ 
 
 test_backend:
-	gcc testcase/backend_test.c backend.c -Iinclude -o backend
+	gcc $(ENTRY_DIR)/backend.c backend.c -Iinclude -o backend
 	./backend
 	rm backend
 
