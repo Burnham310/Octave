@@ -6,7 +6,7 @@
 #include "ast.h"
 #include "backend.h"
 #include "utils.h"
-
+#include "type.h"
 void usage(const char *prog_name)
 {
     eprintf("Usage: %s [input_file] -o [output_file]\n", prog_name);
@@ -16,14 +16,14 @@ FILE *input_f;
 FILE *output_f;
 char *buf;
 Pgm pgm;
-
+Context ctx;
 #define RETURN(x)      \
     do                 \
     {                  \
         exit_code = x; \
         goto out;      \
     } while (0)
-int main(const int argc, char **argv)
+extern int main(const int argc, char **argv)
 {
     int exit_code = 0;
     if (argc != 4)
@@ -53,24 +53,21 @@ int main(const int argc, char **argv)
     {
         perror("Cannot read src file");
     }
-
+    // lexing
     Lexer lexer = lexer_init(buf, input_size, input_path);
     Lexer *dummy = &lexer;
-
-    // Token tk;
-    // while ((tk = lexer_next(&lexer)).type > 0)
-    // {
-    //     TOKEN_DEBUG(tk)
-    //     // printf("%d\n", tk.type);
-    //     printf("\n");
-    // }
-    // lexer = lexer_init(buf, input_size, input_path);
-
+    // parsing
     pgm = parse_ast(&lexer);
     if (!pgm.success)
     {
         eprintf("Failed to parse ast\n");
         RETURN(1);
+    }
+    // semantic analysis
+    type_check(&pgm, &lexer, &ctx);
+    if (!ctx.success) {
+	eprintf("typechecking fails\n");
+	RETURN(1);
     }
     Decl main = pgm.decls.ptr[pgm.main];
     Sec main_sec = pgm.secs.ptr[main.sec];
@@ -175,5 +172,7 @@ out:
         usage(argv[0]);
     if (pgm.success)
         ast_deinit(&pgm);
+    if (ctx.success)
+	context_deinit(&ctx);
     return exit_code;
 }
