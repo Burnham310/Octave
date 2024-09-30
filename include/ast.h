@@ -80,5 +80,6 @@ struct Gen;
 typedef struct Gen Gen;
 Pgm parse_ast(Lexer *lexer);
 void ast_deinit(Pgm *pgm);
-
+#define ast_get(pgm, arr, idx) (pgm)->arr.ptr[idx]
+#define ast_len(pgm, arr) (pgm)->arr.len
 #endif
