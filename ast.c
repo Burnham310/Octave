@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include "ast.h"
 #include "lexer.h"
-#include "utils.h"
+
 DeclIdx parse_decl(Lexer *lexer, Gen *gen);
 SecIdx parse_section(Lexer *lexer, Gen *gen);
 FormalIdx parse_formal(Lexer *lexer, Gen *gen);
