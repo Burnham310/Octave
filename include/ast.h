@@ -3,6 +3,8 @@
 #include "lexer.h"
 #include "utils.h"
 #include <stdbool.h>
+#include "ds.h"
+
 typedef ssize_t AstIdx;
 typedef AstIdx SecIdx;
 typedef AstIdx DeclIdx;
@@ -23,7 +25,11 @@ typedef union
     Slice ident;
     ssize_t num;
     SliceOf(AstIdx) chord_notes;
-    struct { size_t dots; ExprIdx expr; } note;
+    struct
+    {
+        size_t dots;
+        ExprIdx expr;
+    } note;
 } ExprData;
 typedef enum
 {
@@ -69,7 +75,7 @@ typedef enum
     PR_ERR = -1,
     PR_NULL = 0,
 } ParseRes;
-void expr_debug(Pgm* pgm, ExprIdx idx);
+void expr_debug(Pgm *pgm, ExprIdx idx);
 struct Gen;
 typedef struct Gen Gen;
 Pgm parse_ast(Lexer *lexer);
