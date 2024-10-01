@@ -1,7 +1,11 @@
 #include "type.h"
+#include "utils.h"
 #include "assert.h"
+#define STB_DS_IMPLEMENTATION 
+#include "stb_ds.h"
 
 Type type_check_expr_impl(Context *ctx, ExprIdx idx);
+
 
 #define X(x) case x: return #x;
 const char *type_to_str(Type ty) {
@@ -17,8 +21,15 @@ const char *type_to_str(Type ty) {
 void context_deinit(Context *ctx) {
     assert(ctx->types.ptr && ctx->types.len > 0);
     free(ctx->types.ptr);
-    ctx->types.ptr = NULL;
-    ctx->types.len = 0;
+    ctx->types = (SliceOf(Type)) {0};
+
+    assert(ctx->sec_envs.ptr && ctx->sec_envs.len > 0);
+    for (size_t i = 0; i < ctx->sec_envs.len; ++i) {
+	// stb checks for NULL for us
+	shfree(ctx->sec_envs.ptr[i]);
+    }
+    free(ctx->sec_envs.ptr);
+    ctx->sec_envs = (SliceOf(TypeEnv)) {0};
 }
 
 void type_check(Pgm *pgm, Lexer *lexer, Context *ctx) {
@@ -26,7 +37,19 @@ void type_check(Pgm *pgm, Lexer *lexer, Context *ctx) {
 	.pgm = pgm, 
 	.lexer = lexer, 
 	.types = {.ptr = calloc(sizeof(Type), ast_len(pgm, exprs)), .len = ast_len(pgm, exprs)},
+	.pgm_env = NULL,
+	.sec_envs = {.ptr = calloc(sizeof(TypeEnv), ast_len(pgm, secs)), .len = ast_len(pgm, secs)},
+	.curr_sec = 0,
+	.builtin = NULL,
     };
+    sh_new_arena(ctx->pgm_env);
+    for_slice(ctx->sec_envs, i) {
+	TypeEnv sec_env = for_slice_x(ctx->sec_envs);
+	sh_new_arena(sec_env);
+    }
+    sh_new_arena(ctx->builtin);
+    shput(ctx->builtin, "scale", TY_SCALE);
+    shput(ctx->builtin, "bpm", TY_INT);
     ctx->success = type_check_pgm(ctx);
 }
 bool type_check_pgm(Context *ctx) {
@@ -56,8 +79,15 @@ bool type_check_sec(Context *ctx, SecIdx idx) {
 
     return true;
 }
-bool type_check_formal(Context *ctx, SecIdx idx, bool builtin) {
+bool type_check_formal(Context *ctx, FormalIdx idx, bool builtin) {
     // TODO: add binding
+    Formal *formal = &ast_get(ctx->pgm, formals, idx);
+    Type ty = type_check_expr(ctx, formal->expr);
+    TypeEnv env = ctx->sec_envs.ptr[ctx->curr_sec];
+    if (builtin) {
+	Type should_be = shget(ctx->builtin, formal->ident.ptr); 
+    }
+    
     return true;
 }
 Type type_check_expr(Context *ctx, ExprIdx idx) {

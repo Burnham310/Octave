@@ -2,6 +2,7 @@
 #define TYPE_H_
 #include "ast.h"
 #include "utils.h"
+#include "stb_ds.h"
 
 // x macro: https://en.wikipedia.org/wiki/X_macro
 
@@ -33,13 +34,23 @@ typedef enum {
 // #undef X
 
 const char *type_to_str(Type ty);
-
+typedef struct {
+    const char *key;
+    Type value; // could also holds a value in the future?
+} TypeKV;
+typedef TypeKV * TypeEnv;
 
 make_slice(Type);
+make_slice(TypeEnv);
 typedef struct {
+    
     Pgm* pgm;
     Lexer* lexer;
     SliceOf(Type) types; // len == pgm->exprs.len
+    TypeEnv pgm_env; // top level env
+    SliceOf(TypeEnv) sec_envs; // one for each section
+    SecIdx curr_sec; // this is only used internally while type_check'ing
+    TypeEnv builtin;
     bool success;
 } Context;
 void context_deinit(Context *ctx);
