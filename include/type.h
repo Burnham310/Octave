@@ -2,7 +2,6 @@
 #define TYPE_H_
 #include "ast.h"
 #include "utils.h"
-#include "stb_ds.h"
 
 // x macro: https://en.wikipedia.org/wiki/X_macro
 

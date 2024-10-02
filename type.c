@@ -1,8 +1,6 @@
 #include "type.h"
 #include "utils.h"
 #include "assert.h"
-#define STB_DS_IMPLEMENTATION 
-#include "stb_ds.h"
 
 Type type_check_expr_impl(Context *ctx, ExprIdx idx);
 
@@ -24,10 +22,10 @@ void context_deinit(Context *ctx) {
     ctx->types = (SliceOf(Type)) {0};
 
     assert(ctx->sec_envs.ptr && ctx->sec_envs.len > 0);
-    for (size_t i = 0; i < ctx->sec_envs.len; ++i) {
-	// stb checks for NULL for us
-	shfree(ctx->sec_envs.ptr[i]);
-    }
+    //  for (size_t i = 0; i < ctx->sec_envs.len; ++i) {
+    //      // stb checks for NULL for us
+    //      shfree(ctx->sec_envs.ptr[i]);
+    //  }
     free(ctx->sec_envs.ptr);
     ctx->sec_envs = (SliceOf(TypeEnv)) {0};
 }
@@ -42,14 +40,14 @@ void type_check(Pgm *pgm, Lexer *lexer, Context *ctx) {
 	.curr_sec = 0,
 	.builtin = NULL,
     };
-    sh_new_arena(ctx->pgm_env);
-    for_slice(ctx->sec_envs, i) {
-	TypeEnv sec_env = for_slice_x(ctx->sec_envs);
-	sh_new_arena(sec_env);
-    }
-    sh_new_arena(ctx->builtin);
-    shput(ctx->builtin, "scale", TY_SCALE);
-    shput(ctx->builtin, "bpm", TY_INT);
+    //  sh_new_arena(ctx->pgm_env);
+    //  for_slice(ctx->sec_envs, i) {
+    //      TypeEnv sec_env = for_slice_x(ctx->sec_envs);
+    //      sh_new_arena(sec_env);
+    //  }
+    //  sh_new_arena(ctx->builtin);
+    //  shput(ctx->builtin, "scale", TY_SCALE);
+    //  shput(ctx->builtin, "bpm", TY_INT);
     ctx->success = type_check_pgm(ctx);
 }
 bool type_check_pgm(Context *ctx) {
@@ -85,7 +83,7 @@ bool type_check_formal(Context *ctx, FormalIdx idx, bool builtin) {
     Type ty = type_check_expr(ctx, formal->expr);
     TypeEnv env = ctx->sec_envs.ptr[ctx->curr_sec];
     if (builtin) {
-	Type should_be = shget(ctx->builtin, formal->ident.ptr); 
+	// Type should_be = shget(ctx->builtin, formal->ident.ptr); 
     }
     
     return true;

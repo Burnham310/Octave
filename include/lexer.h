@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <sys/types.h>
 
-
+#include "ds.h"
 typedef struct {
     ssize_t pitch;
     size_t dots;
@@ -25,16 +25,11 @@ typedef enum
 	TK_DOTS,
 
 } TokenType;
-typedef struct
-{
-	const char *ptr;
-	size_t len;
-} Slice;
 typedef union
 {
 	Note note;
 	ssize_t integer;
-	Slice str;
+	String str;
 } TokenData;
 typedef struct
 {

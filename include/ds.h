@@ -1,6 +1,11 @@
 #pragma once
 
 #include <aio.h>
+typedef struct
+{
+	const char *ptr;
+	size_t len;
+} String;
 
 // Dynamic Array ---
 #define da_free(da)           \
@@ -53,17 +58,12 @@
         size_t size; \
     } ArrOf(ty)
 
-typedef struct
-{
-    const char *data;
-    ssize_t len;
-} OctaveStr;
-
-typedef struct
+typedef struct HashmapEntry
 {
 
-    OctaveStr *key;
+    String key;
     void *value;
+    struct HasmmapEntry* next;
 } HashmapEntry;
 
 typedef struct
@@ -72,8 +72,8 @@ typedef struct
     int size;
 } Hashmap;
 
-Hashmap *hm_init(size_t size);
-void hm_insert(Hashmap *hashmap, unsigned int key, void *value);
-void *hm_search(Hashmap *hashmap, OctaveStr str);
-void hm_delete(Hashmap *hashmap, OctaveStr str);
+Hashmap hm_init(size_t size);
+int hm_insert(Hashmap *hashmapm, String str, void *value);
+void *hm_search(Hashmap *hashmap, String str);
+void hm_delete(Hashmap *hashmap, String str);
 void hm_free(Hashmap *hashmap);

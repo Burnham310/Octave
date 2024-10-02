@@ -1,29 +1,42 @@
 #include "ds.h"
+#include "utils.h"
 #include <stdio.h>
+#include <stdlib.h>
 
-static unsigned int hash(OctaveStr *str, unsigned int n)
+#define STBDS_SIZE_T_BITS           ((sizeof (size_t)) * 8)
+#define STBDS_ROTATE_LEFT(val, n)   (((val) << (n)) | ((val) >> (STBDS_SIZE_T_BITS - (n))))
+#define STBDS_ROTATE_RIGHT(val, n)  (((val) >> (n)) | ((val) << (STBDS_SIZE_T_BITS - (n))))
+static unsigned int hash(String str, size_t seed)
 {
-    unsigned long hash = 5381;
-    for (size_t i = 0; i < str->len; ++i)
-    {
-        hash = ((hash << 5) + hash) + (unsigned char)str->data[i];
-    }
-    return hash % n;
+  size_t value = seed;
+  for (size_t i = 0; i < str.len; ++i)
+     value = STBDS_ROTATE_LEFT(value, 9) + (unsigned char) str.ptr[i];
+
+  // Thomas Wang 64-to-32 bit mix function, hopefully also works in 32 bits
+  value ^= seed;
+  value = (~value) + (value << 18);
+  value ^= value ^ STBDS_ROTATE_RIGHT(value,31);
+  value = value * 21;
+  value ^= value ^ STBDS_ROTATE_RIGHT(value,11);
+  value += (value << 6);
+  value ^= STBDS_ROTATE_RIGHT(value,22);
+  return value+seed;
+
 }
 
-Hashmap *hm_init(size_t size)
+Hashmap hm_init(size_t size)
 {
-    Hashmap *hashmap = malloc(sizeof(Hashmap));
-    hashmap->size = size;
-    hashmap->buckets = malloc(sizeof(HashmapBucket *) * size);
+    Hashmap hashmap = {};
+    hashmap.size = size;
+    hashmap.buckets = malloc(sizeof(HashmapEntry *) * size);
 
     for (int i = 0; i < size; ++i)
-        hashmap->buckets[i] = NULL;
+        hashmap.buckets[i] = NULL;
 
     return hashmap;
 }
 
-void hm_insert(Hashmap *hashmap, OctaveStr *str, void *value)
+int hm_insert(Hashmap *hashmap, String str, void *value)
 {
     int index = hash(str, hashmap->size);
 
@@ -38,15 +51,15 @@ void hm_insert(Hashmap *hashmap, OctaveStr *str, void *value)
     hashmap->buckets[index] = entry;
     return 0;
 }
-void *hm_search(Hashmap *hashmap, OctaveStr str);
-void hm_delete(Hashmap *hashmap, OctaveStr str);
+void *hm_search(Hashmap *hashmap, String str);
+void hm_delete(Hashmap *hashmap, String str);
 void hm_free(Hashmap *hashmap);
 
-// make_arr(OctaveStr);
+// make_arr(Slice);
 
-// ArrOf(OctaveStr) cc = {0};
+// ArrOf(Slice) cc = {0};
 
-// da_append(cc, (OctaveStr){
+// da_append(cc, (Slice){
 //                   .data = "12",
 //                   .len = 21,
 //               },);
