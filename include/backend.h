@@ -7,6 +7,10 @@
 #define DEFAULT_VELOCITY 64  // volumn
 #define DEFAULT_CHANNEL 0
 
+
+// https://en.wikipedia.org/wiki/Mode_(music)
+
+
 struct _MidiEvent
 {
     enum MidiEventType
