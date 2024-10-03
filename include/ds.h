@@ -58,22 +58,34 @@ typedef struct
         size_t size; \
     } ArrOf(ty)
 
-typedef struct HashmapEntry
-{
+// typedef struct HashmapEntry
+// {
+// 
+//     String key;
+//     void *value;
+//     struct HasmmapEntry* next;
+// } HashmapEntry;
+// 
+// typedef struct
+// {
+//     HashmapEntry **buckets;
+//     int size;
+// } Hashmap;
 
-    String key;
-    void *value;
-    struct HasmmapEntry* next;
-} HashmapEntry;
 
-typedef struct
-{
-    HashmapEntry **buckets;
-    int size;
-} Hashmap;
+// Hashmap hm_init(size_t size);
+// int hm_insert(Hashmap *hashmapm, String str, void *value);
+// void *hm_search(Hashmap *hashmap, String str);
+// void hm_delete(Hashmap *hashmap, String str);
+// void hm_free(Hashmap *hashmap);
 
-Hashmap hm_init(size_t size);
-int hm_insert(Hashmap *hashmapm, String str, void *value);
-void *hm_search(Hashmap *hashmap, String str);
-void hm_delete(Hashmap *hashmap, String str);
-void hm_free(Hashmap *hashmap);
+typedef struct {
+    const char* key;
+    char value; // dummy
+} SymbolEntry;
+typedef SymbolEntry* SymbolTable;
+typedef ssize_t Symbol;
+
+Symbol symt_intern(SymbolTable sym_table, const char* s);
+const char* symt_lookup(SymbolTable sym_table, Symbol s);
+

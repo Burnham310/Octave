@@ -4,6 +4,7 @@
 
 #include "lexer.h"
 #include "ast.h"
+#include "parser.h"
 #include "backend.h"
 #include "utils.h"
 #include "type.h"

@@ -1,8 +1,8 @@
 #include <string.h>
 #include <stdio.h>
 #include "ast.h"
+#include "parser.h"
 #include "lexer.h"
-
 DeclIdx parse_decl(Lexer *lexer, Gen *gen);
 SecIdx parse_section(Lexer *lexer, Gen *gen);
 FormalIdx parse_formal(Lexer *lexer, Gen *gen);
@@ -20,24 +20,24 @@ ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen);
             return (tk).type;                                                                                                \
         }                                                                                                                    \
     } while (0)
-void expr_debug(Pgm* pgm, ExprIdx idx) {
+void expr_debug(Pgm* pgm, SymbolTable sym_table, ExprIdx idx) {
     Expr expr = pgm->exprs.ptr[idx];
     switch (expr.tag) {
 	case EXPR_NUM:
 	    printf("%zi", expr.data.num);
 	    break;
 	case EXPR_IDENT:
-	    printf("%s", expr.data.ident.ptr);
+	    printf("%s", symt_lookup(sym_table, expr.data.ident));
 	    break;
 	case EXPR_NOTE:
 	    printf("NOTE ");
-	    expr_debug(pgm, expr.data.note.expr);
+	    expr_debug(pgm, sym_table, expr.data.note.expr);
 	    printf(".%zu", expr.data.note.dots);
 	    break;
 	case EXPR_CHORD:
 	    printf("[ ");
 	    for (size_t i = 0; i < expr.data.chord_notes.len; ++i) {
-		expr_debug(pgm, expr.data.chord_notes.ptr[i]);
+		expr_debug(pgm, sym_table, expr.data.chord_notes.ptr[i]);
 		printf(" ");
 	    }
 	    printf("]");
@@ -71,7 +71,6 @@ Token assert_next(Lexer *lexer, TokenType type)
 }
 make_arr(Decl);
 make_arr(Sec);
-make_arr(Note);
 make_arr(Formal);
 make_arr(Expr);
 make_arr(AstIdx);
@@ -97,7 +96,7 @@ DeclIdx parse_decl(Lexer *lexer, Gen *gen)
         report(lexer, assign.off, "Expect section after '='");
         return PR_ERR;
     };
-    da_append(gen->decls, ((Decl){.name = id.data.str, .sec = sec, .off = assign.off}));
+    da_append(gen->decls, ((Decl){.name = id.data.integer, .sec = sec, .off = assign.off}));
     return gen->decls.size - 1;
 }
 SecIdx parse_section(Lexer *lexer, Gen *gen)
@@ -193,7 +192,7 @@ FormalIdx parse_formal(Lexer *lexer, Gen *gen)
         return PR_ERR;
     }
 
-    Formal formal = {.expr = expr, .ident = ident.data.str, .off = gen->exprs.items[expr].off};
+    Formal formal = {.expr = expr, .ident = ident.data.integer, .off = gen->exprs.items[expr].off};
     da_append(gen->formals, formal);
     return gen->formals.size - 1;
 }
@@ -252,7 +251,7 @@ ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen)
     {	
     case TK_IDENT:
         expr.tag = EXPR_IDENT;
-        expr.data.ident = tk.data.str;
+        expr.data.ident = tk.data.integer;
 	lexer_next(lexer);
 	expr.off = tk.off;
         break;
@@ -282,21 +281,10 @@ Pgm parse_ast(Lexer *lexer)
     bool find_main = false;
     while ((decl = parse_decl(lexer, &gen)) > 0)
     {
-        Slice name = gen.decls.items[decl].name;
-        if (strncmp(name.ptr, "main", name.len) == 0)
-        {
-            find_main = true;
-            pgm.main = decl;
-        }
     }
     if (decl < 0)
     {
         report(lexer, 0, "Expect Decl at toplevel");
-        goto err_out;
-    }
-    if (!find_main)
-    {
-        eprintf("\"main\" is undefined\n");
         goto err_out;
     }
 

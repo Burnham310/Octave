@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <string.h>
 
+
 char next_char(Lexer *self);
 Token match_single(Lexer *self);
 Token match_multiple(Lexer *self);
@@ -56,11 +57,15 @@ LexerDummy lexer_dummy_init(const char *src, const size_t src_len, const char *p
 {
 	return (LexerDummy){.path = path, .src = src, .src_len = src_len};
 }
-Lexer lexer_init(const char *src, const size_t src_len, const char *path)
+Lexer lexer_init(char *src, const size_t src_len, const char *path)
 {
-	Lexer lexer = {.src = src, .src_len = src_len, .off = 0, .path = path, .peakbuf = {0}};
+	Lexer lexer = {.src = src, .src_len = src_len, .off = 0, .path = path, .peakbuf = {0}, .sym_table = NULL};
+	sh_new_arena(lexer.sym_table);
 
 	return lexer;
+}
+void lexer_deinit(Lexer* self) {
+   shfree(self->sym_table);     
 }
 Loc off_to_loc(const char *src, const size_t src_len, const size_t off)
 {
@@ -233,7 +238,13 @@ Token match_ident(Lexer *self)
 	}
 
 	tk.type = TK_IDENT;
-	tk.data.str = (Slice){.ptr = self->src + tk.off, .len = self->off - tk.off};
+	c = self->src[self->off];
+	// a hack because stb sh wants NULL terminated string
+	self->src[self->off] = '\0';
+	shput(self->sym_table, self->src + tk.off, '\0');
+	ptrdiff_t i = shgeti(self->sym_table, self->src + tk.off);
+	tk.data.integer = i;
+	self->src[self->off] = c; // restore the char
 	return tk;
 }
 Token match_dots(Lexer *self) {

@@ -6,10 +6,7 @@
 #include <sys/types.h>
 
 #include "ds.h"
-typedef struct {
-    ssize_t pitch;
-    size_t dots;
-} Note; // should prob move this some common.h
+#include "stb_ds.h"
 typedef struct
 {
 	size_t row;
@@ -25,11 +22,10 @@ typedef enum
 	TK_DOTS,
 
 } TokenType;
+// TODO refactor and remove the goddam union
 typedef union
 {
-	Note note;
 	ssize_t integer;
-	String str;
 } TokenData;
 typedef struct
 {
@@ -65,13 +61,16 @@ const char* ty_str(TokenType ty);
 									      printf("%c", tk.type);                                    \
 	}                                                             \
 } while (0);
+
 typedef struct
 {
-	const char *src;
+	char *src;
 	size_t src_len;
 	size_t off;
 	const char *path;
 	Token peakbuf;
+	SymbolTable sym_table;
+		
 } Lexer;
 typedef struct
 {
@@ -81,7 +80,8 @@ typedef struct
 } LexerDummy;
 
 LexerDummy lexer_dummy_init(const char* src, const size_t src_len, const char *path);
-Lexer lexer_init(const char *src, size_t src_len, const char *path);
+Lexer lexer_init(char *src, size_t src_len, const char *path);
+void lexer_deinit(Lexer* self);
 Token lexer_next(Lexer *self);
 Token lexer_peek(Lexer *self);
 #endif
