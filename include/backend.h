@@ -78,7 +78,7 @@ void dump_midi_to_file();
 void free_midi_backend();
 
 // note on event, must follow with the noteoff event with same note specified
-struct _MidiEvent NoteOnEvent(MidiScaleType scaleType, MidiNote *note);
+struct _MidiEvent NoteOnEvent(MidiNote *note);
 
 // note off event
-struct _MidiEvent NoteOffEvent(MidiScaleType scaleType, MidiNote *note);
+struct _MidiEvent NoteOffEvent(MidiNote *note);

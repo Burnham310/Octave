@@ -111,11 +111,10 @@ static int note_length(MidiNoteLength l)
     return d;
 }
 
-struct _MidiEvent NoteOnEvent(MidiScaleType scaleType, MidiNote *note)
+struct _MidiEvent NoteOnEvent(MidiNote *note)
 {
     MidiNote *note_copy = (MidiNote *)malloc(sizeof(MidiNote));
     *note_copy = *note;
-    note_copy->pitch = MIDI_SCALES[scaleType][note_copy->pitch - 1];
 
     struct _MidiEvent event =
         {
@@ -130,11 +129,10 @@ struct _MidiEvent NoteOnEvent(MidiScaleType scaleType, MidiNote *note)
     return event;
 }
 
-struct _MidiEvent NoteOffEvent(MidiScaleType scaleType, MidiNote *note)
+struct _MidiEvent NoteOffEvent(MidiNote *note)
 {
     MidiNote *note_copy = (MidiNote *)malloc(sizeof(MidiNote));
     *note_copy = *note;
-    note_copy->pitch = MIDI_SCALES[scaleType][note_copy->pitch - 1];
 
     struct _MidiEvent event =
         {
