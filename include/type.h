@@ -12,7 +12,8 @@
     X(TY_DEGREE) \
     X(TY_CHORD) \
     X(TY_NOTE) \
-    X(TY_SCALE)
+    X(TY_SCALE) \
+    X(TY_SEC)
 #define X(x) x,
 typedef enum {
     TYPE_LISTX
@@ -34,23 +35,33 @@ typedef enum {
 
 const char *type_to_str(Type ty);
 typedef struct {
-    const char *key;
+    Symbol key;
     Type value; // could also holds a value in the future?
-} TypeKV;
-typedef TypeKV * TypeEnv;
+} TypeEntry;
+typedef TypeEntry * TypeEnv;
 
 make_slice(Type);
 make_slice(TypeEnv);
+#define CONFIG_SYMS \
+    X(scale) \
+    X(bpm)
+#define BUILTIN_SYMS \
+    X(main)
 typedef struct {
-    
     Pgm* pgm;
     Lexer* lexer;
     SliceOf(Type) types; // len == pgm->exprs.len
     TypeEnv pgm_env; // top level env
-    SliceOf(TypeEnv) sec_envs; // one for each section
+    SliceOf(TypeEnv) sec_envs; // one for each section, len == pgm->sections.len
     SecIdx curr_sec; // this is only used internally while type_check'ing
-    TypeEnv builtin;
     bool success;
+    SymbolTable sym_table;
+#define X(x) Symbol x;
+    struct {
+	CONFIG_SYMS
+	BUILTIN_SYMS
+    } builtin_syms;
+#undef X
 } Context;
 void context_deinit(Context *ctx);
 void type_check(Pgm* pgm, Lexer* lexer, Context *ctx /* res arg */);

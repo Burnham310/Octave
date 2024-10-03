@@ -1,7 +1,12 @@
 #include "type.h"
 #include "utils.h"
 #include "assert.h"
+#include "utils.h"
+#include <stdio.h>
+#include <stdlib.h>
 
+
+#include "stb_ds.h"
 Type type_check_expr_impl(Context *ctx, ExprIdx idx);
 
 
@@ -22,10 +27,10 @@ void context_deinit(Context *ctx) {
     ctx->types = (SliceOf(Type)) {0};
 
     assert(ctx->sec_envs.ptr && ctx->sec_envs.len > 0);
-    //  for (size_t i = 0; i < ctx->sec_envs.len; ++i) {
-    //      // stb checks for NULL for us
-    //      shfree(ctx->sec_envs.ptr[i]);
-    //  }
+    for (size_t i = 0; i < ctx->sec_envs.len; ++i) {
+        // stb checks for NULL for us
+        shfree(ctx->sec_envs.ptr[i]);
+    }
     free(ctx->sec_envs.ptr);
     ctx->sec_envs = (SliceOf(TypeEnv)) {0};
 }
@@ -38,16 +43,14 @@ void type_check(Pgm *pgm, Lexer *lexer, Context *ctx) {
 	.pgm_env = NULL,
 	.sec_envs = {.ptr = calloc(sizeof(TypeEnv), ast_len(pgm, secs)), .len = ast_len(pgm, secs)},
 	.curr_sec = 0,
-	.builtin = NULL,
+	.sym_table = lexer->sym_table,
     };
-    //  sh_new_arena(ctx->pgm_env);
-    //  for_slice(ctx->sec_envs, i) {
-    //      TypeEnv sec_env = for_slice_x(ctx->sec_envs);
-    //      sh_new_arena(sec_env);
-    //  }
-    //  sh_new_arena(ctx->builtin);
-    //  shput(ctx->builtin, "scale", TY_SCALE);
-    //  shput(ctx->builtin, "bpm", TY_INT);
+#define X(x) ctx->builtin_syms.x = symt_intern(ctx->sym_table, #x);
+    CONFIG_SYMS
+    BUILTIN_SYMS
+#undef X
+    hmput(ctx->pgm_env, ctx->builtin_syms.scale, TY_SCALE);
+    hmput(ctx->pgm_env, ctx->builtin_syms.bpm, TY_INT);
     ctx->success = type_check_pgm(ctx);
 }
 bool type_check_pgm(Context *ctx) {
@@ -57,8 +60,10 @@ bool type_check_pgm(Context *ctx) {
     return true;
 }
 bool type_check_decl(Context *ctx, DeclIdx idx) {
-    // TODO add binding
-    return type_check_sec(ctx, (ast_get(ctx->pgm, decls, idx)).sec);
+    Decl *decl = &ast_get(ctx->pgm, decls, idx);
+    if (!type_check_sec(ctx, decl->sec)) return false;
+    hmput(ctx->pgm_env, decl->name, TY_SEC);
+    return true;
 }
 
 bool type_check_sec(Context *ctx, SecIdx idx) {
@@ -74,19 +79,43 @@ bool type_check_sec(Context *ctx, SecIdx idx) {
 	    return false;
 	}
     }
-
     return true;
 }
 bool type_check_formal(Context *ctx, FormalIdx idx, bool builtin) {
-    // TODO: add binding
     Formal *formal = &ast_get(ctx->pgm, formals, idx);
     Type ty = type_check_expr(ctx, formal->expr);
-    TypeEnv env = ctx->sec_envs.ptr[ctx->curr_sec];
-    if (builtin) {
-	// Type should_be = shget(ctx->builtin, formal->ident.ptr); 
+    TypeEnv *sec_env = &ctx->sec_envs.ptr[ctx->curr_sec];
+    hmput(ctx->pgm_env, formal->ident, ty);
+    ptrdiff_t local_i = hmgeti(*sec_env, formal->ident);
+    if (local_i > 0) {
+	    report(ctx->lexer, formal->off, "Duplicate defination of attribute %s", symt_lookup(ctx->sym_table , formal->ident));
+	    return false;
     }
-    
+    ptrdiff_t global_i = hmgeti(ctx->pgm_env, formal->ident);
+    if (builtin) {
+	if (global_i < 0) {
+	    report(ctx->lexer, formal->off, "Unknown name %s in attribute", symt_lookup(ctx->sym_table, formal->ident));
+	    return false;
+	}
+	
+	Type expect_ty = ctx->pgm_env[global_i].value;
+	if (ty != expect_ty) {
+	    report(
+		    ctx->lexer, 
+		    formal->off, 
+		    "Type mismatch for attribute %s, expect %s, got %s", 
+		    symt_lookup(ctx->sym_table, formal->ident), type_to_str(expect_ty), type_to_str(ty));
+	    return false;
+	}
+    } else {
+	if (global_i > 0) {
+	    report(ctx->lexer, formal->off, "Variable name %s clashes with attribute", symt_lookup(ctx->sym_table, formal->ident));
+	    return false; 
+	}
+    }
+    hmput(*sec_env, formal->ident, ty);
     return true;
+    
 }
 Type type_check_expr(Context *ctx, ExprIdx idx) {
     Type ty = type_check_expr_impl(ctx, idx);
