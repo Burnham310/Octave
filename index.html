@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Octave Music Editor</title>
+    <script
+        src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
+</head>
+
+<body>
+    <h1>Octave Music Editor and Player</h1>
+    <b> By Burnham310 Dev Team</b>
+    <br>
+    <br>
+    <a href="./example.md">Example Octave</a>
+    <hr>
+    <textarea id="editor" rows="10" cols="50" placeholder="Edit your Octave code here..."></textarea>
+
+    <button onclick="compileOctave()">Compile and Play MIDI</button>
+
+
+    <script src="octc.js"></script>
+    <script>
+        function compileOctave() {
+            const input = document.getElementById('editor').value;
+            const inputFile = 'stage3.oct';  // Virtual input file
+            const outputFile = 'stage3.mid'; // Virtual output file
+
+            FS.writeFile(inputFile, input);
+            Module.callMain([inputFile, '-o', outputFile]);
+            const midiData = FS.readFile(outputFile, { encoding: 'binary' });
+            const blob = new Blob([midiData], { type: 'audio/midi' });
+            const url = URL.createObjectURL(blob);
+            const midiPlayer = document.querySelector('midi-player');
+            midiPlayer.src = url;  
+        }
+    </script>
+<midi-player sound-font visualizer="#myVisualizer"></midi-player>
+<midi-visualizer type="piano-roll" id="myVisualizer"></midi-visualizer>
+
+</body>
+
+</html>
