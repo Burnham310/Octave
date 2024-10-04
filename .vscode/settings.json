@@ -23,6 +23,7 @@
         "tuple": "c",
         "type_traits": "c",
         "variant": "c",
-        "string": "c"
+        "string": "c",
+        "random": "c"
     },
 }
