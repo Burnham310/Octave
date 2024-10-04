@@ -6,7 +6,6 @@
 #include <ctype.h>
 #include <string.h>
 
-
 char next_char(Lexer *self);
 Token match_single(Lexer *self);
 Token match_multiple(Lexer *self);
@@ -69,8 +68,9 @@ Lexer lexer_init(char *src, const size_t src_len, const char *path)
 
 	return lexer;
 }
-void lexer_deinit(Lexer* self) {
-   shfree(self->sym_table);     
+void lexer_deinit(Lexer *self)
+{
+	shfree(self->sym_table);
 }
 Loc off_to_loc(const char *src, const size_t src_len, const size_t off)
 {
@@ -113,12 +113,34 @@ void skip_ws(Lexer *lexer)
 		lexer->off++;
 	}
 }
+
 char peek_char(Lexer *self)
 {
 	if (self->off >= self->src_len)
 		return 0;
 	return self->src[self->off];
 }
+
+void skip_comment(Lexer *lexer)
+{
+	if (lexer->off + 1 >= lexer->src_len)
+		return;
+
+	if (next_char(lexer) == '/' && peek_char(lexer) == '/')
+	{
+		while (lexer->off < lexer->src_len)
+		{
+			if (next_char(lexer) == '\n') {
+				skip_ws(lexer);
+				skip_comment(lexer);
+				break;
+			}
+		}
+	}
+	else
+		rewind_char(lexer);
+}
+
 // return 0 if no more character left
 char next_char(Lexer *self)
 {
@@ -160,44 +182,49 @@ Token match_single(Lexer *self)
 	}
 	// return tk;
 }
-Token match_qualifier(Lexer *self) {
-    Token tk = {0};
-    char c = peek_char(self);
-    size_t start = self->off;
-    bool maybe_ident = true;
-    if (c !='o' && c != 's' && c != '#' && c != 'b') {
-	RETURN_TK(TK_NULL);	
-    }
-    tk.type = TK_QUAL;
-    while ((c = next_char(self)) != 0) {
-	switch (c) {
-	    case 'o':
-		tk.data.qualifier.octave += 1;
-		break;
-	    case 's':
-		tk.data.qualifier.suboctave += 1;
-		break;
-	    case '#':
-		tk.data.qualifier.sharps += 1;
-		maybe_ident = false;
-		break;
-	    case 'b':
-		tk.data.qualifier.flats += 1;
-		break;
-	    case '\'':
-		tk.off = self->off;
-		return tk;
-	    default:
-		if (maybe_ident) {
-		    self->off = start;
-		    return match_ident(self);
-		}
-		report(self, self->off, "Invalid character %c in sequence of pitch qualifiers", c);
-		RETURN_TK(TK_ERR);
+Token match_qualifier(Lexer *self)
+{
+	Token tk = {0};
+	char c = peek_char(self);
+	size_t start = self->off;
+	bool maybe_ident = true;
+	if (c != 'o' && c != 's' && c != '#' && c != 'b')
+	{
+		RETURN_TK(TK_NULL);
 	}
-    }
-    report(self, self->off, "Unterminated sequence of pitch qualifiers (expects ')");
-    RETURN_TK(TK_ERR);
+	tk.type = TK_QUAL;
+	while ((c = next_char(self)) != 0)
+	{
+		switch (c)
+		{
+		case 'o':
+			tk.data.qualifier.octave += 1;
+			break;
+		case 's':
+			tk.data.qualifier.suboctave += 1;
+			break;
+		case '#':
+			tk.data.qualifier.sharps += 1;
+			maybe_ident = false;
+			break;
+		case 'b':
+			tk.data.qualifier.flats += 1;
+			break;
+		case '\'':
+			tk.off = self->off;
+			return tk;
+		default:
+			if (maybe_ident)
+			{
+				self->off = start;
+				return match_ident(self);
+			}
+			report(self, self->off, "Invalid character %c in sequence of pitch qualifiers", c);
+			RETURN_TK(TK_ERR);
+		}
+	}
+	report(self, self->off, "Unterminated sequence of pitch qualifiers (expects ')");
+	RETURN_TK(TK_ERR);
 }
 Token match_num(Lexer *self)
 {
@@ -230,7 +257,6 @@ Token match_num(Lexer *self)
 	}
 	tk.type = TK_INT;
 	tk.data.integer = strtol(self->src + tk.off, NULL, 10);
-	
 
 	return tk;
 }
@@ -293,29 +319,37 @@ Token match_ident(Lexer *self)
 	self->src[self->off] = c; // restore the char
 	return tk;
 }
-Token match_dots(Lexer *self) {
-    Token tk;
-    char c = peek_char(self);
-    if (c != '.') {
-	RETURN_TK(TK_NULL);
-    }
-    next_char(self);
-    size_t ct = 1;
-    while ((c = next_char(self)) != 0) {
-	if (c == '.') {
-	    ct += 1;
-	} else if (isalnum(c)) {
-	    report(self, self->off, "Invalid character '%c' in sequence of dots", c);
-	    RETURN_TK(TK_ERR);
-	} else {
-	    rewind_char(self);
-	    break;
+Token match_dots(Lexer *self)
+{
+	Token tk;
+	char c = peek_char(self);
+	if (c != '.')
+	{
+		RETURN_TK(TK_NULL);
 	}
-    }
-    tk.type = TK_DOTS; 
-    tk.data.integer = ct;
-    tk.off = self->off;
-    return tk;
+	next_char(self);
+	size_t ct = 1;
+	while ((c = next_char(self)) != 0)
+	{
+		if (c == '.')
+		{
+			ct += 1;
+		}
+		else if (isalnum(c))
+		{
+			report(self, self->off, "Invalid character '%c' in sequence of dots", c);
+			RETURN_TK(TK_ERR);
+		}
+		else
+		{
+			rewind_char(self);
+			break;
+		}
+	}
+	tk.type = TK_DOTS;
+	tk.data.integer = ct;
+	tk.off = self->off;
+	return tk;
 }
 typedef Token (*match_fn)(Lexer *);
 match_fn fns[] = {
@@ -335,6 +369,7 @@ Token lexer_next(Lexer *self)
 		return tk;
 	}
 	skip_ws(self);
+	skip_comment(self);
 
 	Token tk;
 	for (int i = 0; i < fns_len; i++)

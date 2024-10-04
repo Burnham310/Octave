@@ -11,6 +11,9 @@ int main()
 
     add_midi_event(SetTempoEvent(120));
     add_midi_event(SetInstrumentEvent(41));
+
+    add_midi_event(PauseNoteEvent(WHOLE_NOTE));
+
     for (int i = 0; i < sizeof(notes) / sizeof(notes[0]) * 10; ++i)
     {
 
@@ -41,6 +44,8 @@ int main()
         add_midi_event(NoteOffEvent(&cur_note));
         add_midi_event(NoteOffEvent(&chord_note));
     }
+
+    add_midi_event(PauseNoteEvent(WHOLE_NOTE));
 
     dump_midi_to_file();
     free_midi_backend();
