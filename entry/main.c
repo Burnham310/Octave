@@ -97,8 +97,12 @@ extern int main(const int argc, char **argv)
     {
         Expr note_expr = ast_get(ctx.pgm, exprs, main_sec.note_exprs.ptr[i]);
 	SliceOf(Pitch) pitches = eval_chord(&ctx, note_expr.data.note.expr, &config.scale);
-	assert(pitches.len > 0);
+	
 	size_t dots = note_expr.data.note.dots;
+	if (pitches.len == 0) {
+	    add_midi_event(PauseNoteEvent(dots));
+	    continue;
+	}
 	MidiNote first_note = {
 	    .channel = DEFAULT_CHANNEL,
 	    .length = dots,

@@ -6,7 +6,7 @@
 #include "assert.h"
 DeclIdx parse_decl(Lexer *lexer, Gen *gen);
 SecIdx parse_section(Lexer *lexer, Gen *gen);
-LabelIdx parse_label(Lexer *lexer, Gen *gen);
+LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_size);
 FormalIdx parse_formal(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp);
@@ -111,11 +111,11 @@ DeclIdx parse_decl(Lexer *lexer, Gen *gen)
     return gen->decls.size - 1;
 }
 // TOOD assumes never fails
-LabelIdx parse_label(Lexer *lexer, Gen *gen) {
+LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_ct) {
     Token test = lexer_peek(lexer);
     Token ldiamond = try_next(lexer, '<');
     try(ldiamond);
-    Label label = {0};
+    Label label = {.note_pos = note_ct};
 
     Token name = assert_next(lexer, TK_IDENT);
     try_before(name, TK_IDENT, ldiamond);
@@ -208,11 +208,12 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
 	if (note == 0) {
 	    
 	    // TODO assume never fail for now
-	    LabelIdx label = parse_label(lexer, gen);
+	    LabelIdx label = parse_label(lexer, gen, notes.size);
 	    if (label <= 0) {
 	        note = label;
 	        break;
 	    }
+	    
 	    da_append(labels, label);
 	} else {
 	    da_append(notes, note);
