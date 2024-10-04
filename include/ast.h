@@ -67,6 +67,7 @@ typedef struct {
     Symbol name;
     int volume;
     bool linear;
+    size_t note_pos; // label is after this note
 } Label; // TODO lable is the same as config ??
 make_slice(Label);
 typedef struct
