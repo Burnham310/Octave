@@ -3,20 +3,21 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define DEFAULT_DEVISION 480 // ticks per quarter note
-#define DEFAULT_VELOCITY 64  // volumn
+#define DEFAULT_DEVISION 120 // ticks per quarter note
+#define DEFAULT_VOLUME 80    
 #define DEFAULT_CHANNEL 0
 
+#define DEFAULT_VELOCITY 64 //Moderate press
 
-// https://en.wikipedia.org/wiki/Mode_(music)
-
-
-struct _MidiEvent
+struct _MTrkEvent
 {
-    enum MidiEventType
+    enum MTrkEventType
     {
         _NoteOnEvent,
         _NoteOffEvent,
+        _SetTempoEvent,
+        _SetInstrument,
+        _SetVolume,
     } eventType;
     int delta_time;
     void *data;
@@ -24,14 +25,34 @@ struct _MidiEvent
     void (*destroyer)(void *data);
 };
 
+typedef struct
+{
+    int volume;
+    int devision;
+} MidiConfig;
+
 #define _get_array_len(arr) sizeof(arr) / sizeof(arr[0])
 #define NoteLenRatio(note_length) note_length / 100
+
+#define midi_printf(fmt, ...) printf("[MidiBackend] " fmt "\n", ##__VA_ARGS__);
+#define midi_assert(bool, action) \
+    do                            \
+    {                             \
+        if (!(bool))              \
+        {                         \
+            action;               \
+            exit(0);              \
+        }                         \
+    } while (0);
+
+#define EVENT_CALLBACK(event_name) static void callback_##event_name(int delta_time, void *data)
+#define USE_CALLBACK(event_name) {&callback_##event_name}
 
 struct _MidiTrack
 {
     size_t cap;
     size_t event_count;
-    struct _MidiEvent *events;
+    struct _MTrkEvent *events;
 };
 
 typedef enum
@@ -53,23 +74,11 @@ typedef struct
     unsigned char channel;
 } MidiNote;
 
-typedef enum
-{
-    CMAJOR,
-    CMINOR,
-    DMAJOR,
-    DMINOR,
-    EMAJOR,
-    EMINOR,
-
-    ERRSCALE = -1,
-} MidiScaleType;
-
-// initialize the midi backend
-void init_midi_backend(FILE *fp);
+// initialize the midi backend, set config to NULL to use default
+void init_midi_backend(FILE *fp, MidiConfig *config);
 
 // add event to the midi track, e.g. NoteOn_event, NoteOff_event
-void add_midi_event(struct _MidiEvent event);
+void add_midi_event(struct _MTrkEvent event);
 
 // dump all events to the file
 void dump_midi_to_file();
@@ -77,8 +86,26 @@ void dump_midi_to_file();
 // free the backend
 void free_midi_backend();
 
-// note on event, must follow with the noteoff event with same note specified
-struct _MidiEvent NoteOnEvent(MidiNote *note);
+/*
+    MTrk Events <MTrk event>:
 
-// note off event
-struct _MidiEvent NoteOffEvent(MidiNote *note);
+    formal definition: <MTrk event> = <delta-time><event>
+
+    description:
+    - NoteOnEvent: key press
+    - NoteOffEvent: key down
+    - SetTempoEvent: change current tempo(bpm)
+*/
+
+// note on event, must follow with the noteoff event with same note specified
+struct _MTrkEvent NoteOnEvent(MidiNote *note);
+
+// note off event, If the first event in a track occurs at the very beginning of a track
+// or if two events occur simultaneously, a delta-time of zero is used
+struct _MTrkEvent NoteOffEvent(MidiNote *note);
+
+// change tempo (event) of current track
+struct _MTrkEvent SetTempoEvent(int bpm);
+
+// change instrument of current track
+struct _MTrkEvent SetInstrument(int pc);

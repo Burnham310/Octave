@@ -3,6 +3,10 @@
 
 static FILE *midi_fp;
 static struct _MidiTrack midi_track;
+static MidiConfig midi_config = {
+    .devision = DEFAULT_DEVISION,
+    .volume = DEFAULT_VOLUME,
+};
 
 // write a single byte
 static void write_byte(unsigned char byte)
@@ -26,7 +30,7 @@ static void write_dword(unsigned int dword)
     write_byte(dword & 0xFF);
 }
 
-// write a variable length value (used for delta times in MIDI)
+// write a variable length value
 static void write_var_len(unsigned int value)
 {
     unsigned char buffer[4];
@@ -48,27 +52,7 @@ static void write_var_len(unsigned int value)
     }
 }
 
-static unsigned char MIDI_SCALES[][8] = {
-    // C Major scale: C D E F G A B C
-    {60, 62, 64, 65, 67, 69, 71, 72},
-
-    // C Minor scale: C D Eb F G Ab Bb C
-    {60, 62, 63, 65, 67, 68, 70, 72},
-
-    // D Major scale: D E F# G A B C# D
-    {62, 64, 66, 67, 69, 71, 73, 74},
-
-    // D Minor scale: D E F G A Bb C D
-    {62, 64, 65, 67, 69, 70, 72, 74},
-
-    // E Major scale: E F# G# A B C# D# E
-    {64, 66, 68, 69, 71, 73, 75, 76},
-
-    // E Minor scale: E F# G A B C D E
-    {64, 66, 67, 69, 71, 72, 74, 76},
-};
-
-static void NoteOnEvent_callback(int delta_time, void *data)
+EVENT_CALLBACK(NoteOnEvent)
 {
     MidiNote *note = (MidiNote *)data;
 
@@ -78,7 +62,27 @@ static void NoteOnEvent_callback(int delta_time, void *data)
     write_byte(note->velocity);
 }
 
-static void NoteOffEvent_callback(int delta_time, void *data)
+struct _MTrkEvent NoteOnEvent(MidiNote *note)
+{
+    midi_assert(note->pitch >= 0 && note->pitch <= 127, midi_printf("bad note pitch value '%d'", note->pitch));
+    midi_assert(note->velocity >= 0 && note->velocity <= 127, midi_printf("bad velocity '%d'", note->velocity));
+
+    MidiNote *note_copy = (MidiNote *)malloc(sizeof(MidiNote));
+    *note_copy = *note;
+
+    struct _MTrkEvent event =
+        {
+            .eventType = _NoteOnEvent,
+            .callbacks = USE_CALLBACK(NoteOnEvent),
+            .delta_time = 0,
+            .data = note_copy,
+            .destroyer = free,
+        };
+
+    return event;
+}
+
+EVENT_CALLBACK(NoteOffEvent)
 {
     MidiNote *note = (MidiNote *)data;
 
@@ -88,87 +92,143 @@ static void NoteOffEvent_callback(int delta_time, void *data)
     write_byte(note->velocity); // Velocity (volume)
 }
 
-static const char *note_event_to_str(int MidiEventType)
+struct _MTrkEvent NoteOffEvent(MidiNote *note)
 {
-    switch (MidiEventType)
-    {
-    case 0:
-        return "NoteOnEevent";
-    case 1:
-        return "NoteOffEvent";
-    default:
-        return "UnknownEvent";
-    }
-}
+    midi_assert(note->pitch >= 0 && note->pitch <= 127, midi_printf("bad note pitch value '%d'", note->pitch));
 
-static int note_length(MidiNoteLength l)
-{
-    int d = 400;
-    for (int i = 0; i < l; i++)
-    {
-        d /= 2;
-    }
-    return d;
-}
-
-struct _MidiEvent NoteOnEvent(MidiNote *note)
-{
     MidiNote *note_copy = (MidiNote *)malloc(sizeof(MidiNote));
     *note_copy = *note;
 
-    struct _MidiEvent event =
-        {
-            .eventType = _NoteOnEvent,
-            .callbacks = {
-                &NoteOnEvent_callback,
-            },
-            .delta_time = 0,
-            .data = note_copy,
-            .destroyer = free,
-        };
-    return event;
-}
+    int note_length_f = 400;
+    for (int i = 0; i < note->length; i++)
+        note_length_f /= 2;
 
-struct _MidiEvent NoteOffEvent(MidiNote *note)
-{
-    MidiNote *note_copy = (MidiNote *)malloc(sizeof(MidiNote));
-    *note_copy = *note;
-
-    struct _MidiEvent event =
+    struct _MTrkEvent event =
         {
             .eventType = _NoteOffEvent,
-            .callbacks = {
-                &NoteOffEvent_callback,
-            },
-            .delta_time = DEFAULT_DEVISION * NoteLenRatio(note_length(note->length)),
+            .callbacks = USE_CALLBACK(NoteOffEvent),
+            .delta_time = DEFAULT_DEVISION * NoteLenRatio(note_length_f),
             .data = note_copy,
             .destroyer = free,
         };
     return event;
 }
 
-void init_midi_backend(FILE *fp)
+EVENT_CALLBACK(SetTempoEvent)
+{
+
+    int tempo_sec = *(int *)data;
+
+    write_var_len(0);
+    write_byte(0xFF);
+    write_byte(0x51);
+    write_byte(0x03);
+
+    write_byte((tempo_sec >> 16) & 0xFF);
+    write_byte((tempo_sec >> 8) & 0xFF);
+    write_byte(tempo_sec & 0xFF);
+}
+
+struct _MTrkEvent SetTempoEvent(int bpm)
+{
+    midi_assert(bpm > 0, midi_printf("bpm should be greater than 0"));
+
+    int *tempo_sec = malloc(sizeof(int));
+    *tempo_sec = 60 * 1000000 / bpm;
+
+    struct _MTrkEvent event =
+        {
+            .eventType = _SetTempoEvent,
+            .callbacks = USE_CALLBACK(SetTempoEvent),
+            .delta_time = 0,
+            .data = tempo_sec,
+            .destroyer = free,
+        };
+
+    return event;
+}
+
+EVENT_CALLBACK(SetInstrument)
+{
+    write_var_len(0);
+
+    int pc = *(int *)data;
+
+    write_byte(0xC0 + DEFAULT_CHANNEL);
+    write_byte(pc);
+}
+
+struct _MTrkEvent SetInstrument(int pc)
+{
+    midi_assert(pc >= 1 && pc <= 128, midi_printf("invalid PC number '%d'", pc));
+
+    int *pc_data = malloc(sizeof(int));
+    *pc_data = pc;
+
+    struct _MTrkEvent event =
+        {
+            .eventType = _SetInstrument,
+            .callbacks = USE_CALLBACK(SetInstrument),
+            .data = pc_data,
+            .destroyer = free,
+        };
+
+    return event;
+}
+
+EVENT_CALLBACK(SetVolume)
+{
+    write_var_len(0);
+
+    int volume = *(int *)data;
+
+    write_byte(0xB0 + DEFAULT_CHANNEL);
+    write_byte(0x07);
+    write_byte(volume);
+}
+
+struct _MTrkEvent SetVolume(int volume)
+{
+    midi_assert(volume >= 1 && volume <= 128, midi_printf("invalid volume number '%d'", volume));
+
+    int *volume_data = malloc(sizeof(int));
+    *volume_data = volume;
+
+    struct _MTrkEvent event =
+        {
+            .eventType = _SetVolume,
+            .callbacks = USE_CALLBACK(SetVolume),
+            .data = volume_data,
+            .destroyer = free,
+        };
+
+    return event;
+}
+
+void init_midi_backend(FILE *fp, MidiConfig *config)
 {
     midi_fp = fp;
 
     // init track
-    midi_track.events = malloc(sizeof(struct _MidiEvent) * 5);
+    midi_track.events = malloc(sizeof(struct _MTrkEvent) * 5);
     midi_track.event_count = 0;
     midi_track.cap = 5;
 
     // write head chunk
-    fwrite("MThd", 1, 4, midi_fp); // header tag
-    write_dword(6);                // always 6
-    write_word(0);                 // Format Type
-    write_word(1);                 // Number of Tracks
-    write_word(DEFAULT_DEVISION);  // ticks per quarter note
+    fwrite("MThd", 1, 4, midi_fp);                                                // header tag
+    write_dword(6);                                                               // always 6
+    write_word(0);                                                                // Format Type
+    write_word(1);                                                                // Number of Tracks
+    write_word(config && config->devision ? config->devision : DEFAULT_DEVISION); // ticks per quarter note
+
+    config ? midi_config = *config : midi_config;
 }
 
-void add_midi_event(struct _MidiEvent event)
+void add_midi_event(struct _MTrkEvent event)
 {
     if (midi_track.event_count == midi_track.cap)
     {
-        midi_track.events = realloc(midi_track.events, sizeof(struct _MidiEvent) * (midi_track.cap * 2));
+        midi_track.events = realloc(midi_track.events, sizeof(struct _MTrkEvent) * (midi_track.cap * 2));
         midi_track.cap *= 2;
     }
 
@@ -177,18 +237,21 @@ void add_midi_event(struct _MidiEvent event)
 
 void dump_midi_to_file()
 {
-    printf("[MidiBackend] begin dumping.\n");
+    midi_printf("begin dumping.");
 
     fwrite("MTrk", 1, 4, midi_fp);          // Chunk type
     long track_length_pos = ftell(midi_fp); // Write a placeholder for the track length (we'll go back and fill this in later)
     write_dword(0);                         // Placeholder
 
-    printf("[MidiBackend] write track chunk tag.\n");
-    printf("[MidiBackend] prepare %zu event.\n", midi_track.event_count);
+    midi_printf("write track chunk tag.");
+    midi_printf("prepare %zu event.", midi_track.event_count);
+
+    // write config volume
+    callback_SetVolume(0, &midi_config.volume);
 
     for (size_t i = 0; i < midi_track.event_count; ++i)
     {
-        struct _MidiEvent event = midi_track.events[i];
+        struct _MTrkEvent event = midi_track.events[i];
         for (size_t i = 0; i < _get_array_len(event.callbacks); ++i)
         {
             if (event.callbacks[i])
@@ -197,7 +260,7 @@ void dump_midi_to_file()
                 break;
         }
     }
-    printf("[MidiBackend] finish events writing.\n");
+    midi_printf("finish events writing.");
 
     // end of track
     write_var_len(0);
@@ -210,9 +273,8 @@ void dump_midi_to_file()
     fseek(midi_fp, track_length_pos, SEEK_SET);
     write_dword(end_of_file_pos - track_length_pos - 4); // ignore length field
     fseek(midi_fp, end_of_file_pos, SEEK_SET);
-    printf("[MidiBackend] write EOT tag.\n");
 
-    printf("[MidiBackend] all done\n");
+    midi_printf("all done");
 }
 
 void free_midi_backend()
