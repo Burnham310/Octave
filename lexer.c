@@ -50,7 +50,6 @@ const char *ty_str(TokenType ty)
 		return "]";
 	case '/':
 		return "/";
-
 	default:
 		return "TK_UNKNOWN";
 	}
@@ -155,7 +154,45 @@ Token match_single(Lexer *self)
 	}
 	// return tk;
 }
-
+Token match_qualifier(Lexer *self) {
+    Token tk = {0};
+    char c = peek_char(self);
+    size_t start = self->off;
+    bool maybe_ident = true;
+    if (c !='o' && c != 's' && c != '#' && c != 'b') {
+	RETURN_TK(TK_NULL);	
+    }
+    tk.type = TK_QUAL;
+    while ((c = next_char(self)) != 0) {
+	switch (c) {
+	    case 'o':
+		tk.data.qualifier.octave += 1;
+		break;
+	    case 's':
+		tk.data.qualifier.suboctave += 1;
+		break;
+	    case '#':
+		tk.data.qualifier.sharps += 1;
+		maybe_ident = false;
+		break;
+	    case 'b':
+		tk.data.qualifier.flats += 1;
+		break;
+	    case '\'':
+		tk.off = self->off;
+		return tk;
+	    default:
+		if (maybe_ident) {
+		    self->off = start;
+		    return match_ident(self);
+		}
+		report(self, self->off, "Invalid character %c in sequence of pitch qualifiers", c);
+		RETURN_TK(TK_ERR);
+	}
+    }
+    report(self, self->off, "Unterminated sequence of pitch qualifiers (expects ')");
+    RETURN_TK(TK_ERR);
+}
 Token match_num(Lexer *self)
 {
 	Token tk = {.off = self->off};
@@ -277,6 +314,7 @@ Token match_dots(Lexer *self) {
 typedef Token (*match_fn)(Lexer *);
 match_fn fns[] = {
 	match_dots,
+	match_qualifier,
 	match_single,
 	match_num,
 	match_ident,

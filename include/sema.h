@@ -44,7 +44,7 @@ typedef struct {
 
 } Value;
 #define DIATONIC 7
-static const int BASE_MODE[DIATONIC] = {0, 2, 4, 5, 7, 9, 10};
+static const int BASE_MODE[DIATONIC] = {0, 2, 4, 5, 7, 9, 11};
 // 1 <= degree <= 7
 // returns absolute pitch
 Pitch pitch_from_scale(Scale *scale, size_t degree);

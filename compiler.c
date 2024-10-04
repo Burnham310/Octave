@@ -3,49 +3,53 @@
 #include "ds.h"
 #include "sema.h"
 
-// 1 <= degree <= 7
-Pitch pitch_from_scale(Scale *scale, size_t degree) {
-    assert(degree <= DIATONIC && degree >= 1 && "degree out of bound");
-    assert(scale->tonic < DIATONIC && scale->tonic >= 0 && "tonic out of bound");
 
-    size_t base = scale->tonic + scale->octave * 12;
-    // degree is 1-based
-    size_t degree_shift = degree + scale->mode - 1;
-    // Step is how much we should walk from the tonic
-    size_t step = degree_shift < DIATONIC 
-	? BASE_MODE[degree_shift] - BASE_MODE[scale->mode]
-	: 12 + BASE_MODE[degree_shift % DIATONIC] - BASE_MODE[scale->mode];
-    return base + step;    
-}
 
 make_arr(Pitch);
 static ArrOf(Pitch) pitches_tmp = {0};
-size_t eval_chord_recur(Context *ctx, ExprIdx idx);
+size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale);
 
 
-SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx) {
+SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale) {
 
-    eval_chord_recur(ctx, idx);
+    eval_chord_recur(ctx, idx, scale);
     SliceOf(Pitch) res = {.ptr = pitches_tmp.items, .len = pitches_tmp.size};
  
     pitches_tmp.size = 0;
     return res;
 }
 // returns the number of pitch added to the chord
-size_t eval_chord_recur(Context *ctx, ExprIdx idx) {
+size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale) {
     Type ty = ctx->types.ptr[idx];
-    assert(ty == TY_INT || ty == TY_CHORD);  
+    assert(ty == TY_INT || ty == TY_CHORD || ty == TY_PITCH);  
     Expr *expr = &ast_get(ctx->pgm, exprs, idx);
-    if (ty == TY_INT) {
-	da_append(pitches_tmp, expr->data.num);
+    ExprTag tag = expr->tag;
+    if (tag == EXPR_NUM) {
+	da_append(pitches_tmp, pitch_from_scale(scale, expr->data.num));
 	return 1;
     }
-    else {
+    else if (tag == EXPR_CHORD) {
+	size_t total = 0;
 	for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
-	    eval_chord_recur(ctx, expr->data.chord_notes.ptr[i]);
+	    total += eval_chord_recur(ctx, expr->data.chord_notes.ptr[i], scale);
 	}
-	return expr->data.chord_notes.len;
+	return total;
+    } else if (tag == EXPR_PREFIX) {
+	size_t count = eval_chord_recur(ctx, expr->data.prefix.expr, scale);
+	Token qual = expr->data.prefix.op;
+	ssize_t shift = 
+	    - 12 * qual.data.qualifier.suboctave 
+	    + 12 * qual.data.qualifier.octave 
+	    - qual.data.qualifier.flats 
+	    + qual.data.qualifier.sharps;
+	for (size_t i = pitches_tmp.size - count; i < pitches_tmp.size; ++i) {
+	    pitches_tmp.items[i] += shift;
+	}
+	return count;
+
     }
+
+    assert(false && "unreachable");
      
 
 }

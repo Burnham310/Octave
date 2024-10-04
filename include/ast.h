@@ -29,11 +29,14 @@ typedef union
 	ExprIdx octave;
 	ExprIdx mode;
     } scale;
-    struct
-    {
+    struct {
         size_t dots;
         ExprIdx expr;
     } note;
+    struct {
+	Token op;
+	ExprIdx expr;
+    } prefix;
 } ExprData;
 typedef enum
 {
@@ -42,6 +45,7 @@ typedef enum
     EXPR_NOTE,
     EXPR_CHORD,
     EXPR_SCALE,
+    EXPR_PREFIX,
 } ExprTag;
 typedef struct
 {

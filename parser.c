@@ -7,9 +7,13 @@ DeclIdx parse_decl(Lexer *lexer, Gen *gen);
 SecIdx parse_section(Lexer *lexer, Gen *gen);
 FormalIdx parse_formal(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr(Lexer *lexer, Gen *gen);
+ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp);
 ExprIdx parse_chord(Lexer *lexer, Gen *gen);
 ExprIdx parse_scale(Lexer *lexer, Gen *gen);
+ExprIdx parse_prefix(Lexer *lexer, Gen *gen);
 ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen);
+int prefix_bp(Token tk);
+int postfix_bp(Token tk);
 #define try(exp)         \
     if ((exp).type <= 0) \
     return (exp).type
@@ -172,7 +176,6 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
         // TODO free sec
         return PR_ERR;
     }
-    printf("end of sec\n");
 out:
     da_move(notes, sec.note_exprs);
     da_append(gen->secs, sec);
@@ -255,9 +258,38 @@ ExprIdx parse_scale(Lexer *lexer, Gen *gen) {
     da_append(gen->exprs, expr);
     return gen->exprs.size - 1; 
 }
-ExprIdx parse_expr(Lexer *lexer, Gen *gen) {
-    // the order of this matter; atomic expr must be tried last.
-    static const ParseFn prefix_parsers[] = {parse_scale, parse_chord, parse_atomic_expr };
+// currently only have one kind of prefix operator
+ExprIdx parse_prefix(Lexer *lexer, Gen *gen) {
+
+    Token qual = try_next(lexer, TK_QUAL);
+    try(qual);
+    int lbp = prefix_bp(qual);
+    ExprIdx sub_expr = parse_expr_climb(lexer, gen, lbp);
+    if (sub_expr < 0) return PR_ERR;
+    if (sub_expr == 0) {
+	report(lexer, qual.off, "Expect expression after qualifiers");
+	return PR_ERR;
+    }	
+    Expr expr = {.off = qual.off, .tag = EXPR_PREFIX, .data.prefix = {.op = qual, .expr = sub_expr } };
+    da_append(gen->exprs, expr);
+    return gen->exprs.size - 1;
+}
+int prefix_bp(Token tk) {
+    switch (tk.type) {
+	case TK_QUAL: return 20;
+	default: return -1;
+    }
+}
+int postfix_bp(Token tk) {
+    switch (tk.type) {
+	case TK_DOTS: return 10;
+	default: return -1;
+    }
+}
+
+ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp) {
+// the order of this matter; atomic expr must be tried last.
+    static const ParseFn prefix_parsers[] = {parse_prefix, parse_scale, parse_chord, parse_atomic_expr };
     static const size_t prefix_parsers_len = sizeof(prefix_parsers)/sizeof(prefix_parsers[0]);
     ExprIdx lhs;
     for (size_t i = 0; i < prefix_parsers_len; ++i) {
@@ -267,9 +299,11 @@ ExprIdx parse_expr(Lexer *lexer, Gen *gen) {
     }
     if (lhs == 0) return PR_NULL;
     // postfix parser
-    Token op = try_next(lexer, TK_DOTS);
-    if (op.type < 0) return op.type;
-    else if (op.type > 0) {
+    Token op; 
+    while ((op = lexer_peek(lexer)).type > 0) {
+	int lbp = postfix_bp(op);
+	if (lbp < min_bp) break;
+	lexer_next(lexer);
 	Expr expr;
 	expr.tag = EXPR_NOTE;
 	expr.off = op.off;
@@ -278,8 +312,11 @@ ExprIdx parse_expr(Lexer *lexer, Gen *gen) {
 	da_append(gen->exprs, expr);
 	lhs = gen->exprs.size - 1;
     }
+    if (op.type < 0) return op.type;
     return lhs;
-    
+}
+ExprIdx parse_expr(Lexer *lexer, Gen *gen) {
+    return parse_expr_climb(lexer, gen, 0);    
 }
 ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen)
 {

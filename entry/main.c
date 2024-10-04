@@ -86,18 +86,21 @@ extern int main(const int argc, char **argv)
     // add event to track
 
     SecConfig config = eval_config(&ctx, ctx.main);
-    // Scale test_scale = {.tonic = PTCH_C, .octave = 5, .mode = MODE_MIN};
-    // printf("1 -> %i\n", pitch_from_scale(&test_scale, 1));
+    // eprintf("scale: tonic: %i mode: %i octave: %i\n", config.scale.tonic, config.scale.mode, config.scale.octave);
+    // Scale test_scale = {.tonic = PTCH_C, .octave = 5, .mode = MODE_MAJ};
+    // for (int i = 0; i < DIATONIC; ++i) {
+    //     printf("%i -> %i\n", i+1, pitch_from_scale(&test_scale, i+1));
+    // }
     for (int i = 0; i < main_sec.note_exprs.len; ++i)
     {
         Expr note_expr = ast_get(ctx.pgm, exprs, main_sec.note_exprs.ptr[i]);
-	SliceOf(Pitch) pitches = eval_chord(&ctx, note_expr.data.note.expr);
+	SliceOf(Pitch) pitches = eval_chord(&ctx, note_expr.data.note.expr, &config.scale);
 	assert(pitches.len > 0);
 	size_t dots = note_expr.data.note.dots;
 	MidiNote first_note = {
 	    .channel = DEFAULT_CHANNEL,
 	    .length = dots,
-	    .pitch = pitch_from_scale(&config.scale, pitches.ptr[0]),
+	    .pitch = pitches.ptr[0],
 	    .velocity = DEFAULT_VELOCITY,
 	};
 	add_midi_event(NoteOnEvent(&first_note));
@@ -105,7 +108,7 @@ extern int main(const int argc, char **argv)
 	    MidiNote midi_note = {
 		.channel = DEFAULT_CHANNEL,
 		.length = dots,
-		.pitch = pitch_from_scale(&config.scale, pitches.ptr[p]),
+		.pitch = pitches.ptr[p],
 		.velocity = DEFAULT_VELOCITY,
 	    };
 	    add_midi_event(NoteOnEvent(&midi_note));
@@ -115,7 +118,7 @@ extern int main(const int argc, char **argv)
 	    MidiNote midi_note = {
 		.channel = DEFAULT_CHANNEL,
 		.length = dots,
-		.pitch = pitch_from_scale(&config.scale, pitches.ptr[p]),
+		.pitch = pitches.ptr[p],
 		.velocity = DEFAULT_VELOCITY,
 	    };
 	    struct _MidiEvent event = NoteOffEvent(&midi_note);

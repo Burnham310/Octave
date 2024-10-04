@@ -20,11 +20,19 @@ typedef enum
 	TK_IDENT,
 	TK_INT,
 	TK_DOTS,
+	TK_QUAL,
 
 } TokenType;
 // TODO refactor and remove the goddam union
+typedef unsigned char u8;
 typedef union
-{
+{	
+	struct {
+	   u8 sharps;
+	   u8 flats;
+	   u8 octave;
+	   u8 suboctave;
+	} qualifier;
 	ssize_t integer;
 } TokenData;
 typedef struct
@@ -49,7 +57,7 @@ const char* ty_str(TokenType ty);
 		case TK_NULL:                                                 \
 									      printf("NULL");                                           \
 		case TK_IDENT:                                                \
-									      printf("ID %.*s", (int)tk.data.str.len, tk.data.str.ptr); \
+									      printf("ID %zu", tk.data.integer); \
 		break;                                                    \
 		case TK_INT:                                                  \
 									      printf("INT_CONST %zi", tk.data.integer);                 \
@@ -57,6 +65,8 @@ const char* ty_str(TokenType ty);
 		case TK_DOTS: \
 									      printf("TK_DOTS %zi", tk.data.integer); \
 		break;                                                    \
+		case TK_QUAL: \
+									      printf("TK_QUAL"); \
 		default:                                                      \
 									      printf("%c", tk.type);                                    \
 	}                                                             \

@@ -21,6 +21,21 @@ const char *type_to_str(Type ty) {
     assert(false && "unreachable");
 }
 #undef X
+
+// 1 <= degree <= 7
+Pitch pitch_from_scale(Scale *scale, size_t degree) {
+    assert(degree <= DIATONIC && degree >= 1 && "degree out of bound");
+    assert(scale->tonic < DIATONIC && scale->tonic >= 0 && "tonic out of bound");
+
+    size_t base = scale->tonic + scale->octave * 12;
+    // degree is 1-based
+    size_t degree_shift = degree + scale->mode - 1;
+    // Step is how much we should walk from the tonic
+    size_t step = degree_shift < DIATONIC 
+	? BASE_MODE[degree_shift] - BASE_MODE[scale->mode]
+	: 12 + BASE_MODE[degree_shift % DIATONIC] - BASE_MODE[scale->mode];
+    return base + step;    
+}
 void context_deinit(Context *ctx) {
     assert(ctx->types.ptr && ctx->types.len > 0);
     free(ctx->types.ptr);
@@ -63,7 +78,7 @@ void sema_analy(Pgm *pgm, Lexer *lexer, Context *ctx) {
     ctx->builtin_syms.maj = symt_intern(ctx->sym_table, "MAJ");
     hmput(ctx->pgm_env, ctx->builtin_syms.maj, TY_MODE);
     ctx->builtin_syms.min = symt_intern(ctx->sym_table, "MIN");
-    hmput(ctx->pgm_env, ctx->builtin_syms.maj, TY_MODE);
+    hmput(ctx->pgm_env, ctx->builtin_syms.min, TY_MODE);
 
     ctx->success = sema_analy_pgm(ctx);
 }
@@ -108,6 +123,7 @@ bool sema_analy_sec(Context *ctx, SecIdx idx) {
 bool sema_analy_formal(Context *ctx, FormalIdx idx, bool builtin) {
     Formal *formal = &ast_get(ctx->pgm, formals, idx);
     Type ty = sema_analy_expr(ctx, formal->expr);
+    if (ty == TY_ERR) return false;
     TypeEnv *sec_env = &ctx->sec_envs.ptr[ctx->curr_sec];
     hmput(ctx->pgm_env, formal->ident, ty);
     ptrdiff_t local_i = hmgeti(*sec_env, formal->ident);
@@ -182,16 +198,27 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx) {
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.tonic);
 	    if (sub_t != TY_PITCH) {
 		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_PITCH), type_to_str(sub_t));
+		return TK_ERR;
 	    }
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.octave);
 	    if (sub_t != TY_INT) {
 		report(ctx->lexer, expr->off, "Expect %s, got %s in octave of scale", type_to_str(TY_INT), type_to_str(sub_t));
+		return TY_ERR;
 	    }
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.mode);
 	    if (sub_t != TY_MODE) {
-		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_MODE), type_to_str(sub_t));
+		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_MODE), type_to_str(sub_t));	
+		return TY_ERR;
 	    }
 	    return TY_SCALE;
+	case EXPR_PREFIX:
+	    // current only have pitch qualifiers as prefix operator
+	    sub_t = sema_analy_expr(ctx, expr->data.prefix.expr);
+	    if (sub_t != TY_PITCH && sub_t != TY_INT && sub_t != TY_CHORD) {
+		report(ctx->lexer, expr->off, "Expect INT, PITCH, or CHORD after pitch qualifier, got %s", type_to_str(sub_t));
+		return false;
+	    }
+	    return sub_t;
 	default:
 	    assert(false && "unknown tag");
     }
