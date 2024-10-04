@@ -77,7 +77,7 @@ extern int main(const int argc, char **argv)
     Sec main_sec = pgm.secs.ptr[main.sec];
 
     // backend initialization
-    init_midi_backend(output_f, &(MidiConfig){.volume = 100});
+    init_midi_backend(output_f, &(MidiConfig){.volume = 100, .devision = 120});
         // default configuration
 
     // update configuration for section
@@ -85,7 +85,7 @@ extern int main(const int argc, char **argv)
     // add event to track
 
     SecConfig config = eval_config(&ctx, ctx.main);
-    add_midi_event(SetInstrument(config.instr));
+    add_midi_event(SetInstrumentEvent(config.instr));
     add_midi_event(SetTempoEvent(config.bpm));
 
     // eprintf("scale: tonic: %i mode: %i octave: %i\n", config.scale.tonic, config.scale.mode, config.scale.octave);
