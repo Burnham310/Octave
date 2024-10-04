@@ -10,6 +10,7 @@ typedef AstIdx SecIdx;
 typedef AstIdx DeclIdx;
 typedef AstIdx FormalIdx;
 typedef AstIdx ExprIdx;
+typedef AstIdx LabelIdx;
 make_slice(AstIdx);
 typedef struct
 {
@@ -62,11 +63,17 @@ typedef struct
     size_t off;
 } Formal;
 make_slice(Formal);
-
+typedef struct {
+    Symbol name;
+    int volume;
+    bool linear;
+} Label; // TODO lable is the same as config ??
+make_slice(Label);
 typedef struct
 {
     SliceOf(AstIdx) note_exprs;
     SliceOf(AstIdx) config;
+    SliceOf(AstIdx) labels;
     size_t off;
 } Sec;
 make_slice(Sec);
@@ -76,6 +83,7 @@ typedef struct
     SecSlice secs;
     FormalSlice formals;
     ExprSlice exprs;
+    LabelSlice labels;
     bool success;
 } Pgm;
 

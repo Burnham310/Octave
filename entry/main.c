@@ -78,14 +78,16 @@ extern int main(const int argc, char **argv)
 
     // backend initialization
     init_midi_backend(output_f, &(MidiConfig){.volume = 100});
-
-    // default configuration
+        // default configuration
 
     // update configuration for section
 
     // add event to track
 
     SecConfig config = eval_config(&ctx, ctx.main);
+    add_midi_event(SetInstrument(config.instr));
+    add_midi_event(SetTempoEvent(config.bpm));
+
     // eprintf("scale: tonic: %i mode: %i octave: %i\n", config.scale.tonic, config.scale.mode, config.scale.octave);
     // Scale test_scale = {.tonic = PTCH_C, .octave = 5, .mode = MODE_MAJ};
     // for (int i = 0; i < DIATONIC; ++i) {

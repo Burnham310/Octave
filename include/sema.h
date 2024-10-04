@@ -36,7 +36,7 @@ typedef struct {
 typedef struct {
     Scale scale;
     size_t bpm;
-    // Instr instr;
+    int instr;
 } SecConfig;
 
 typedef struct {
@@ -90,7 +90,8 @@ make_slice(Type);
 make_slice(TypeEnv);
 #define CONFIG_SYMS \
     X(scale) \
-    X(bpm)
+    X(bpm) \
+    X(instrument)
 #define BUILTIN_SYMS \
     X(main)
 #define PITCH_SYMS \

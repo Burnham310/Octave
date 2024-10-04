@@ -3,8 +3,10 @@
 #include "ast.h"
 #include "parser.h"
 #include "lexer.h"
+#include "assert.h"
 DeclIdx parse_decl(Lexer *lexer, Gen *gen);
 SecIdx parse_section(Lexer *lexer, Gen *gen);
+LabelIdx parse_label(Lexer *lexer, Gen *gen);
 FormalIdx parse_formal(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp);
@@ -14,6 +16,8 @@ ExprIdx parse_prefix(Lexer *lexer, Gen *gen);
 ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen);
 int prefix_bp(Token tk);
 int postfix_bp(Token tk);
+
+make_arr(Label);
 #define try(exp)         \
     if ((exp).type <= 0) \
     return (exp).type
@@ -86,6 +90,7 @@ struct Gen
     SecArr secs;
     FormalArr formals;
     ExprArr exprs;
+    LabelArr labels;
 };
 
 DeclIdx parse_decl(Lexer *lexer, Gen *gen)
@@ -105,8 +110,46 @@ DeclIdx parse_decl(Lexer *lexer, Gen *gen)
     da_append(gen->decls, ((Decl){.name = id.data.integer, .sec = sec, .off = assign.off}));
     return gen->decls.size - 1;
 }
+// TOOD assumes never fails
+LabelIdx parse_label(Lexer *lexer, Gen *gen) {
+    Token test = lexer_peek(lexer);
+    Token ldiamond = try_next(lexer, '<');
+    try(ldiamond);
+    Label label = {0};
+
+    Token name = assert_next(lexer, TK_IDENT);
+    try_before(name, TK_IDENT, ldiamond);
+    label.name = name.data.integer;
+
+    Token rdiamond = assert_next(lexer, '>');
+    try_before(rdiamond, '>', name);
+
+    Token lbrac = assert_next(lexer, '[');
+    try_before(lbrac, '[', rdiamond);
+
+    Token volume = assert_next(lexer, TK_IDENT);
+    try_before(volume, TK_IDENT, lbrac);
+    assert(volume.data.integer == symt_intern(lexer->sym_table, "volume"));
+
+    Token eq = assert_next(lexer, '=');
+    try_before(eq, '=', volume);
+
+    Token num = assert_next(lexer, TK_INT);
+    try_before(num, TK_INT, eq);
+    label.volume = name.data.integer;
+    Token special = try_next(lexer, TK_IDENT);
+    if (special.type > 0) {
+	assert(special.data.integer == symt_intern(lexer->sym_table, "linear"));
+	label.linear = true;	
+    } else if (special.type < 0) return PR_ERR;
+    Token rbrac = assert_next(lexer, ']');
+    try_before(rbrac, ']', num);
+    da_append(gen->labels, label); 
+    return gen->labels.size - 1;
+}
 SecIdx parse_section(Lexer *lexer, Gen *gen)
 {
+    
     // TODO parse var decl skipped
     Token bar = try_next(lexer, '|');
     Token colon1 = assert_next(lexer, ':');
@@ -155,14 +198,28 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     try_before(colon2, ':', colon1);
 
     ArrOf(AstIdx) notes = {0};
+    ArrOf(AstIdx) labels = {0}; 
     ExprIdx note;
     AstIdx res;
     sec.off = colon2.off;
-    while ((note = parse_expr(lexer, gen)) > 0)
+    while ((note = parse_expr(lexer, gen)) >= 0)
     {
-        da_append(notes, note);
-        sec.off =  gen->exprs.items[note].off;
-    }
+
+	if (note == 0) {
+	    
+	    // TODO assume never fail for now
+	    LabelIdx label = parse_label(lexer, gen);
+	    if (label <= 0) {
+	        note = label;
+	        break;
+	    }
+	    da_append(labels, label);
+	} else {
+	    da_append(notes, note);
+	    sec.off =  gen->exprs.items[note].off;
+
+	}
+            }
     if (note < 0)
     {
         report(lexer, sec.off, "Error while parsing notes");
@@ -178,6 +235,7 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     }
 out:
     da_move(notes, sec.note_exprs);
+    da_move(labels, sec.labels);
     da_append(gen->secs, sec);
     return gen->secs.size - 1;
 err_out:
@@ -354,6 +412,7 @@ Pgm parse_ast(Lexer *lexer)
     da_append(gen.secs, (Sec){});
     da_append(gen.formals, (Formal){});
     da_append(gen.exprs, (Expr){});
+    da_append(gen.labels, (Label){});
     bool find_main = false;
     while ((decl = parse_decl(lexer, &gen)) > 0)
     {

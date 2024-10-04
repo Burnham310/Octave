@@ -67,6 +67,7 @@ void sema_analy(Pgm *pgm, Lexer *lexer, Context *ctx) {
 #undef X
     hmput(ctx->pgm_env, ctx->builtin_syms.scale, TY_SCALE);
     hmput(ctx->pgm_env, ctx->builtin_syms.bpm, TY_INT);
+    hmput(ctx->pgm_env, ctx->builtin_syms.instrument, TY_INT);
     for (size_t i = 0; i < DIATONIC; ++i) {
 	ctx->builtin_syms.pitches[i] = symt_intern(ctx->sym_table, CONST_PITCH[i]);
 	hmput(ctx->pgm_env, ctx->builtin_syms.pitches[i], TY_PITCH);

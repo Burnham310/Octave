@@ -54,7 +54,7 @@ size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale) {
 
 }
 
-static const SecConfig default_config = {.bpm = 120, .scale = (Scale) {.mode = MODE_MAJ, .tonic = PTCH_C, .octave = 5}};
+static const SecConfig default_config = {.bpm = 120, .scale = (Scale) {.mode = MODE_MAJ, .tonic = PTCH_C, .octave = 5}, .instr = 2};
 SecConfig eval_config(Context *ctx, SecIdx idx) {
     SecConfig config = default_config;
     Sec *sec = &ast_get(ctx->pgm, secs, idx);
@@ -63,7 +63,9 @@ SecConfig eval_config(Context *ctx, SecIdx idx) {
 	if (formal->ident == ctx->builtin_syms.scale) {
 	    config.scale = eval_scale(ctx, formal->expr);
 	} else if (formal->ident == ctx->builtin_syms.bpm) {
-	   config.bpm = eval_int(ctx, formal->expr); 
+	    config.bpm = eval_int(ctx, formal->expr); 
+	} else if (formal->ident == ctx->builtin_syms.instrument) {
+	    config.instr = eval_int(ctx, formal->expr); 
 	} else assert(false && "unreachable");
     }
     return config;
