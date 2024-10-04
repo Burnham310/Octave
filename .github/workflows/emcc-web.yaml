@@ -1,0 +1,17 @@
+name: Emcc Compiler Builder
+run-name: ${{ github.actor }} is building webasm 🚀
+on: [push]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: mymindstorm/setup-emsdk@v14
+
+      - name: Verify
+        run: emcc -v
+
+      - name: checkout repo
+        uses: actions/checkout@main
+        
+      - name: Build Webasm
+        run: make webasm

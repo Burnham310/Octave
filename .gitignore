@@ -103,3 +103,5 @@ bin/
 *.mid
 .cache
 compile_commands.json
+web/octc.js
+web/octc.wasm

@@ -1,7 +1,8 @@
 #ifndef DS_H_
 #define DS_H_
 
-#include <aio.h>
+#include <stddef.h>
+
 typedef struct
 {
 	const char *ptr;
@@ -85,7 +86,7 @@ typedef struct {
     char value; // dummy
 } SymbolEntry;
 typedef SymbolEntry* SymbolTable;
-typedef ssize_t Symbol;
+typedef size_t Symbol;
 #define symt_intern(sym_table, s) (shput(sym_table, s, '\0'), shgeti(sym_table, s))
 #define symt_lookup(sym_table, s) sym_table[s].key
 #endif

@@ -15,6 +15,7 @@
         "backend.h": "c",
         "stdlib.h": "c",
         "utils.h": "c",
-        "ratio": "c"
+        "ratio": "c",
+        "aio.h": "c"
     },
 }
