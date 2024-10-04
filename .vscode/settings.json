@@ -16,6 +16,13 @@
         "stdlib.h": "c",
         "utils.h": "c",
         "ratio": "c",
-        "aio.h": "c"
+        "aio.h": "c",
+        "optional": "c",
+        "system_error": "c",
+        "functional": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "variant": "c",
+        "string": "c"
     },
 }

@@ -22,7 +22,7 @@ parser: $(OBJ) $(ENTRY_DIR)/parser.c | $(OUT_DIR)
 	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 
 backend:
-	$(CC) $(CFLAGS) $(INCLUDES) backend.c -o $@ 
+	$(CC) $(CFLAGS) $(INCLUDES) $(ENTRY_DIR)/backend.c  backend.c -o $@ 
 
 test_backend:
 	gcc $(ENTRY_DIR)/backend.c backend.c -Iinclude -o backend

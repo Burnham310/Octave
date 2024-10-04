@@ -26,6 +26,4 @@
         }                  \
     } while (0)
 
-MidiScaleType str_to_MidiKeyType(const char *target, int len);
-
 #endif
