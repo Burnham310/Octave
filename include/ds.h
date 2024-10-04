@@ -5,8 +5,8 @@
 
 typedef struct
 {
-	const char *ptr;
-	size_t len;
+    const char *ptr;
+    size_t len;
 } String;
 
 // Dynamic Array ---
@@ -62,18 +62,17 @@ typedef struct
 
 // typedef struct HashmapEntry
 // {
-// 
+//
 //     String key;
 //     void *value;
 //     struct HasmmapEntry* next;
 // } HashmapEntry;
-// 
+//
 // typedef struct
 // {
 //     HashmapEntry **buckets;
 //     int size;
 // } Hashmap;
-
 
 // Hashmap hm_init(size_t size);
 // int hm_insert(Hashmap *hashmapm, String str, void *value);
@@ -81,11 +80,12 @@ typedef struct
 // void hm_delete(Hashmap *hashmap, String str);
 // void hm_free(Hashmap *hashmap);
 
-typedef struct {
-    const char* key;
+typedef struct
+{
+    const char *key;
     char value; // dummy
 } SymbolEntry;
-typedef SymbolEntry* SymbolTable;
+typedef SymbolEntry *SymbolTable;
 typedef size_t Symbol;
 #define symt_intern(sym_table, s) (shput(sym_table, s, '\0'), shgeti(sym_table, s))
 #define symt_lookup(sym_table, s) sym_table[s].key
