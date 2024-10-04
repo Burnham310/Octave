@@ -1,17 +1,28 @@
-name: Emcc Compiler Builder
-run-name: ${{ github.actor }} is building webasm 🚀
+name: Emcc Compiler Website Builder
+
+run-name: ${{ github.actor }} is building website 🚀
+
 on: [push]
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: mymindstorm/setup-emsdk@v14
+      - name: Setup EMSDK
+        uses: mymindstorm/setup-emsdk@v14
 
-      - name: Verify
+      - name: Verify EMSDK
         run: emcc -v
 
-      - name: checkout repo
-        uses: actions/checkout@main
-        
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
       - name: Build Webasm
         run: make webasm
+
+      # Deploy to GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./web
