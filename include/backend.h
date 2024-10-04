@@ -4,10 +4,10 @@
 #include <stdlib.h>
 
 #define DEFAULT_DEVISION 120 // ticks per quarter note
-#define DEFAULT_VOLUME 80    
+#define DEFAULT_VOLUME 80
 #define DEFAULT_CHANNEL 0
 
-#define DEFAULT_VELOCITY 64 //Moderate press
+#define DEFAULT_VELOCITY 64 // Moderate press
 
 struct _MTrkEvent
 {
@@ -16,8 +16,9 @@ struct _MTrkEvent
         _NoteOnEvent,
         _NoteOffEvent,
         _SetTempoEvent,
-        _SetInstrument,
-        _SetVolume,
+        _SetInstrumentEvent,
+        _SetVolumeEvent,
+        _BufUpdateEvent
     } eventType;
     int delta_time;
     void *data;
@@ -95,6 +96,9 @@ void free_midi_backend();
     - NoteOnEvent: key press
     - NoteOffEvent: key down
     - SetTempoEvent: change current tempo(bpm)
+    - SetInstrumentEvent: change instrument, pc refer to midi document
+    - SetVolumeEvent: set volume
+    -
 */
 
 // note on event, must follow with the noteoff event with same note specified
@@ -104,8 +108,14 @@ struct _MTrkEvent NoteOnEvent(MidiNote *note);
 // or if two events occur simultaneously, a delta-time of zero is used
 struct _MTrkEvent NoteOffEvent(MidiNote *note);
 
+// pause note
+struct _MTrkEvent PauseNoteEvent(MidiNoteLength length);
+
 // change tempo (event) of current track
 struct _MTrkEvent SetTempoEvent(int bpm);
 
 // change instrument of current track
-struct _MTrkEvent SetInstrument(int pc);
+struct _MTrkEvent SetInstrumentEvent(int pc);
+
+// change volume
+struct _MTrkEvent SetVolumeEvent(int volume);
