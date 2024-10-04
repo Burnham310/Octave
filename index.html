@@ -1,30 +1,134 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Octave Music Editor</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
     <script
         src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #333;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        b {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #555;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        textarea {
+            width: 100%;
+            font-size: 1.2em;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        button {
+            display: block;
+            width: 100%;
+            background-color: #007bff;
+            color: white;
+            font-size: 1.2em;
+            padding: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        hr {
+            border: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        midi-player {
+            display: block;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+
+        .midi-visualizer-group {
+            display: block;
+            width: 100%;
+            min-height: 250px;
+            padding-top: 20px;
+            padding-bottom: 20px;
+            background-color: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+        }
+    </style>
 </head>
 
 <body>
-    <h1>Octave Music Editor and Player</h1>
-    <b> By Burnham310 Dev Team</b>
-    <br>
-    <br>
-    <a href="./example">Example Octave</a>
-    <hr>
-    <textarea id="editor" rows="10" cols="50" placeholder="Edit your Octave code here..."></textarea>
 
-    <button onclick="compileOctave()">Compile and Play MIDI</button>
+    <h1>Octave Music Editor</h1>
+    <b>By Burnham310 Dev Team</b>
 
+    <div class="container">
+        <a href="./example.html" target="_blank">Example Octave</a>
+        <hr>
+
+        <textarea id="editor" rows="10" placeholder="Edit your Octave code here..."></textarea>
+
+        <button onclick="compileOctave()">Compile</button>
+
+        <midi-player sound-font visualizer="#myVisualizer"></midi-player>
+
+        <div class="midi-visualizer-group">
+            <midi-visualizer type="piano-roll" id="myVisualizer"></midi-visualizer>
+            <midi-visualizer type="staff" id="myVisualizer"></midi-visualizer>
+        </div>
+
+    </div>
 
     <script src="octc.js"></script>
     <script>
         function compileOctave() {
             const input = document.getElementById('editor').value;
-            const inputFile = 'stage3.oct';  // Virtual input file
-            const outputFile = 'stage3.mid'; // Virtual output file
+            const inputFile = 'tmp.oct';  // Virtual input file
+            const outputFile = 'tmp.mid'; // Virtual output file
 
             FS.writeFile(inputFile, input);
             Module.callMain([inputFile, '-o', outputFile]);
@@ -32,11 +136,9 @@
             const blob = new Blob([midiData], { type: 'audio/midi' });
             const url = URL.createObjectURL(blob);
             const midiPlayer = document.querySelector('midi-player');
-            midiPlayer.src = url;  
+            midiPlayer.src = url;
         }
     </script>
-<midi-player sound-font visualizer="#myVisualizer"></midi-player>
-<midi-visualizer type="piano-roll" id="myVisualizer"></midi-visualizer>
 
 </body>
 
