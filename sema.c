@@ -1,4 +1,6 @@
-#include "type.h"
+#include "sema.h"
+#include "compiler.h"
+#include "ds.h"
 #include "utils.h"
 #include "assert.h"
 #include "utils.h"
@@ -7,9 +9,7 @@
 
 
 #include "stb_ds.h"
-Type type_check_expr_impl(Context *ctx, ExprIdx idx);
-
-
+Type sema_analy_expr_impl(Context *ctx, ExprIdx idx);
 #define X(x) case x: return #x;
 const char *type_to_str(Type ty) {
     switch (ty) {
@@ -35,7 +35,7 @@ void context_deinit(Context *ctx) {
     ctx->sec_envs = (SliceOf(TypeEnv)) {0};
 }
 
-void type_check(Pgm *pgm, Lexer *lexer, Context *ctx) {
+void sema_analy(Pgm *pgm, Lexer *lexer, Context *ctx) {
     *ctx = (Context) {
 	.pgm = pgm, 
 	.lexer = lexer, 
@@ -43,37 +43,61 @@ void type_check(Pgm *pgm, Lexer *lexer, Context *ctx) {
 	.pgm_env = NULL,
 	.sec_envs = {.ptr = calloc(sizeof(TypeEnv), ast_len(pgm, secs)), .len = ast_len(pgm, secs)},
 	.curr_sec = 0,
+	.main = 0,
 	.sym_table = lexer->sym_table,
     };
 #define X(x) ctx->builtin_syms.x = symt_intern(ctx->sym_table, #x);
-    CONFIG_SYMS
     BUILTIN_SYMS
+    CONFIG_SYMS
 #undef X
     hmput(ctx->pgm_env, ctx->builtin_syms.scale, TY_SCALE);
     hmput(ctx->pgm_env, ctx->builtin_syms.bpm, TY_INT);
-    ctx->success = type_check_pgm(ctx);
+    for (size_t i = 0; i < DIATONIC; ++i) {
+	ctx->builtin_syms.pitches[i] = symt_intern(ctx->sym_table, CONST_PITCH[i]);
+	hmput(ctx->pgm_env, ctx->builtin_syms.pitches[i], TY_PITCH);
+
+	ctx->builtin_syms.modes[i] = symt_intern(ctx->sym_table, CONST_MODE[i]);
+	hmput(ctx->pgm_env, ctx->builtin_syms.modes[i], TY_MODE);
+    }
+    // maj and min mode alias
+    ctx->builtin_syms.maj = symt_intern(ctx->sym_table, "MAJ");
+    hmput(ctx->pgm_env, ctx->builtin_syms.maj, TY_MODE);
+    ctx->builtin_syms.min = symt_intern(ctx->sym_table, "MIN");
+    hmput(ctx->pgm_env, ctx->builtin_syms.maj, TY_MODE);
+
+    ctx->success = sema_analy_pgm(ctx);
 }
-bool type_check_pgm(Context *ctx) {
+bool sema_analy_pgm(Context *ctx) {
     for (size_t di = 1; di < ast_len(ctx->pgm, decls); ++di) {
-	if (!type_check_decl(ctx, di)) return false;
+	if (!sema_analy_decl(ctx, di)) return false;
+    }
+    if (ctx->main == 0) {
+	report(ctx->lexer, 0, "section main is undefiend");
+	return false;
     }
     return true;
 }
-bool type_check_decl(Context *ctx, DeclIdx idx) {
+bool sema_analy_decl(Context *ctx, DeclIdx idx) {
     Decl *decl = &ast_get(ctx->pgm, decls, idx);
-    if (!type_check_sec(ctx, decl->sec)) return false;
+    if (!sema_analy_sec(ctx, decl->sec)) return false;
+    if (hmgeti(ctx->pgm_env, decl->name) >= 0) {
+	report(ctx->lexer, decl->off, "Duplicate defination of section %s", symt_lookup(ctx->sym_table, decl->name));
+	return false;
+    }
     hmput(ctx->pgm_env, decl->name, TY_SEC);
+    if (decl->name == ctx->builtin_syms.main) ctx->main = idx;
     return true;
 }
 
-bool type_check_sec(Context *ctx, SecIdx idx) {
+bool sema_analy_sec(Context *ctx, SecIdx idx) {
     Sec *sec = &ast_get(ctx->pgm, secs, idx);
+    ctx->curr_sec = idx;
     for (size_t i = 0; i < sec->config.len; ++i) {
-	if (!type_check_formal(ctx, sec->config.ptr[i], true)) return false;
+	if (!sema_analy_formal(ctx, sec->config.ptr[i], true)) return false;
     }
     for (size_t i = 0; i < sec->note_exprs.len; ++i) {
 	ExprIdx expr_idx = sec->note_exprs.ptr[i];
-	Type ty = type_check_expr(ctx, sec->note_exprs.ptr[i]);
+	Type ty = sema_analy_expr(ctx, sec->note_exprs.ptr[i]);
 	if (ty != TY_NOTE) {
 	    report(ctx->lexer, ast_get(ctx->pgm, exprs, expr_idx).off, "Expect type `note` in this part of section, found %s", type_to_str(ty));
 	    return false;
@@ -81,9 +105,9 @@ bool type_check_sec(Context *ctx, SecIdx idx) {
     }
     return true;
 }
-bool type_check_formal(Context *ctx, FormalIdx idx, bool builtin) {
+bool sema_analy_formal(Context *ctx, FormalIdx idx, bool builtin) {
     Formal *formal = &ast_get(ctx->pgm, formals, idx);
-    Type ty = type_check_expr(ctx, formal->expr);
+    Type ty = sema_analy_expr(ctx, formal->expr);
     TypeEnv *sec_env = &ctx->sec_envs.ptr[ctx->curr_sec];
     hmput(ctx->pgm_env, formal->ident, ty);
     ptrdiff_t local_i = hmgeti(*sec_env, formal->ident);
@@ -117,19 +141,29 @@ bool type_check_formal(Context *ctx, FormalIdx idx, bool builtin) {
     return true;
     
 }
-Type type_check_expr(Context *ctx, ExprIdx idx) {
-    Type ty = type_check_expr_impl(ctx, idx);
+Type sema_analy_expr(Context *ctx, ExprIdx idx) {
+    Type ty = sema_analy_expr_impl(ctx, idx);
     ctx->types.ptr[idx] = ty;
     return ty;
 }
-Type type_check_expr_impl(Context *ctx, ExprIdx idx) {
+Type sema_analy_expr_impl(Context *ctx, ExprIdx idx) {
     Expr *expr = &ast_get(ctx->pgm, exprs, idx);
+    Type sub_t;
+    ptrdiff_t env_i;
     switch (expr->tag) {
 	case EXPR_NUM: return TY_INT;
-	case EXPR_IDENT: assert(false && "unimplemented");
+	case EXPR_IDENT:
+	    env_i = hmgeti(ctx->sec_envs.ptr[ctx->curr_sec], expr->data.ident);
+	    if (env_i >= 0) return ctx->sec_envs.ptr[ctx->curr_sec][env_i].value;
+	    env_i = hmgeti(ctx->pgm_env, expr->data.ident);
+	    if (env_i < 0) {
+		report(ctx->lexer, expr->off, "Undefined variable %s", symt_lookup(ctx->sym_table, expr->data.ident));
+		return false;
+	    }
+	    return ctx->pgm_env[env_i].value;
 	case EXPR_NOTE:
 	    assert(expr->data.note.dots > 0);
-	    Type sub_t = type_check_expr(ctx, expr->data.note.expr);
+	    sub_t = sema_analy_expr(ctx, expr->data.note.expr);
 	    if (sub_t != TY_INT && sub_t != TY_CHORD) {
 		report(ctx->lexer, expr->off, "Expect either type `int` or `chord` in note, found %s", type_to_str(sub_t));
 		return TY_ERR;
@@ -137,13 +171,27 @@ Type type_check_expr_impl(Context *ctx, ExprIdx idx) {
 	    return TY_NOTE;
 	case EXPR_CHORD:
 	    for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
-		Type sub_t = type_check_expr(ctx, expr->data.chord_notes.ptr[i]);
+		Type sub_t = sema_analy_expr(ctx, expr->data.chord_notes.ptr[i]);
 		if (sub_t != TY_INT && sub_t != TY_CHORD) {
 		    report(ctx->lexer, expr->off, "Expect either type `int` or `chord` in chord, found %s", type_to_str(sub_t));
 		    return TY_ERR;
 		}
 	    }
 	    return TY_CHORD;
+	case EXPR_SCALE:
+	    sub_t = sema_analy_expr(ctx, expr->data.scale.tonic);
+	    if (sub_t != TY_PITCH) {
+		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_PITCH), type_to_str(sub_t));
+	    }
+	    sub_t = sema_analy_expr(ctx, expr->data.scale.octave);
+	    if (sub_t != TY_INT) {
+		report(ctx->lexer, expr->off, "Expect %s, got %s in octave of scale", type_to_str(TY_INT), type_to_str(sub_t));
+	    }
+	    sub_t = sema_analy_expr(ctx, expr->data.scale.mode);
+	    if (sub_t != TY_MODE) {
+		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_MODE), type_to_str(sub_t));
+	    }
+	    return TY_SCALE;
 	default:
 	    assert(false && "unknown tag");
     }

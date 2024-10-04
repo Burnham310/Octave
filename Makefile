@@ -1,4 +1,4 @@
-SRC = lexer.c ast.c backend.c utils.c type.c ds.c parse.c
+SRC = lexer.c backend.c utils.c sema.c ds.c parser.c compiler.c
 OBJ_DIR = obj
 OBJ = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRC))
 

@@ -24,6 +24,11 @@ typedef union
     Symbol ident;
     ssize_t num;
     SliceOf(AstIdx) chord_notes;
+    struct {
+	ExprIdx tonic;
+	ExprIdx octave;
+	ExprIdx mode;
+    } scale;
     struct
     {
         size_t dots;
@@ -36,6 +41,7 @@ typedef enum
     EXPR_NUM,
     EXPR_NOTE,
     EXPR_CHORD,
+    EXPR_SCALE,
 } ExprTag;
 typedef struct
 {
@@ -62,13 +68,14 @@ typedef struct
 make_slice(Sec);
 typedef struct
 {
-    DeclIdx main;
     DeclSlice decls; // array of decls
     SecSlice secs;
     FormalSlice formals;
     ExprSlice exprs;
     bool success;
 } Pgm;
+
+void expr_debug(Pgm *pgm, SymbolTable sym_table, ExprIdx idx);
 #define ast_get(pgm, arr, idx) (pgm)->arr.ptr[idx]
 #define ast_len(pgm, arr) (pgm)->arr.len
 #endif

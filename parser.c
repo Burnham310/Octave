@@ -7,6 +7,8 @@ DeclIdx parse_decl(Lexer *lexer, Gen *gen);
 SecIdx parse_section(Lexer *lexer, Gen *gen);
 FormalIdx parse_formal(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr(Lexer *lexer, Gen *gen);
+ExprIdx parse_chord(Lexer *lexer, Gen *gen);
+ExprIdx parse_scale(Lexer *lexer, Gen *gen);
 ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen);
 #define try(exp)         \
     if ((exp).type <= 0) \
@@ -198,36 +200,73 @@ FormalIdx parse_formal(Lexer *lexer, Gen *gen)
 }
 
 
-ExprIdx parse_expr(Lexer *lexer, Gen *gen) {
-
-    ExprIdx lhs;
-    Token head = try_next(lexer, '[');
-    if (head.type < 0) return head.type;
-    else if (head.type > 0) {
-	Expr expr;
-	ExprIdx sub_expr;
-	ArrOf(AstIdx) sub_exprs = {0};
-	while ((sub_expr = parse_expr(lexer, gen)) > 0) { 
-	    da_append(sub_exprs, sub_expr);
-	}
-	if (sub_expr < 0) {
-	    report(lexer, head.off, "Expect expressions inside brackets");
-	    return sub_expr;
-	}
-	Token rbrac = assert_next(lexer, ']');
-	if (head.type < 0) {
-	    report(lexer, head.off, "Unclosed bracket in `chord`");
-	    return PR_ERR;
-	}
-	expr.tag = EXPR_CHORD;
-	expr.off = rbrac.off;
-	da_move(sub_exprs, expr.data.chord_notes);
-	da_append(gen->exprs, expr);
-	lhs = gen->exprs.size - 1;
-    } else {
-	lhs = parse_atomic_expr(lexer, gen);
-	if (lhs <= 0) return lhs;
+ExprIdx parse_chord(Lexer *lexer, Gen *gen) {
+    Token lbrac = try_next(lexer, '[');
+    try(lbrac);
+    Expr expr;
+    ExprIdx sub_expr;
+    ArrOf(AstIdx) sub_exprs = {0};
+    while ((sub_expr = parse_expr(lexer, gen)) > 0) { 
+	da_append(sub_exprs, sub_expr);
     }
+    if (sub_expr < 0) {
+	return sub_expr;
+    }
+    Token rbrac = assert_next(lexer, ']');
+    if (rbrac.type < 0) {
+	report(lexer, lbrac.off, "Unclosed bracket in `chord`");
+	return PR_ERR;
+    }
+    expr.tag = EXPR_CHORD;
+    expr.off = rbrac.off;
+    da_move(sub_exprs, expr.data.chord_notes);
+    da_append(gen->exprs, expr);
+    return gen->exprs.size - 1;
+
+}
+typedef ExprIdx(*ParseFn)(Lexer *, Gen *);
+ExprIdx parse_scale(Lexer *lexer, Gen *gen) {
+    Token lslash = try_next(lexer, '/');
+    try (lslash);
+    ExprIdx tonic = parse_expr(lexer, gen);
+    if (tonic <= 0) {
+	report(lexer, lslash.off, "Expect expression for tonic in scale expression");
+	return PR_ERR;
+    }
+    ExprIdx octave = parse_expr(lexer, gen);
+    if (octave <= 0) {
+	report(lexer, gen->exprs.items[tonic].off, "Expect expression for octave in scale expression");
+	return PR_ERR;
+    }
+    ExprIdx mode = parse_expr(lexer, gen);
+    if (mode <= 0) {
+	report(lexer, gen->exprs.items[octave].off, "Expect expression for mode in scale expression");
+	return PR_ERR;
+    }
+    Token rslash = try_next(lexer, '/');
+    if (rslash.type <= 0) {
+	report(lexer, gen->exprs.items[mode].off, "Unclosed scale expression");
+	return PR_ERR;
+    }
+    Expr expr = {.off = lslash.off, .tag = EXPR_SCALE };
+    expr.data.scale.tonic = tonic;
+    expr.data.scale.octave = octave;
+    expr.data.scale.mode = mode;
+    da_append(gen->exprs, expr);
+    return gen->exprs.size - 1; 
+}
+ExprIdx parse_expr(Lexer *lexer, Gen *gen) {
+    // the order of this matter; atomic expr must be tried last.
+    static const ParseFn prefix_parsers[] = {parse_scale, parse_chord, parse_atomic_expr };
+    static const size_t prefix_parsers_len = sizeof(prefix_parsers)/sizeof(prefix_parsers[0]);
+    ExprIdx lhs;
+    for (size_t i = 0; i < prefix_parsers_len; ++i) {
+	lhs = prefix_parsers[i](lexer, gen);
+	if (lhs < 0) return lhs;
+	if (lhs > 0) break;
+    }
+    if (lhs == 0) return PR_NULL;
+    // postfix parser
     Token op = try_next(lexer, TK_DOTS);
     if (op.type < 0) return op.type;
     else if (op.type > 0) {

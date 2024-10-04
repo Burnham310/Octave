@@ -1,4 +1,5 @@
-#pragma once
+#ifndef DS_H_
+#define DS_H_
 
 #include <aio.h>
 typedef struct
@@ -85,7 +86,6 @@ typedef struct {
 } SymbolEntry;
 typedef SymbolEntry* SymbolTable;
 typedef ssize_t Symbol;
-
-Symbol symt_intern(SymbolTable sym_table, const char* s);
-const char* symt_lookup(SymbolTable sym_table, Symbol s);
-
+#define symt_intern(sym_table, s) (shput(sym_table, s, '\0'), shgeti(sym_table, s))
+#define symt_lookup(sym_table, s) sym_table[s].key
+#endif

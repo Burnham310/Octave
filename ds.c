@@ -5,13 +5,6 @@
 #define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 
-Symbol symt_intern(SymbolTable sym_table, const char* s) {
-    shput(sym_table, s, '\0');
-    return shgeti(sym_table, s);
-}
-const char* symt_tlookup(SymbolTable sym_table, Symbol s) {
-    return sym_table[s].key;
-}
 
 // #define STBDS_SIZE_T_BITS           ((sizeof (size_t)) * 8)
 // #define STBDS_ROTATE_LEFT(val, n)   (((val) << (n)) | ((val) >> (STBDS_SIZE_T_BITS - (n))))
