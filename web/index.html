@@ -178,13 +178,14 @@
         async function compileBtnCallback() {
             document.getElementById("out").innerText = ""
             const compile_ret = compileOctave();
+
+            const code = document.getElementById('editor').value;
+            localStorage.setItem('octaveCode', code);
+
             if (compile_ret) {
                 document.getElementById("out").innerText = "compile succeed! save code to local storage"
-                document.getElementById("compile-btn").innerText = "OK and saved!"
+                document.getElementById("compile-btn").innerText = "OK!"
                 document.getElementById("compile-btn").style.background = "green"
-
-                const code = document.getElementById('editor').value;
-                localStorage.setItem('octaveCode', code);
 
                 await new Promise(r => setTimeout(r, 1000));
                 document.getElementById("compile-btn").innerText = "Compile"
