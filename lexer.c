@@ -82,6 +82,7 @@ Loc off_to_loc(const char *src, const size_t src_len, const size_t off)
 		if (c == '\n')
 		{
 			loc.row++;
+			loc.col = 1;
 		}
 		else
 		{

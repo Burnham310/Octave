@@ -102,11 +102,12 @@ DeclIdx parse_decl(Lexer *lexer, Gen *gen)
     try_before(assign, '=', id);
 
     SecIdx sec = parse_section(lexer, gen);
-    if (sec <= 0)
+    if (sec == 0)
     {
         report(lexer, assign.off, "Expect section after '='");
         return PR_ERR;
-    };
+    } else if (sec < 0) return sec;
+
     da_append(gen->decls, ((Decl){.name = id.data.integer, .sec = sec, .off = assign.off}));
     return gen->decls.size - 1;
 }
@@ -153,6 +154,7 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     // TODO parse var decl skipped
     Token bar = try_next(lexer, '|');
     Token colon1 = assert_next(lexer, ':');
+    size_t prev_off = 0;
     try_before(colon1, ':', bar);
 
     Sec sec = {0};
@@ -160,7 +162,9 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     // TODO parse config skipped
     ArrOf(AstIdx) formals = {0};
 
-    FormalIdx formal = parse_formal(lexer, gen);
+    // parse comma seperated list of formals
+    FormalIdx formal = parse_formal(lexer, gen); 
+    prev_off = gen->formals.items[formal].off;
     if (formal < 0)
     {
         return PR_ERR;
@@ -184,6 +188,7 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
                 report(lexer, comma.off, "Expect formal after ','");
                 return PR_ERR;
             }
+	    prev_off = gen->formals.items[formal].off;
             da_append(formals, formal);
         }
         if (formal < 0)
@@ -195,7 +200,10 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     }
 
     Token colon2 = assert_next(lexer, ':');
-    try_before(colon2, ':', colon1);
+    if (colon2.type < 0) {
+	report(lexer, prev_off, "Expect ':' after formal");
+	return PR_ERR;
+    }
 
     ArrOf(AstIdx) notes = {0};
     ArrOf(AstIdx) labels = {0}; 

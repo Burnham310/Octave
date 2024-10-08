@@ -8,7 +8,7 @@
     do                                                                                     \
     {                                                                                      \
         Loc __loc = off_to_loc(lexer->src, lexer->src_len, off);                           \
-        eprintf("%s:%zu:%zu " fmt "\n", lexer->path, __loc.row, __loc.col, ##__VA_ARGS__); \
+        eprintf("%s:%zu:%zu: " fmt "\n", lexer->path, __loc.row, __loc.col, ##__VA_ARGS__); \
     } while (0)
 #define WARNING(lexer, off, fmt, ...)                                                               \
     do                                                                                              \

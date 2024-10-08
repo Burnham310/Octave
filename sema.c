@@ -114,6 +114,7 @@ bool sema_analy_sec(Context *ctx, SecIdx idx) {
     for (size_t i = 0; i < sec->note_exprs.len; ++i) {
 	ExprIdx expr_idx = sec->note_exprs.ptr[i];
 	Type ty = sema_analy_expr(ctx, sec->note_exprs.ptr[i]);
+	if (ty == TY_ERR) return false;
 	if (ty != TY_NOTE) {
 	    report(ctx->lexer, ast_get(ctx->pgm, exprs, expr_idx).off, "Expect type `note` in this part of section, found %s", type_to_str(ty));
 	    return false;
@@ -140,6 +141,7 @@ bool sema_analy_formal(Context *ctx, FormalIdx idx, bool builtin) {
 	}
 	
 	Type expect_ty = ctx->pgm_env[global_i].value;
+	if (ty == TY_ERR) return false;
 	if (ty != expect_ty) {
 	    report(
 		    ctx->lexer, 
@@ -175,12 +177,13 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx) {
 	    env_i = hmgeti(ctx->pgm_env, expr->data.ident);
 	    if (env_i < 0) {
 		report(ctx->lexer, expr->off, "Undefined variable %s", symt_lookup(ctx->sym_table, expr->data.ident));
-		return false;
+		return TY_ERR;
 	    }
 	    return ctx->pgm_env[env_i].value;
 	case EXPR_NOTE:
 	    assert(expr->data.note.dots > 0);
 	    sub_t = sema_analy_expr(ctx, expr->data.note.expr);
+	    if (sub_t == TY_ERR) return TY_ERR;
 	    if (sub_t != TY_INT && sub_t != TY_CHORD) {
 		report(ctx->lexer, expr->off, "Expect either type `int` or `chord` in note, found %s", type_to_str(sub_t));
 		return TY_ERR;
@@ -189,6 +192,7 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx) {
 	case EXPR_CHORD:
 	    for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
 		Type sub_t = sema_analy_expr(ctx, expr->data.chord_notes.ptr[i]);
+		if (sub_t == TY_ERR) return TY_ERR;
 		if (sub_t != TY_INT && sub_t != TY_CHORD) {
 		    report(ctx->lexer, expr->off, "Expect either type `int` or `chord` in chord, found %s", type_to_str(sub_t));
 		    return TY_ERR;
@@ -197,16 +201,19 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx) {
 	    return TY_CHORD;
 	case EXPR_SCALE:
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.tonic);
+	    if (sub_t == TY_ERR) return TY_ERR;
 	    if (sub_t != TY_PITCH) {
 		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_PITCH), type_to_str(sub_t));
 		return TK_ERR;
 	    }
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.octave);
+	    if (sub_t == TY_ERR) return TY_ERR;
 	    if (sub_t != TY_INT) {
 		report(ctx->lexer, expr->off, "Expect %s, got %s in octave of scale", type_to_str(TY_INT), type_to_str(sub_t));
 		return TY_ERR;
 	    }
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.mode);
+	    if (sub_t == TY_ERR) return TY_ERR;
 	    if (sub_t != TY_MODE) {
 		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_MODE), type_to_str(sub_t));	
 		return TY_ERR;
@@ -215,9 +222,10 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx) {
 	case EXPR_PREFIX:
 	    // current only have pitch qualifiers as prefix operator
 	    sub_t = sema_analy_expr(ctx, expr->data.prefix.expr);
+	    if (sub_t == TY_ERR) return TY_ERR;
 	    if (sub_t != TY_PITCH && sub_t != TY_INT && sub_t != TY_CHORD) {
 		report(ctx->lexer, expr->off, "Expect INT, PITCH, or CHORD after pitch qualifier, got %s", type_to_str(sub_t));
-		return false;
+		return TY_ERR;
 	    }
 	    return sub_t;
 	default:
