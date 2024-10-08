@@ -98,6 +98,10 @@
             border: 1px solid #ddd;
             border-radius: 6px;
         }
+
+        #out p {
+            margin: 0px;
+        }
     </style>
 </head>
 
@@ -112,7 +116,10 @@
 
         <textarea id="editor" rows="10" placeholder="Edit your Octave code here..."></textarea>
 
-        <button onclick="compileOctave()">Compile</button>
+        <p id="out" style="background-color: #f0f0f0;">
+        </p>
+
+        <button id="compile-btn" onclick="compileBtnCallback()">Compile</button>
 
         <midi-player sound-font visualizer="#myVisualizer"></midi-player>
 
@@ -125,19 +132,76 @@
 
     <script src="octc.js"></script>
     <script>
+        window.onload = function () {
+            const savedCode = localStorage.getItem('octaveCode');
+            if (savedCode) {
+                document.getElementById('editor').value = savedCode;
+            }
+        }
+
         function compileOctave() {
             const input = document.getElementById('editor').value;
             const inputFile = 'tmp.oct';  // Virtual input file
             const outputFile = 'tmp.mid'; // Virtual output file
 
             FS.writeFile(inputFile, input);
-            Module.callMain([inputFile, '-o', outputFile]);
+
+            try {
+                Module.callMain([inputFile, '-o', outputFile]);
+            } catch {
+                return false
+            }
+
+            if (FS.readFile(outputFile).byteLength === 0) {
+                return false
+            }
+
             const midiData = FS.readFile(outputFile, { encoding: 'binary' });
             const blob = new Blob([midiData], { type: 'audio/midi' });
             const url = URL.createObjectURL(blob);
             const midiPlayer = document.querySelector('midi-player');
             midiPlayer.src = url;
+
+            return true;
         }
+
+
+        // override error message output
+        function err(msg) {
+            document.getElementById("out").innerHTML += `<p style="color: red">${msg}</p>`;
+        }
+
+        function out(msg) {
+            document.getElementById("out").innerHTML += `<p>${msg}</p>`;
+        }
+
+        async function compileBtnCallback() {
+            document.getElementById("out").innerText = ""
+            const compile_ret = compileOctave();
+
+            const code = document.getElementById('editor').value;
+            localStorage.setItem('octaveCode', code);
+
+            if (compile_ret) {
+                document.getElementById("out").innerText = "compile succeed! save code to local storage"
+                document.getElementById("compile-btn").innerText = "OK!"
+                document.getElementById("compile-btn").style.background = "green"
+
+                await new Promise(r => setTimeout(r, 1000));
+                document.getElementById("compile-btn").innerText = "Compile"
+                document.getElementById("compile-btn").style.background = "#007bff"
+
+            }
+            else {
+                document.getElementById("compile-btn").innerText = "Compile Failed!"
+                document.getElementById("compile-btn").style.background = "red"
+                await new Promise(r => setTimeout(r, 1000));
+                document.getElementById("compile-btn").innerText = "Compile"
+                document.getElementById("compile-btn").style.background = "#007bff"
+
+            }
+        }
+
     </script>
 
 </body>
