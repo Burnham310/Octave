@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <sys/types.h>
-
 #include "ds.h"
 #include "stb_ds.h"
 typedef struct
@@ -43,35 +42,6 @@ typedef struct
 } Token;
 Loc off_to_loc(const char *src, const size_t src_len, const size_t off);
 const char* ty_str(TokenType ty);
-#define TOKEN_DEBUG(tk)                                               \
-	do                                                                \
-{                                                                 \
-	switch (tk.type)                                              \
-	{                                                             \
-		case TK_ERR:                                                  \
-									      printf("ERR");                                            \
-		break;                                                    \
-		case TK_EOF:                                                  \
-									      printf("EOF");                                            \
-		break;                                                    \
-		case TK_NULL:                                                 \
-									      printf("NULL");                                           \
-		case TK_IDENT:                                                \
-									      printf("ID %zu", tk.data.integer); \
-		break;                                                    \
-		case TK_INT:                                                  \
-									      printf("INT_CONST %zi", tk.data.integer);                 \
-		break;                                                    \
-		case TK_DOTS: \
-									      printf("TK_DOTS %zi", tk.data.integer); \
-		break;                                                    \
-		case TK_QUAL: \
-									      printf("TK_QUAL"); \
-		default:                                                      \
-									      printf("%c", tk.type);                                    \
-	}                                                             \
-} while (0);
-
 typedef struct
 {
 	char *src;

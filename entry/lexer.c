@@ -48,12 +48,8 @@ int main(const int argc, char **argv)
     Token tk;
     while ((tk = lexer_next(&lexer)).type > 0)
     {
-        TOKEN_DEBUG(tk)
-        printf("\n");
+        printf("%s\n", ty_str(tk.type));
     }	
-
-
-
 
 out:
     if (input_f)

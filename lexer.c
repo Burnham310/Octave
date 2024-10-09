@@ -35,6 +35,10 @@ const char *ty_str(TokenType ty)
 		return "TK_INT";
 	case TK_IDENT:
 		return "TK_IDENT";
+	case TK_DOTS:
+		return "TK_DOTS";
+	case TK_QUAL:
+		return "TK_QUAL";
 	case ';':
 		return ";";
 	case '=':
