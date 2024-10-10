@@ -48,7 +48,7 @@ int main(const int argc, char **argv)
     Token tk;
     while ((tk = lexer_next(&lexer)).type > 0)
     {
-        printf("%s\n", ty_str(tk.type));
+        printf("%s\n", tk_str(tk.type));
     }	
 
 out:

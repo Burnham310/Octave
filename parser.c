@@ -4,6 +4,8 @@
 #include "parser.h"
 #include "lexer.h"
 #include "assert.h"
+#include "utils.h"
+
 DeclIdx parse_decl(Lexer *lexer, Gen *gen);
 SecIdx parse_section(Lexer *lexer, Gen *gen);
 LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_size);
@@ -51,11 +53,9 @@ void expr_debug(Pgm* pgm, SymbolTable sym_table, ExprIdx idx) {
 // peeking into the next token for a specific token type, and execute custom code if no match
 // if a TK_ERR is generated, 
 // try to match a token of type "type". If fails, the state of the lexer is unchanged. Otherwise, the lexer is incremented and the desired token is returned
-#define assert_next(lexer, name, ty) Token name = lexer_next(lexer); if (name.type != ty) return PR_ERR;
+#define assert_next(lexer, name, ty) Token name = lexer_next(lexer); if (name.type != ty) THROW_EXCEPT();
 #define assert_next_before(lexer, name, ty, before) Token name = lexer_next(lexer); \
-    if (name.type != ty) {  report(lexer, before.off, "Expect %s after %s, found %s", ty_str(ty), ty_str(before.type), ty_str(name.type)); return PR_ERR; }
-
-
+    if (name.type != ty) {  report(lexer, before.off, "Expect %s after %s, found %s", tk_str(ty), tk_str(before.type), tk_str(name.type)); THROW_EXCEPT(); }
 #define try_next(lexer, name, ty) Token name = lexer_peek(lexer); if (name.type != ty) return PR_NULL; else lexer_next(lexer);
 
 make_arr(Decl);
@@ -79,12 +79,11 @@ DeclIdx parse_decl(Lexer *lexer, Gen *gen)
     assert_next_before(lexer, assign, '=', id); // assert_next never returns TK_NULL
 
     SecIdx sec = parse_section(lexer, gen);
-    if (sec == 0)
+    if (sec == PR_NULL)
     {
         report(lexer, assign.off, "Expect section after '='");
-        return PR_ERR;
-    } else if (sec < 0) return sec;
-
+	THROW_EXCEPT();
+    }
     da_append(gen->decls, ((Decl){.name = id.data.integer, .sec = sec, .off = assign.off}));
     return gen->decls.size - 1;
 }
@@ -103,14 +102,46 @@ LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_ct) {
     assert_next_before(lexer, num, TK_INT, eq);
     label.volume = name.data.integer;
     Token linear = lexer_peek(lexer);
-    if (linear.type < 0) return PR_ERR;
     if (linear.type == TK_IDENT) {
+	lexer_next(lexer);
 	assert(linear.data.integer == symt_intern(lexer->sym_table, "linear"));
 	label.linear = true;	
     }
     assert_next_before(lexer, rbrac, ']', lbrac);
     da_append(gen->labels, label); 
     return gen->labels.size - 1;
+}
+// parse a list of formal, seperated by comma i.e. <id1>=<exp1>, <id2>=<exp2>, ...
+SliceOf(AstIdx) parse_formals(Lexer *lexer, Gen *gen) {
+    ArrOf(AstIdx) formals = {0};
+    SliceOf(AstIdx) res = {0};
+    // parse comma seperated list of formals
+    FormalIdx formal = parse_formal(lexer, gen); 
+    size_t prev_off = gen->formals.items[formal].off;
+    if (formal == 0) {
+	return res;
+    }
+    da_append(formals, formal);
+    while (true)
+    {
+	Token comma = lexer_peek(lexer);
+	if (comma.type != ',')
+	{
+	    break;
+	}
+	lexer_next(lexer);
+	if ((formal = parse_formal(lexer, gen)) == PR_NULL)
+	{
+	    report(lexer, comma.off, "Expect formal after ','");
+	    THROW_EXCEPT();
+	}
+	prev_off = gen->formals.items[formal].off;
+	da_append(formals, formal);
+    }
+
+    da_move(formals, res); 
+    return res;
+
 }
 SecIdx parse_section(Lexer *lexer, Gen *gen)
 {
@@ -123,56 +154,19 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     // TODO parse config skipped
     ArrOf(AstIdx) formals = {0};
     // parse comma seperated list of formals
-    FormalIdx formal = parse_formal(lexer, gen); 
-    prev_off = gen->formals.items[formal].off;
-    if (formal < 0)
-    {
-        return PR_ERR;
-    }
-    else if (formal > 0)
-    {
-        da_append(formals, formal);
-        while (true)
-        {
-            try_next(lexer, comma, ',')
-            if (comma.type < 0)
-            {
-                return PR_ERR;
-            }
-            else if (comma.type == 0)
-            {
-                break;
-            }
-            if ((formal = parse_formal(lexer, gen)) <= 0)
-            {
-                report(lexer, comma.off, "Expect formal after ','");
-                return PR_ERR;
-            }
-	    prev_off = gen->formals.items[formal].off;
-            da_append(formals, formal);
-        }
-        if (formal < 0)
-        {
-            // TODO free formals
-            return PR_ERR;
-        }
-        da_move(formals, sec.config);
-    }
-
+    sec.config = parse_formals(lexer, gen);
     assert_next_before(lexer, colon2, ':', colon1); // TODO more accurate loc
-
     ArrOf(AstIdx) notes = {0};
     ArrOf(AstIdx) labels = {0}; 
     ExprIdx note;
     AstIdx res;
     sec.off = colon2.off;
-    while ((note = parse_expr(lexer, gen)) >= 0)
+    while ((note = parse_expr(lexer, gen)) >= PR_NULL)
     {
-	if (note == 0) {
+	if (note == PR_NULL) {
 	    // TODO assume never fail for now
 	    LabelIdx label = parse_label(lexer, gen, notes.size);
-	    if (label <= 0) {
-	        note = label;
+	    if (label == PR_NULL) {
 	        break;
 	    }
 	    
@@ -182,12 +176,6 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
 	    sec.off =  gen->exprs.items[note].off;
 
 	}
-            }
-    if (note < 0)
-    {
-        report(lexer, sec.off, "Error while parsing notes");
-        res = note;
-        goto out;
     }
     assert_next_before(lexer, bar2, '|', colon2); // TODO: more accurate loc
 out:
@@ -201,13 +189,15 @@ err_out:
 }
 FormalIdx parse_formal(Lexer *lexer, Gen *gen)
 {
+    Token test = lexer_peek(lexer);
     try_next(lexer, ident, TK_IDENT)
+
     assert_next_before(lexer, assign, '=', ident)
     ExprIdx expr = parse_expr(lexer, gen);
-    if (expr <= 0)
+    if (expr == PR_NULL)
     {
         report(lexer, assign.off, "Expect expression after '='");
-        return PR_ERR;
+	THROW_EXCEPT();
     }
 
     Formal formal = {.expr = expr, .ident = ident.data.integer, .off = gen->exprs.items[expr].off};
@@ -224,14 +214,7 @@ ExprIdx parse_chord(Lexer *lexer, Gen *gen) {
     while ((sub_expr = parse_expr(lexer, gen)) > 0) { 
 	da_append(sub_exprs, sub_expr);
     }
-    if (sub_expr < 0) {
-	return sub_expr;
-    }
     assert_next_before(lexer, rbrac, ']', lbrac) // TODO: more accurate loc
-    if (rbrac.type < 0) {
-	report(lexer, lbrac.off, "Unclosed bracket in `chord`");
-	return PR_ERR;
-    }
     expr.tag = EXPR_CHORD;
     expr.off = rbrac.off;
     da_move(sub_exprs, expr.data.chord_notes);
@@ -243,24 +226,24 @@ typedef ExprIdx(*ParseFn)(Lexer *, Gen *);
 ExprIdx parse_scale(Lexer *lexer, Gen *gen) {
     try_next(lexer, lslash, '/')
     ExprIdx tonic = parse_expr(lexer, gen);
-    if (tonic <= 0) {
+    if (tonic == PR_NULL) {
 	report(lexer, lslash.off, "Expect expression for tonic in scale expression");
-	return PR_ERR;
+	THROW_EXCEPT();
     }
     ExprIdx octave = parse_expr(lexer, gen);
-    if (octave <= 0) {
+    if (octave == PR_NULL) {
 	report(lexer, gen->exprs.items[tonic].off, "Expect expression for octave in scale expression");
-	return PR_ERR;
+	THROW_EXCEPT();
     }
     ExprIdx mode = parse_expr(lexer, gen);
-    if (mode <= 0) {
+    if (mode == PR_NULL) {
 	report(lexer, gen->exprs.items[octave].off, "Expect expression for mode in scale expression");
-	return PR_ERR;
+	THROW_EXCEPT();
     }
     try_next(lexer, rslash, '/')
-    if (rslash.type <= 0) {
+    if (rslash.type == PR_NULL) {
 	report(lexer, gen->exprs.items[mode].off, "Unclosed scale expression");
-	return PR_ERR;
+	THROW_EXCEPT();
     }
     Expr expr = {.off = lslash.off, .tag = EXPR_SCALE };
     expr.data.scale.tonic = tonic;
@@ -275,10 +258,9 @@ ExprIdx parse_prefix(Lexer *lexer, Gen *gen) {
     try_next(lexer, qual, TK_QUAL)
     int lbp = prefix_bp(qual);
     ExprIdx sub_expr = parse_expr_climb(lexer, gen, lbp);
-    if (sub_expr < 0) return PR_ERR;
-    if (sub_expr == 0) {
+    if (sub_expr == PR_NULL) {
 	report(lexer, qual.off, "Expect expression after qualifiers");
-	return PR_ERR;
+	THROW_EXCEPT();
     }	
     Expr expr = {.off = qual.off, .tag = EXPR_PREFIX, .data.prefix = {.op = qual, .expr = sub_expr } };
     da_append(gen->exprs, expr);
@@ -304,10 +286,9 @@ ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp) {
     ExprIdx lhs;
     for (size_t i = 0; i < prefix_parsers_len; ++i) {
 	lhs = prefix_parsers[i](lexer, gen);
-	if (lhs < 0) return lhs;
 	if (lhs > 0) break;
     }
-    if (lhs == 0) return PR_NULL;
+    if (lhs == PR_NULL) return PR_NULL;
     // postfix parser
     Token op; 
     while ((op = lexer_peek(lexer)).type > 0) {
@@ -322,7 +303,6 @@ ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp) {
 	da_append(gen->exprs, expr);
 	lhs = gen->exprs.size - 1;
     }
-    if (op.type < 0) return op.type;
     return lhs;
 }
 ExprIdx parse_expr(Lexer *lexer, Gen *gen) {
@@ -368,11 +348,6 @@ Pgm parse_ast(Lexer *lexer)
     bool find_main = false;
     while ((decl = parse_decl(lexer, &gen)) > 0)
     {
-    }
-    if (decl < 0)
-    {
-        report(lexer, 0, "Expect Decl at toplevel");
-        goto err_out;
     }
 
     da_move(gen.decls, pgm.decls);

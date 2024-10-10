@@ -22,13 +22,11 @@ static struct lexer_state
 	.is_attribute_begin = 0,
 };
 
-const char *ty_str(TokenType ty)
+const char *tk_str(TokenType ty)
 {
 
 	switch (ty)
 	{
-	case TK_ERR:
-		return "TK_ERR";
 	case TK_NULL:
 		return "TK_NULL";
 	case TK_INT:
@@ -225,11 +223,11 @@ Token match_qualifier(Lexer *self)
 				return match_ident(self);
 			}
 			report(self, self->off, "Invalid character %c in sequence of pitch qualifiers", c);
-			RETURN_TK(TK_ERR);
+			THROW_EXCEPT();
 		}
 	}
 	report(self, self->off, "Unterminated sequence of pitch qualifiers (expects ')");
-	RETURN_TK(TK_ERR);
+	THROW_EXCEPT();
 }
 Token match_num(Lexer *self)
 {
@@ -252,7 +250,7 @@ Token match_num(Lexer *self)
 		else if (isalpha(c))
 		{
 			report(self, self->off, "invalid character '%c' (%d) in integer", c, c);
-			RETURN_TK(TK_ERR);
+			THROW_EXCEPT();
 		}
 		else
 		{
@@ -280,7 +278,7 @@ Token match_num(Lexer *self)
 // 				rewind_char(self);
 // 				--i;
 // 			} while (i > 0);
-// 			RETURN_TK(TK_ERR);
+// 			THROW_EXCEPT();
 // 		}
 // 	}
 //
@@ -310,7 +308,7 @@ Token match_ident(Lexer *self)
 			rewind_char(self);
 			break;
 			// report(self, self->off, "invalid character '%c' (%d) in ident", c, c);
-			// RETURN_TK(TK_ERR);
+			// THROW_EXCEPT();
 		}
 	}
 
@@ -343,7 +341,7 @@ Token match_dots(Lexer *self)
 		else if (isalnum(c))
 		{
 			report(self, self->off, "Invalid character '%c' in sequence of dots", c);
-			RETURN_TK(TK_ERR);
+			THROW_EXCEPT();
 		}
 		else
 		{

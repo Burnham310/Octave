@@ -204,7 +204,7 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx) {
 	    if (sub_t == TY_ERR) return TY_ERR;
 	    if (sub_t != TY_PITCH) {
 		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_PITCH), type_to_str(sub_t));
-		return TK_ERR;
+		return TY_ERR;
 	    }
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.octave);
 	    if (sub_t == TY_ERR) return TY_ERR;
