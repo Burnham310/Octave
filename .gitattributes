@@ -1,1 +1,2 @@
 web/octc.js linguist-vendored
+include/*.h linguist-language=C
