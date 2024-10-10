@@ -117,10 +117,10 @@ SliceOf(AstIdx) parse_formals(Lexer *lexer, Gen *gen) {
     SliceOf(AstIdx) res = {0};
     // parse comma seperated list of formals
     FormalIdx formal = parse_formal(lexer, gen); 
-    size_t prev_off = gen->formals.items[formal].off;
-    if (formal == 0) {
+    if (formal == PR_NULL) {
 	return res;
     }
+    size_t prev_off = gen->formals.items[formal].off;
     da_append(formals, formal);
     while (true)
     {
@@ -148,11 +148,9 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     
     // TODO parse var decl skipped
     try_next(lexer, bar, '|')
-    assert_next_before(lexer, colon1, ':', bar);
-    size_t prev_off = 0;
     Sec sec = {0};
-    // TODO parse config skipped
-    ArrOf(AstIdx) formals = {0};
+    sec.vars = parse_formals(lexer, gen);
+    assert_next_before(lexer, colon1, ':', bar);
     // parse comma seperated list of formals
     sec.config = parse_formals(lexer, gen);
     assert_next_before(lexer, colon2, ':', colon1); // TODO more accurate loc
@@ -340,11 +338,11 @@ Pgm parse_ast(Lexer *lexer)
     Pgm pgm;
     DeclIdx decl;
     Gen gen = {0};
-    da_append(gen.decls, (Decl){});
-    da_append(gen.secs, (Sec){});
-    da_append(gen.formals, (Formal){});
-    da_append(gen.exprs, (Expr){});
-    da_append(gen.labels, (Label){});
+    //  da_append(gen.decls, (Decl){});
+    //  da_append(gen.secs, (Sec){});
+    //  da_append(gen.formals, (Formal){});
+    //  da_append(gen.exprs, (Expr){});
+    //  da_append(gen.labels, (Label){});
     bool find_main = false;
     while ((decl = parse_decl(lexer, &gen)) > 0)
     {

@@ -73,6 +73,7 @@ make_slice(Label);
 typedef struct
 {
     SliceOf(AstIdx) note_exprs;
+    SliceOf(AstIdx) vars;
     SliceOf(AstIdx) config;
     SliceOf(AstIdx) labels;
     size_t off;
