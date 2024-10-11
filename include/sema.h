@@ -59,7 +59,8 @@ Pitch pitch_from_scale(Scale *scale, size_t degree);
     X(TY_NOTE) \
     X(TY_SCALE) \
     X(TY_MODE) \
-    X(TY_SEC)
+    X(TY_SEC) \
+    X(TY_CHORUS)
 #define X(x) x,
 typedef enum {
     TYPE_LISTX

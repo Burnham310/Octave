@@ -14,13 +14,18 @@ SliceOf(Track) eval_pgm(Context* ctx) {
     for (ssize_t fi = 0; fi < ast_len(ctx->pgm, toplevel); fi++) {
 	eval_formal(ctx, ast_get(ctx->pgm, toplevel, fi), -1);
     }
-    Track main =  hmget(ctx->pgm_env, ctx->builtin_syms.main).data.sec;
-    SliceOf(Track) res = {.ptr = calloc(1, sizeof(Track)), .len = 1 }; 
-    	
-    res.ptr[0] = main;
-    for (size_t i = 0; i < 10; ++i) {
+    Val main =  hmget(ctx->pgm_env, ctx->builtin_syms.main);
+    if (main.ty == TY_SEC) {
+	SliceOf(Track) res = {.ptr = calloc(1, sizeof(Track)), .len = 1 }; 
+
+	res.ptr[0] = main.data.sec;
+	for (size_t i = 0; i < 10; ++i) {
+	}
+	return res;
+    } else {
+	return main.data.chorus;
     }
-    return res;
+    
 }
 void eval_formal(Context* ctx, FormalIdx idx, SecIdx sec_idx) {
     Formal* formal = &ast_get(ctx->pgm, formals, idx);
@@ -66,6 +71,8 @@ ValData eval_expr(Context* ctx, ExprIdx idx, SecIdx sec_idx) {
     ValEnv *env = get_curr_env(ctx, sec_idx);
     Scale *scale = NULL;
     ValData v;
+    ValData v2;
+    ValData v3;
     ptrdiff_t env_i;
     switch (expr->tag) {
 	case EXPR_NUM: return (ValData) {.i = expr->data.num };
@@ -75,8 +82,9 @@ ValData eval_expr(Context* ctx, ExprIdx idx, SecIdx sec_idx) {
 	    if (sec_idx > 0) {
 		env_i = hmgeti(ctx->sec_envs.ptr[sec_idx], expr->data.ident);
 		if (env_i >= 0) return ctx->sec_envs.ptr[sec_idx][env_i].value.data;
-	    } 
-	    return hmget(ctx->pgm_env, expr->data.ident).data;
+	    }
+	    v = hmget(ctx->pgm_env, expr->data.ident).data;
+	    return v;
 	case EXPR_SCALE: return (ValData) { .scale = eval_scale(ctx, idx, sec_idx) };
 	case EXPR_NOTE: 
 	    scale = &hmgetp(*env, ctx->builtin_syms.scale)->value.data.scale; // scale must be defined in the current scope
@@ -84,6 +92,13 @@ ValData eval_expr(Context* ctx, ExprIdx idx, SecIdx sec_idx) {
 	case EXPR_SEC:
 	    v = (ValData) {.sec = eval_section(ctx, expr->data.sec) };
 	    return v;
+	case EXPR_INFIX:
+	    v = eval_expr(ctx, expr->data.infix.lhs, sec_idx); 
+	    v2 = eval_expr(ctx, expr->data.infix.rhs, sec_idx);
+	    v3 = (ValData) {.chorus = (SliceOf(Track)) {.ptr = calloc(sizeof(Track), 2), .len = 2 } };
+	    v3.chorus.ptr[0] = v.sec;
+	    v3.chorus.ptr[1] = v2.sec;
+	    return v3;
 	case EXPR_PREFIX:
 	case EXPR_CHORD:
 	    assert(false && "unimplemented, currently hacked");

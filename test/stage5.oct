@@ -1,33 +1,3 @@
-// Tchaikvosky Theme
-
-main = | do=1, chord=[do 3 5] :scale=/D 3 MAJ/, bpm=120, volumn=80, instrument=50:
-    
-    // Intro Fanfare
-    1.. 1... o'5..  o'1..    // Simple melody leading into the fanfare theme
-    5... 6... 7... o'2...    // Ascending line towards dominant
-    
-    // Theme entrance (brass fanfare, slow tempo)
-    o'3.. o'5.. o'6... o'2...    // Majestic chords rising
-    1... 5... o'1... o'7... o'5..  o'5...    // Rhythmically strong fanfare
-    
-    // Canon-like progression (celebratory)
-    o'1.. o'3.. o'5.. o'chord... o'[5 7 o'2]...  // Chords overlaid with melodic fragments
-    5... o'6... o'5... o'7... o'5...  // Rising motion
-    
-<buildup-start>[volumn=100 linear-in-30, instrument=32]
-
-    // Build-up to climax
-    oo'2... ooo'1.. oo'5... oo'6... oo'7...  // Thickening texture, layering chords and melody
-    
-    // Climactic chords with cannon fire
-    ooo'[1 5]... []... oo'[3 7]... ooo'1..  // Strong sustained chords with dramatic pauses for "cannons"
-    ooo'2... ooo'5... ooo'7... ooo'[1 3 5]...   // Final climactic chord progression
-
-<buildup-end>[volumn=70 linear-out-10]
-
-    // Ending sequence, return to initial theme
-    o'2... o'5... o'6... o'5...  oo'1.. oo'5... oo'7...  // Resolved closing
-    oo'[2 5]... oo'3... oo'5... oo'[1 3 5]...
-|
-// END
-
+bass = |:instrument=10,scale=/C 2 MAJ/: [1 3 5]. [1 3 5]. [6 o'1 o'3]. [5 7 o'1]. |
+guitar = |:scale=/C 4 MAJ/, instrument=67: 1.. 1.. 5.. 5.. 6.. 6.. 5. |
+main = bass & guitar

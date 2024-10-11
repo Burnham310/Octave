@@ -5,7 +5,10 @@
 #include "lexer.h"
 #include "assert.h"
 #include "utils.h"
-
+typedef struct {
+    int lbp;
+    int rbp;
+} BP;
 SecIdx parse_section(Lexer *lexer, Gen *gen);
 ExprIdx parse_section_expr(Lexer *lexer, Gen *gen);
 LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_size);
@@ -18,6 +21,7 @@ ExprIdx parse_prefix(Lexer *lexer, Gen *gen);
 ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen);
 int prefix_bp(Token tk);
 int postfix_bp(Token tk);
+BP infix_bp(Token tk);
 
 make_arr(Label);
 void expr_debug(Pgm* pgm, SymbolTable sym_table, ExprIdx idx) {
@@ -46,6 +50,7 @@ void expr_debug(Pgm* pgm, SymbolTable sym_table, ExprIdx idx) {
 	    printf("Sec");
 	case EXPR_SCALE:
 	case EXPR_PREFIX:
+	case EXPR_INFIX:
 	    assert(false && "unimplemented");
     }
 }
@@ -131,8 +136,8 @@ SliceOf(AstIdx) parse_formals(Lexer *lexer, Gen *gen) {
 
 }
 ExprIdx parse_section_expr(Lexer *lexer, Gen *gen) {
-    SecIdx sec = parse_section(lexer, gen) == PR_NULL;
-    if (sec) return PR_NULL;
+    SecIdx sec = parse_section(lexer, gen);
+    if (sec == PR_NULL) return PR_NULL;
     Expr expr ={.off = gen->secs.items[sec].off, .tag = EXPR_SEC, .data.sec = sec};
     da_append(gen->exprs, expr);
     return gen->exprs.size - 1;
@@ -275,6 +280,12 @@ int postfix_bp(Token tk) {
     }
 }
 
+BP infix_bp(Token tk) {
+    switch (tk.type) {
+	case '&': return (BP) {.lbp = 5, .rbp = 5 };
+	default: return (BP) {.lbp = -1, .rbp = -1 };
+    }
+}
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp) {
 // the order of this matter; atomic expr must be tried last.
     static const ParseFn prefix_parsers[] = {parse_prefix, parse_scale, parse_chord, parse_section_expr, parse_atomic_expr };
@@ -289,15 +300,31 @@ ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp) {
     Token op; 
     while ((op = lexer_peek(lexer)).type > TK_NULL) {
 	int lbp = postfix_bp(op);
-	if (lbp < min_bp) break;
-	lexer_next(lexer);
-	Expr expr;
-	expr.tag = EXPR_NOTE;
-	expr.off = op.off;
-	expr.data.note.dots = op.data.integer;
-	expr.data.note.expr = lhs;
-	da_append(gen->exprs, expr);
-	lhs = gen->exprs.size - 1;
+	if (lbp > 0) {
+	    if (lbp < min_bp) break;
+	    lexer_next(lexer);
+	    Expr expr;
+	    expr.tag = EXPR_NOTE;
+	    expr.off = op.off;
+	    expr.data.note.dots = op.data.integer;
+	    expr.data.note.expr = lhs;
+	    da_append(gen->exprs, expr);
+	    lhs = gen->exprs.size - 1;
+
+
+	} else {
+	    BP bp = infix_bp(op);
+	    lbp = bp.lbp;
+	    int rbp = bp.rbp;
+	    if (lbp < min_bp) break;
+	    lexer_next(lexer);
+	    ExprIdx rhs = parse_expr_climb(lexer, gen, rbp);
+	    Expr expr = {.tag = EXPR_INFIX, .off = op.off};
+	    expr.data.infix.lhs = lhs;
+	    expr.data.infix.rhs = rhs;
+	    da_append(gen->exprs, expr);
+	    lhs = gen->exprs.size - 1;
+	}
     }
     return lhs;
 }
