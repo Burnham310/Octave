@@ -13,14 +13,7 @@ Token match_num(Lexer *self);
 Token match_ident(Lexer *self);
 Token match_dots(Lexer *self);
 void skip_ws(Lexer *lexer);
-static struct lexer_state
-{
-	int is_section_begin; // section begin flag
-	int is_attribute_begin;
-} LEXER_STATE = {
-	.is_section_begin = 0,
-	.is_attribute_begin = 0,
-};
+;
 
 const char *tk_str(TokenType ty)
 {
@@ -59,6 +52,8 @@ const char *tk_str(TokenType ty)
 		return ">";
 	case '|':
 		return "|";
+	case '&':
+		return "&";
 	default:
 		return "TK_UNKNOWN";
 	}
@@ -181,6 +176,7 @@ Token match_single(Lexer *self)
 	case '/':
 	case '<':
 	case '>':
+	case '&':
 		tk.type = (unsigned char)c;
 		return tk;
 	default:

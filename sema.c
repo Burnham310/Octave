@@ -111,7 +111,7 @@ bool sema_analy_pgm(Context *ctx) {
 Type sema_analy_sec(Context *ctx, SecIdx idx) {
     Sec *sec = &ast_get(ctx->pgm, secs, idx);
     for (size_t i = 0; i < sec->vars.len; ++i) {
-	if (!sema_analy_formal(ctx, sec->vars.ptr[i], true, idx)) return false;
+	if (!sema_analy_formal(ctx, sec->vars.ptr[i], false, idx)) return false;
     }   
     for (size_t i = 0; i < sec->config.len; ++i) {
 	if (!sema_analy_formal(ctx, sec->config.ptr[i], true, idx)) return false;
