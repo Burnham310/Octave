@@ -30,7 +30,7 @@ typedef struct
 } MidiConfig;
 
 #define midi_printf(fmt, ...) printf("[MidiBackend] " fmt "\n", ##__VA_ARGS__);
-
+#define midi_eprintf(fmt, ...) fprintf(stderr, "[💀 MidiBackend] " fmt "\n", ##__VA_ARGS__)
 enum MTrkEventType
 {
     _NoteOnEvent,
@@ -66,6 +66,7 @@ struct _MTrkEvent
 #define TRACK5 4
 #define TRACK6 5
 
+#define GLOABL_EV 
 #define GLOBAL 114514
 
 #define _get_array_len(arr) sizeof(arr) / sizeof(arr[0])
@@ -77,7 +78,7 @@ struct _MTrkEvent
         if (!(bool))              \
         {                         \
             action;               \
-            exit(0);              \
+            exit(1);              \
         }                         \
     } while (0);
 
@@ -97,6 +98,13 @@ struct _MidiTrack
     int channel;
     struct MidiTrackMeta meta;
     struct _MTrkEvent *events;
+};
+
+struct _MidiTrackGloEv
+{
+    struct _MTrkEvent *events;
+    size_t event_count;
+    size_t cap;
 };
 
 #define NoteLenRatio(note_length) note_length / 100

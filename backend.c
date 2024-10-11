@@ -21,16 +21,22 @@ inline void init_backend(FILE *fp, MidiConfig *config)
 
 void _add_midi_note(int track_id, MidiNote *note, size_t note_n)
 {
-    // trigger interpolate mapper function
-    for (int i = arrlen(hmgets(iFuncMap, track_id).ifuncs) - 1; i >= 0; --i)
-    {
-        int duration = hmgets(iFuncMap, track_id).duration;
-        int note_c = hmgets(iFuncMap, track_id).ifuncs_status[i];
+    float mapper_val = 1;
+    iFuncMap_s target = hmgets(iFuncMap, track_id);
 
-        switch (hmgets(iFuncMap, track_id).eventType)
+    if (!target.key)
+        goto add_note_start;
+
+    // trigger interpolate mapper function
+    for (int i = arrlen(target.ifuncs) - 1; i >= 0; --i)
+    {
+        int duration = target.duration;
+        int note_c = target.ifuncs_status[i];
+
+        switch (target.eventType)
         {
         case _SetVolumeEvent:
-            float mapper_val = hmgets(iFuncMap, track_id).ifuncs[i](note_c, duration);
+            mapper_val = target.ifuncs[i](note_c, duration);
 
             add_midi_event(track_id, SetVolumeRatioEvent(mapper_val));
             break;
@@ -42,13 +48,14 @@ void _add_midi_note(int track_id, MidiNote *note, size_t note_n)
 
         if (note_c + 1 >= duration)
         {
-            arrdel(hmgets(iFuncMap, track_id).ifuncs_status, i);
-            arrdel(hmgets(iFuncMap, track_id).ifuncs, i);
+            arrdel(target.ifuncs_status, i);
+            arrdel(target.ifuncs, i);
         }
         else
-            hmgets(iFuncMap, track_id).ifuncs_status[i] = note_c + 1;
+            target.ifuncs_status[i] = note_c + 1;
     }
 
+add_note_start:
     for (int i = 0; i < note_n; ++i)
     {
         add_midi_event(track_id, NoteOnEvent(note + i));
@@ -63,10 +70,15 @@ void _add_midi_note(int track_id, MidiNote *note, size_t note_n)
 
 void add_iFunc(int track_id, enum MTrkEventType event, int duration, float (*wrapper)(int idx, int n))
 {
-    arrput(hmgets(iFuncMap, track_id).ifuncs, wrapper);
-    arrput(hmgets(iFuncMap, track_id).ifuncs_status, 1);
-    hmgets(iFuncMap, track_id).eventType = event;
-    hmgets(iFuncMap, track_id).duration = duration;
+    iFuncMap_s target = hmgets(iFuncMap, track_id);
+
+    if (target.key)
+    {
+        arrput(target.ifuncs, wrapper);
+        arrput(target.ifuncs_status, 1);
+        hmgets(iFuncMap, track_id).eventType = event;
+        hmgets(iFuncMap, track_id).duration = duration;
+    }
 }
 
 void free_backend()
@@ -84,4 +96,14 @@ void free_backend()
 float iFunc_linear(int idx, int n)
 {
     return (n - idx) / (float)n;
+}
+
+float iFunc_zoom(int idx, int n)
+{
+    float t = (float)idx / n;
+
+    if (t >= 0.8)
+        return 0;
+
+    return (1.0f - t * t * t * t); // starts slow, then speeds up as idx approaches n
 }

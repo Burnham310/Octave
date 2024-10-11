@@ -24,6 +24,8 @@ static struct lexer_state
 
 const char *tk_str(TokenType ty)
 {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch"
 
 	switch (ty)
 	{
@@ -61,10 +63,11 @@ const char *tk_str(TokenType ty)
 		return "|";
 	case '&':
 		return "&";
-		
+
 	default:
 		return "TK_UNKNOWN";
 	}
+#pragma clang diagnostic pop
 }
 LexerDummy lexer_dummy_init(const char *src, const size_t src_len, const char *path)
 {
@@ -140,7 +143,8 @@ void skip_comment(Lexer *lexer)
 	{
 		while (lexer->off < lexer->src_len)
 		{
-			if (next_char(lexer) == '\n') {
+			if (next_char(lexer) == '\n')
+			{
 				skip_ws(lexer);
 				skip_comment(lexer);
 				break;

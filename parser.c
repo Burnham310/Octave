@@ -281,7 +281,7 @@ int postfix_bp(Token tk) {
 }
 
 BP infix_bp(Token tk) {
-    switch (tk.type) {
+    switch ((char)tk.type) {
 	case '&': return (BP) {.lbp = 5, .rbp = 5 };
 	default: return (BP) {.lbp = -1, .rbp = -1 };
     }
