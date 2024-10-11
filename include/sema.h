@@ -93,12 +93,14 @@ typedef struct {
     SliceOf(Note) notes;
     SecConfig config;
 } Track;
+make_slice(Track);
 typedef union {
     int i; 
     SliceOf(Pitch) chord;
     Note note;
     Scale scale;
     Track sec;
+    SliceOf(Track) chorus;
 } ValData;
 typedef struct {
     ValData data;
