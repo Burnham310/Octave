@@ -76,7 +76,7 @@ extern int main(const int argc, char **argv)
     }
     SliceOf(Track) tracks = eval_pgm(&ctx);
     // backend initialization
-    init_midi_backend(output_f, &(MidiConfig){.devision = 120, .track_n = tracks.len, .volume = 100});
+    init_backend(output_f, &(MidiConfig){.devision = 120, .track_n = tracks.len, .volume = 100});
     // default configuration
 
     for (size_t ti = 0; ti < tracks.len; ++ti)
