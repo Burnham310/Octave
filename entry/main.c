@@ -77,7 +77,7 @@ extern int main(const int argc, char **argv)
     Sec main_sec = pgm.secs.ptr[main.sec];
 
     // backend initialization
-    init_midi_backend(output_f, &(MidiConfig){.devision = 120, .track_n = 1});
+    init_midi_backend(output_f, &(MidiConfig){.devision = 120, .track_n = 1, .volume = 80});
     // default configuration
 
     // update configuration for section
@@ -122,7 +122,7 @@ extern int main(const int argc, char **argv)
     // dump events to file
     dump_midi_to_file();
     // free backend
-    free_midi_backend();
+    free_backend();
 out:
     if (input_f)
         fclose(input_f);
