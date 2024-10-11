@@ -47,7 +47,10 @@ Track eval_section(Context* ctx, SecIdx idx) {
     for (ssize_t fi = 0; fi < ast_len(sec, config); ++fi) {
 	eval_formal(ctx, ast_get(sec, config, fi), idx);
     }
-    Track track = {};
+    Track track = {.labels = (SliceOf(Label)) {.ptr = calloc(sizeof(Label), sec->labels.len), .len = sec->labels.len} };
+    for (size_t ti = 0; ti < sec->labels.len; ++ti) {
+	track.labels.ptr[ti] = ast_get(ctx->pgm, labels, sec->labels.ptr[ti]);
+    }
     ptrdiff_t env_i;
     ValEnv *env = &ctx->sec_envs.ptr[idx];
     env_i = hmgeti(*env, ctx->builtin_syms.bpm);
@@ -84,6 +87,7 @@ ValData eval_expr(Context* ctx, ExprIdx idx, SecIdx sec_idx) {
 		env_i = hmgeti(ctx->sec_envs.ptr[sec_idx], expr->data.ident);
 		if (env_i >= 0) return ctx->sec_envs.ptr[sec_idx][env_i].value.data;
 	    }
+	    eprintf("IDENT %s\n", symt_lookup(ctx->sym_table, expr->data.ident));
 	    v = hmget(ctx->pgm_env, expr->data.ident).data;
 	    return v;
 	case EXPR_SCALE: return (ValData) { .scale = eval_scale(ctx, idx, sec_idx) };

@@ -381,6 +381,7 @@ Pgm parse_ast(Lexer *lexer)
     da_move(gen.secs, pgm.secs);
     da_move(gen.formals, pgm.formals);
     da_move(gen.exprs, pgm.exprs);
+    da_move(gen.labels, pgm.labels);
 
     return pgm.success = true, pgm;
 err_out:
@@ -388,6 +389,7 @@ err_out:
     da_free(gen.secs);
     da_free(gen.formals);
     da_free(gen.exprs);
+    da_free(gen.labels);
     // free gen
     pgm.success = false;
     return pgm;

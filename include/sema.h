@@ -81,9 +81,6 @@ const char *type_to_str(Type ty);
 
 make_slice(Pitch);
 typedef struct {
-
-} MidiTrack;
-typedef struct {
     SliceOf(Pitch) chord;
     int dots;
 } Note;
@@ -91,6 +88,7 @@ make_slice(Note);
 typedef struct {
     SliceOf(Note) notes;
     SecConfig config;
+    SliceOf(Label) labels;
 } Track;
 make_slice(Track);
 typedef union {
