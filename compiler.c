@@ -2,13 +2,14 @@
 #include "assert.h"
 #include "ast.h"
 #include "ds.h"
+#include "lexer.h"
 #include "sema.h"
 
 
 
 make_arr(Pitch);
 static ArrOf(Pitch) pitches_tmp = {0};
-size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale);
+size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx);
 
 SliceOf(Track) eval_pgm(Context* ctx) {
     for (ssize_t fi = 0; fi < ast_len(ctx->pgm, toplevel); fi++) {
@@ -88,7 +89,7 @@ ValData eval_expr(Context* ctx, ExprIdx idx, SecIdx sec_idx) {
 	case EXPR_SCALE: return (ValData) { .scale = eval_scale(ctx, idx, sec_idx) };
 	case EXPR_NOTE: 
 	    scale = &hmgetp(*env, ctx->builtin_syms.scale)->value.data.scale; // scale must be defined in the current scope
-	    return (ValData) { .note = (Note) { .chord = eval_chord(ctx, expr->data.note.expr, scale), .dots = expr->data.note.dots } };
+	    return (ValData) { .note = (Note) { .chord = eval_chord(ctx, expr->data.note.expr, scale, sec_idx), .dots = expr->data.note.dots } };
 	case EXPR_SEC:
 	    v = (ValData) {.sec = eval_section(ctx, expr->data.sec) };
 	    return v;
@@ -99,8 +100,25 @@ ValData eval_expr(Context* ctx, ExprIdx idx, SecIdx sec_idx) {
 	    v3.chorus.ptr[0] = v.sec;
 	    v3.chorus.ptr[1] = v2.sec;
 	    return v3;
-	case EXPR_PREFIX:
 	case EXPR_CHORD:
+	    {
+		// two types: TY_CHORD or TY_PITCH
+		// TY_CHORD is unresolved degree
+		
+		Type ty = ctx->types.ptr[idx];
+		if (ty == TY_CHORD) {
+		    for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
+			Expr *sub_expr = &ast_get(ctx->pgm, exprs, expr->data.chord_notes.ptr[i]);
+			if (sub_expr->tag == EXPR_NUM) {
+			    da_append(pitches_tmp, sub_expr->data.num);
+			}
+		    }
+		} else if (ty == TY_PITCH) {
+
+		}
+		assert(false && "unreachable");
+	    }
+	case EXPR_PREFIX:
 	    assert(false && "unimplemented, currently hacked");
 
     }
@@ -109,15 +127,15 @@ ValData eval_expr(Context* ctx, ExprIdx idx, SecIdx sec_idx) {
 
 
 
-SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale) {
+SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx) {
 
-    eval_chord_recur(ctx, idx, scale);
+    eval_chord_recur(ctx, idx, scale, sec_idx);
     SliceOf(Pitch) res = {0};
     da_move(pitches_tmp, res);
     return res;
 }
 // returns the number of pitch added to the chord
-size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale) {
+size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx) {
     Type ty = ctx->types.ptr[idx];
     assert(ty == TY_INT || ty == TY_CHORD || ty == TY_PITCH);  
     Expr *expr = &ast_get(ctx->pgm, exprs, idx);
@@ -129,11 +147,12 @@ size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale) {
     else if (tag == EXPR_CHORD) {
 	size_t total = 0;
 	for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
-	    total += eval_chord_recur(ctx, expr->data.chord_notes.ptr[i], scale);
+	    total += eval_chord_recur(ctx, expr->data.chord_notes.ptr[i], scale, sec_idx);
 	}
 	return total;
     } else if (tag == EXPR_PREFIX) {
-	size_t count = eval_chord_recur(ctx, expr->data.prefix.expr, scale);
+	assert(expr->data.prefix.op.type == TK_QUAL);
+	size_t count = eval_chord_recur(ctx, expr->data.prefix.expr, scale, sec_idx);
 	Token qual = expr->data.prefix.op;
 	ssize_t shift = 
 	    - 12 * qual.data.qualifier.suboctave 
@@ -145,8 +164,17 @@ size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale) {
 	}
 	return count;
 
-    }
+    } else if (tag == EXPR_INFIX) {
+	assert(expr->data.infix.op.type == '\'');
+	size_t count = eval_chord_recur(ctx, expr->data.infix.rhs, scale, sec_idx);
+	ssize_t shift = eval_expr(ctx, expr->data.infix.lhs, sec_idx).i;
+	for (size_t i = pitches_tmp.size - count; i < pitches_tmp.size; ++i) {
+	    pitches_tmp.items[i] += shift;
+	}
+	return count;
 
+    }
+    eprintf("EXPR %i\n", expr->tag); 
     assert(false && "unreachable");
      
 

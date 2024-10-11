@@ -9,7 +9,7 @@ struct CpGen; // temp storage for intermediate objects generateed during compila
 typedef struct CpGen CpGen;
 // returns a shallow copy. The next call to eval_chord invalidates the slice
 // The pithches are absolute, from 0~128
-SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale);
+SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx);
 // ssize_t eval_int(Context *ctx, ExprIdx idx);
 Scale eval_scale(Context *scale, ExprIdx idx, SecIdx sec_idx);
 SecConfig eval_config(Context *ctx, SecIdx idx);
