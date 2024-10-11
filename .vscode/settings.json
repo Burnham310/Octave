@@ -26,6 +26,8 @@
         "string": "c",
         "random": "c",
         "midi_common.h": "c",
-        "midi.h": "c"
+        "midi.h": "c",
+        "chrono": "c",
+        "ds.h": "c"
     },
 }

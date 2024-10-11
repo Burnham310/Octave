@@ -1,7 +1,6 @@
 #include "backend.h"
 #include "midi.h"
 
-#define STB_DS_IMPLEMENTATION
 #include "stb_ds.h"
 
 typedef struct

@@ -1,3 +1,4 @@
+#pragma once
 #include "midi.h"
 #include <stdio.h>
 
