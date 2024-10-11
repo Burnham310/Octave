@@ -110,7 +110,7 @@ extern int main(const int argc, char **argv)
     // dump events to file
     dump_midi_to_file();
     // free backend
-    free_midi_backend();
+    free_backend();
 out:
     if (input_f)
         fclose(input_f);
