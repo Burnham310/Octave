@@ -6,9 +6,10 @@
 typedef struct
 {
     int key;
-    float (*ifunc)(int idx, int n);
+    float (*ifunc)(int start, int end, int idx, int n);
     int ifunc_status;
     enum MTrkEventType eventType;
+    int start, end;
     int duration;
 } iFuncMap_s;
 
@@ -28,12 +29,14 @@ void _add_midi_note(int track_id, MidiNote *note, size_t note_n)
     if (target.key == -1)
         goto add_note_start;
 
+    // midi_printf("qqqq %d %d", target.key, track_id);
     switch (target.eventType)
     {
     case _SetVolumeEvent:
-        mapper_val = target.ifunc(target.ifunc_status, target.duration);
-        // midi_printf("%f", mapper_val);
-        add_midi_event(track_id, SetVolumeRatioEvent(mapper_val));
+
+        mapper_val = target.ifunc ? target.ifunc(target.start, target.end, target.ifunc_status, target.duration) : target.start;
+        // midi_printf("volume: %f %d %d %d %d", mapper_val, target.start, target.end, target.ifunc_status, target.duration);
+        add_midi_event(track_id, SetVolumeEvent(mapper_val));
         break;
 
     default:
@@ -41,8 +44,10 @@ void _add_midi_note(int track_id, MidiNote *note, size_t note_n)
         break;
     }
 
-    if (++target.ifunc_status >= target.duration)
+    if (++target.ifunc_status >= target.duration) {
         hmdel(iFuncMap, track_id);
+        // midi_printf("asdasd %d %d", hmgets(iFuncMap, track_id).key, track_id);
+    }
     else
         hmputs(iFuncMap, target);
 
@@ -59,7 +64,7 @@ add_note_start:
     }
 }
 
-void add_iFunc(int track_id, enum MTrkEventType event, int duration, float (*wrapper)(int idx, int n))
+void add_iFunc(int track_id, enum MTrkEventType event, int start_d, int end_d, int duration, float (*wrapper)(int start, int end, int idx, int n))
 {
     iFuncMap_s target = hmgets(iFuncMap, track_id);
 
@@ -67,12 +72,15 @@ void add_iFunc(int track_id, enum MTrkEventType event, int duration, float (*wra
 
     iFuncMap_s update = {
         .key = track_id,
+        .start = start_d,
+        .end = end_d,
         .duration = duration,
         .eventType = event,
         .ifunc = wrapper,
         .ifunc_status = 0,
     };
     hmputs(iFuncMap, update);
+    // midi_printf("add iFunc");
 }
 
 void free_backend()
@@ -82,12 +90,12 @@ void free_backend()
 }
 
 // sample interpolator
-float iFunc_linear(int idx, int n)
+float iFunc_linear(int start, int end, int idx, int n)
 {
-    return (n - idx) / (float)n;
+    return start + (end - start) * (idx / (float)(n - 1));
 }
 
-float iFunc_zoom(int idx, int n)
+float iFunc_zoom(int start, int end, int idx, int n)
 {
     float t = (float)idx / n;
 

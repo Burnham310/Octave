@@ -75,18 +75,43 @@ extern int main(const int argc, char **argv)
         RETURN(1);
     }
     SliceOf(Track) tracks = eval_pgm(&ctx);
+
     // backend initialization
     init_backend(output_f, &(MidiConfig){.devision = 120, .track_n = tracks.len, .volume = 100});
-    // default configuration
 
+    // add track
     for (size_t ti = 0; ti < tracks.len; ++ti)
     {
         Track *track = &tracks.ptr[ti];
+
         printf("instr %i\n", track->config.instr);
         add_midi_event(ti, SetInstrumentEvent(track->config.instr));
         add_midi_event(GLOBAL, SetTempoEvent(track->config.bpm));
+
+        size_t label_c = 0;
         for (size_t ni = 0; ni < track->notes.len; ++ni)
         {
+            if (label_c < track->labels.len && track->labels.ptr[label_c].note_pos == ni)
+            {
+                int is_last_label = label_c == track->labels.len - 1;
+
+                Label cur_label = track->labels.ptr[label_c];
+                int duration = track->notes.len - cur_label.note_pos;
+                if (!is_last_label)
+                {
+                    duration = track->labels.ptr[label_c + 1].note_pos - cur_label.note_pos;
+                }
+                // midi_printf("add iFunc, volumne %d", cur_label.volume);
+                add_iFunc(
+                    ti,
+                    _SetVolumeEvent,
+                    cur_label.volume,
+                    is_last_label ? cur_label.volume : track->labels.ptr[label_c + 1].volume,
+                    duration,
+                    cur_label.linear ? iFunc_linear : NULL);
+
+                label_c++;
+            }
             Note note = track->notes.ptr[ni];
             SliceOf(Pitch) pitches = note.chord;
             size_t dots = note.dots;

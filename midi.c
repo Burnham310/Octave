@@ -202,7 +202,7 @@ EVENT_CALLBACK(SetVolumeEvent)
 
 EVENT_DECLARE(SetVolumeEvent, int volume)
 {
-    midi_assert(volume >= 1 && volume <= 128, midi_eprintf("invalid volume number '%d'", volume));
+    midi_assert(volume >= 0 && volume <= 128, midi_eprintf("invalid volume number '%d'", volume));
 
     int *volume_data = malloc(sizeof(int));
     *volume_data = volume;

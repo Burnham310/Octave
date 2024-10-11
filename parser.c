@@ -92,12 +92,12 @@ LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_ct) {
     assert(volume.data.integer == symt_intern(lexer->sym_table, "volume"));
     assert_next_before(lexer, eq, '=', volume);
     assert_next_before(lexer, num, TK_INT, eq);
-    label.volume = name.data.integer;
+    label.volume = num.data.integer;
     Token linear = lexer_peek(lexer);
     if (linear.type == TK_IDENT) {
-	lexer_next(lexer);
-	assert(linear.data.integer == symt_intern(lexer->sym_table, "linear"));
-	label.linear = true;	
+        lexer_next(lexer);
+        assert(linear.data.integer == symt_intern(lexer->sym_table, "linear"));
+        label.linear = true;	
     }
     assert_next_before(lexer, rbrac, ']', lbrac);
     da_append(gen->labels, label); 
