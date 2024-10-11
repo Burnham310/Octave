@@ -7,7 +7,7 @@ int main()
 
     unsigned char notes[] = {1, 1, 5, 5, 6, 6, 5}; // twinkle
 
-    init_midi_backend(fp, &(MidiConfig){.volume = 100, .devision = 120, .track_n = 2});
+    init_backend(fp, &(MidiConfig){.volume = 100, .devision = 120, .track_n = 2});
     add_midi_event(TRACK2, SetInstrumentEvent(28));
     add_midi_event(TRACK1, SetInstrumentEvent(37));
 
@@ -52,7 +52,7 @@ int main()
     add_midi_event(TRACK2, PauseNoteEvent(QUARTER_NOTE));
     add_midi_note(TRACK2, NOTE(&note));
 
-    add_iFunc(TRACK1, _SetVolumeEvent, sizeof(notes), iFunc_zoom);
+    add_iFunc(TRACK1, _SetVolumeEvent, sizeof(notes), iFunc_linear);
 
     for (int i = 0; i < sizeof(notes); ++i)
     {

@@ -5,6 +5,7 @@
 #define CHORD(note) note, _get_array_len(note)
 #define NOTE(note) note, 1
 
+void init_backend(FILE *fp, MidiConfig *config);
 #define add_midi_note(track_id, note) _add_midi_note(track_id, note)
 void add_iFunc(int track_id, enum MTrkEventType event, int duration, float (*wrapper)(int idx, int n));
 
