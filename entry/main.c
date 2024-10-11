@@ -77,16 +77,16 @@ extern int main(const int argc, char **argv)
     Sec main_sec = pgm.secs.ptr[main.sec];
 
     // backend initialization
-    init_midi_backend(output_f, &(MidiConfig){.volume = 100, .devision = 120});
-        // default configuration
+    init_midi_backend(output_f, &(MidiConfig){.devision = 120, .track_n = 1});
+    // default configuration
 
     // update configuration for section
 
     // add event to track
 
     SecConfig config = eval_config(&ctx, ctx.main);
-    add_midi_event(SetInstrumentEvent(config.instr));
-    add_midi_event(SetTempoEvent(config.bpm));
+    add_midi_event(GLOBAL, SetTempoEvent(config.bpm));
+    add_midi_event(TRACK1, SetInstrumentEvent(config.instr));
 
     // eprintf("scale: tonic: %i mode: %i octave: %i\n", config.scale.tonic, config.scale.mode, config.scale.octave);
     // Scale test_scale = {.tonic = PTCH_C, .octave = 5, .mode = MODE_MAJ};
@@ -96,81 +96,27 @@ extern int main(const int argc, char **argv)
     for (int i = 0; i < main_sec.note_exprs.len; ++i)
     {
         Expr note_expr = ast_get(ctx.pgm, exprs, main_sec.note_exprs.ptr[i]);
-	SliceOf(Pitch) pitches = eval_chord(&ctx, note_expr.data.note.expr, &config.scale);
-	
-	size_t dots = note_expr.data.note.dots;
-	if (pitches.len == 0) {
-	    add_midi_event(PauseNoteEvent(dots));
-	    continue;
-	}
-	MidiNote first_note = {
-	    .channel = DEFAULT_CHANNEL,
-	    .length = dots,
-	    .pitch = pitches.ptr[0],
-	    .velocity = DEFAULT_VELOCITY,
-	};
-	add_midi_event(NoteOnEvent(&first_note));
-	for (size_t p = 1; p < pitches.len; ++p) {
-	    MidiNote midi_note = {
-		.channel = DEFAULT_CHANNEL,
-		.length = dots,
-		.pitch = pitches.ptr[p],
-		.velocity = DEFAULT_VELOCITY,
-	    };
-	    add_midi_event(NoteOnEvent(&midi_note));
-	}
-	add_midi_event(NoteOffEvent(&first_note));
-	for (size_t p = 1; p < pitches.len; ++p) {
-	    MidiNote midi_note = {
-		.channel = DEFAULT_CHANNEL,
-		.length = dots,
-		.pitch = pitches.ptr[p],
-		.velocity = DEFAULT_VELOCITY,
-	    };
-	    struct _MTrkEvent event = NoteOffEvent(&midi_note);
-	    event.delta_time = 0;
-	    add_midi_event(event);
-	}
-	// if (pitch_expr.tag == EXPR_NUM)
+        SliceOf(Pitch) pitches = eval_chord(&ctx, note_expr.data.note.expr, &config.scale);
 
-        // {
-        //     MidiNote midi_note = {
-        //         .channel = DEFAULT_CHANNEL,
-        //         .length = expr.data.note.dots,
-        //         .pitch = pitch_expr.data.num,
-        //         .velocity = DEFAULT_VELOCITY,
-        //     };
-        //     add_midi_event(NoteOnEvent(midi_conf.scale, &midi_note));
-        //     add_midi_event(NoteOffEvent(midi_conf.scale, &midi_note));
-        // }
-        // else if (pitch_expr.tag == EXPR_CHORD)
-        // {
-        //     size_t chord_len = pitch_expr.data.chord_notes.len;
-        //     struct _MidiEvent note_off_buf[chord_len];
-        //     for (size_t i = 0; i < chord_len; ++i)
-        //     {
-        //         AstIdx chrod_pitch_idx = pitch_expr.data.chord_notes.ptr[i];
-        //         Expr chrod_pitch_expr = pgm.exprs.ptr[chrod_pitch_idx];
-        // 	MidiNote midi_note = {
-        // 	    .channel = DEFAULT_CHANNEL,
-        // 	    .length = expr.data.note.dots,
-        // 	    .pitch = chrod_pitch_expr.data.num,
-        // 	    .velocity = DEFAULT_VELOCITY,
-        // 	};
-        // 	add_midi_event(NoteOnEvent(midi_conf.scale, &midi_note));
-        // 	note_off_buf[i] = NoteOffEvent(midi_conf.scale, &midi_note);
-        //     }
+        size_t dots = note_expr.data.note.dots;
+        if (pitches.len == 0)
+        {
+            add_midi_event(TRACK1, PauseNoteEvent(dots));
+            continue;
+        }
 
-        //     // inject note off events
-        //     add_midi_event(note_off_buf[0]);
-        //
-        //     for (size_t i = 1; i < chord_len; ++i) {
-        // 	note_off_buf[i].delta_time = 0;
-        //         add_midi_event(note_off_buf[i]);
-        //     }
-        // }
-        // else
-        //     report(dummy, expr.off, "unknown bug");
+        MidiNote chord[pitches.len];
+
+        for (size_t p = 0; p < pitches.len; ++p)
+        {
+            chord[p] = (MidiNote){
+                .velocity = DEFAULT_VELOCITY,
+                .length = dots,
+                .pitch = pitches.ptr[p],
+            };
+        }
+
+        add_midi_note(TRACK1, CHORD(chord));
     }
 
     // dump events to file
