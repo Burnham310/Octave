@@ -30,6 +30,7 @@ test_backend:
 	${CC} $(ENTRY_DIR)/backend.c backend.c midi.c ds.c -Iinclude -g -o $(OUT_DIR)/backend
 	$(OUT_DIR)/backend
 	rm $(OUT_DIR)/backend
+	timidity twinkle.mid
 
 webasm:
 	emcc $(SRC) $(ENTRY_DIR)/main.c $(INCLUDES) -o web/octc.js -s WASM=1 -s EXPORTED_FUNCTIONS='["_main"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["callMain"]'
