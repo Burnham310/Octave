@@ -1,4 +1,4 @@
-SRC = lexer.c backend.c utils.c sema.c ds.c parser.c compiler.c
+SRC = lexer.c backend.c utils.c sema.c ds.c parser.c compiler.c midi.c
 OBJ_DIR = obj
 OBJ = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRC))
 
@@ -22,10 +22,10 @@ parser: $(OBJ) $(ENTRY_DIR)/parser.c | $(OUT_DIR)
 	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 
 backend:
-	$(CC) $(CFLAGS) $(INCLUDES) $(ENTRY_DIR)/backend.c  backend.c -o $@ 
+	gcc $(ENTRY_DIR)/backend.c backend.c midi.c -Iinclude -g -o backend
 
 test_backend:
-	gcc $(ENTRY_DIR)/backend.c backend.c -Iinclude -o backend
+	gcc $(ENTRY_DIR)/backend.c backend.c midi.c -Iinclude -g -o backend
 	./backend
 	rm backend
 
