@@ -109,6 +109,7 @@ bool sema_analy_pgm(Context *ctx) {
 
 
 Type sema_analy_sec(Context *ctx, SecIdx idx) {
+
     Sec *sec = &ast_get(ctx->pgm, secs, idx);
     for (size_t i = 0; i < sec->vars.len; ++i) {
 	if (!sema_analy_formal(ctx, sec->vars.ptr[i], true, idx)) return false;
@@ -134,8 +135,8 @@ bool sema_analy_formal(Context *ctx, FormalIdx idx, bool builtin, SecIdx sec_idx
     Formal *formal = &ast_get(ctx->pgm, formals, idx);
     Type ty = sema_analy_expr(ctx, formal->expr, sec_idx);
     if (ty == TY_ERR) return false;
-    if (sec_idx < 0 && (ty != TY_SEC)) {
-	report(ctx->lexer, formal->off, "Toplevel declaration %s must be Section, got %s", symt_lookup(ctx->sym_table, formal->ident), type_to_str(ty));
+    if (sec_idx < 0 && (ty != TY_SEC && ty != TY_CHORUS)) {
+	report(ctx->lexer, formal->off, "Toplevel declaration %s must be Section or Chorus, got %s", symt_lookup(ctx->sym_table, formal->ident), type_to_str(ty));
 	return false;
     }
     ValEnv *env = get_curr_env(ctx, sec_idx);
@@ -178,22 +179,24 @@ Type sema_analy_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx) {
 Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx) {
     Expr *expr = &ast_get(ctx->pgm, exprs, idx);
     Type sub_t;
-    ptrdiff_t env_i;
+    ptrdiff_t env_i = -1;
     switch (expr->tag) {
 	case EXPR_NUM: return TY_INT;
 	case EXPR_IDENT:
 	    
-	    env_i = hmgeti(ctx->sec_envs.ptr[sec_idx], expr->data.ident);
-	    if (env_i < 0) {
-		env_i = hmgeti(ctx->pgm_env, expr->data.ident);
-		if (env_i < 0) {
-		    report(ctx->lexer, expr->off, "Undefined variable %s", symt_lookup(ctx->sym_table, expr->data.ident));
-		    return TY_ERR;
-
-		}
-		return ctx->pgm_env[env_i].value.ty;
+	    if (sec_idx >= 0) {
+		env_i = hmgeti(ctx->sec_envs.ptr[sec_idx], expr->data.ident);
+		if (env_i >= 0)
+		    return ctx->sec_envs.ptr[sec_idx][env_i].value.ty;
 	    }
-	    return ctx->sec_envs.ptr[sec_idx][env_i].value.ty;
+	    env_i = hmgeti(ctx->pgm_env, expr->data.ident);
+	    if (env_i < 0) {
+		report(ctx->lexer, expr->off, "Undefined variable %s", symt_lookup(ctx->sym_table, expr->data.ident));
+		return TY_ERR;
+
+	    }
+	    
+	    return ctx->pgm_env[env_i].value.ty;
 	case EXPR_NOTE:
 	    assert(expr->data.note.dots > 0);
 	    sub_t = sema_analy_expr(ctx, expr->data.note.expr, sec_idx);
@@ -243,7 +246,20 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx) {
 	    }
 	    return sub_t;
 	case EXPR_SEC:
+
 	    return sema_analy_sec(ctx, expr->data.sec);
+	case EXPR_INFIX:
+	    sub_t = sema_analy_expr(ctx, expr->data.infix.lhs, sec_idx);
+	    if (sub_t != TY_SEC) {
+		report(ctx->lexer, expr->off, "Expect TY_SEC for lhs of operator &, find %s", type_to_str(sub_t));
+		return TY_ERR;
+	    }
+	    sub_t = sema_analy_expr(ctx, expr->data.infix.rhs, sec_idx);
+	    if (sub_t != TY_SEC) {
+		report(ctx->lexer, expr->off, "Expect TY_SEC for rhs of operator &, find %s", type_to_str(sub_t));
+		return TY_ERR;
+	    }
+	    return TY_CHORUS;
 	default:
 	    eprintf("tag %i\n", expr->tag);
 	    assert(false && "unknown tag");

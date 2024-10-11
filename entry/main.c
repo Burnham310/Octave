@@ -76,11 +76,12 @@ extern int main(const int argc, char **argv)
     }
     SliceOf(Track) tracks = eval_pgm(&ctx);
     // backend initialization
-    init_midi_backend(output_f, &(MidiConfig){.devision = 120, .track_n = 1, .volume = 100});
+    init_midi_backend(output_f, &(MidiConfig){.devision = 120, .track_n = tracks.len, .volume = 100});
     // default configuration
 
     for (size_t ti = 0; ti < tracks.len; ++ti) {
 	Track *track = &tracks.ptr[ti];
+	printf("instr %i\n", track->config.instr);
 	add_midi_event(ti, SetInstrumentEvent(track->config.instr));
 	add_midi_event(GLOBAL, SetTempoEvent(track->config.bpm));
 	for (size_t ni = 0; ni < track->notes.len; ++ni)

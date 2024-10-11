@@ -32,6 +32,11 @@ typedef union
 	Token op;
 	ExprIdx expr;
     } prefix;
+    struct {
+	Token op;
+	ExprIdx lhs;
+	ExprIdx rhs;
+    } infix;
     SecIdx sec;
 } ExprData;
 typedef enum
@@ -42,6 +47,7 @@ typedef enum
     EXPR_CHORD,
     EXPR_SCALE,
     EXPR_PREFIX,
+    EXPR_INFIX,
     EXPR_SEC,
 } ExprTag;
 typedef struct
