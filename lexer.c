@@ -37,6 +37,8 @@ const char *tk_str(TokenType ty)
 		return "TK_DOTS";
 	case TK_QUAL:
 		return "TK_QUAL";
+	case TK_EOF:
+		return "TK_EOF";
 	case ';':
 		return ";";
 	case '=':
@@ -55,6 +57,8 @@ const char *tk_str(TokenType ty)
 		return "<";
 	case '>':
 		return ">";
+	case '|':
+		return "|";
 	default:
 		return "TK_UNKNOWN";
 	}

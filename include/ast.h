@@ -12,13 +12,7 @@ typedef AstIdx FormalIdx;
 typedef AstIdx ExprIdx;
 typedef AstIdx LabelIdx;
 make_slice(AstIdx);
-typedef struct
-{
-    Symbol name;
-    SecIdx sec;
-    size_t off;
-} Decl;
-make_slice(Decl);
+
 
 typedef union
 {
@@ -38,6 +32,7 @@ typedef union
 	Token op;
 	ExprIdx expr;
     } prefix;
+    SecIdx sec;
 } ExprData;
 typedef enum
 {
@@ -47,6 +42,7 @@ typedef enum
     EXPR_CHORD,
     EXPR_SCALE,
     EXPR_PREFIX,
+    EXPR_SEC,
 } ExprTag;
 typedef struct
 {
@@ -81,11 +77,11 @@ typedef struct
 make_slice(Sec);
 typedef struct
 {
-    DeclSlice decls; // array of decls
-    SecSlice secs;
-    FormalSlice formals;
-    ExprSlice exprs;
-    LabelSlice labels;
+    SliceOf(Sec) secs;
+    SliceOf(Formal) formals;
+    SliceOf(Expr) exprs;
+    SliceOf(Label) labels;
+    SliceOf(AstIdx) toplevel;
     bool success;
 } Pgm;
 

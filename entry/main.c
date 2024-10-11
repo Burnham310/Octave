@@ -73,67 +73,63 @@ extern int main(const int argc, char **argv)
         eprintf("typechecking fails\n");
         RETURN(1);
     }
-    Decl main = pgm.decls.ptr[ctx.main];
-    Sec main_sec = pgm.secs.ptr[main.sec];
-
+    SliceOf(Track) tracks = eval_pgm(&ctx);
     // backend initialization
     init_midi_backend(output_f, &(MidiConfig){.volume = 100, .devision = 120});
         // default configuration
 
-    // update configuration for section
-
-    // add event to track
-
-    SecConfig config = eval_config(&ctx, ctx.main);
-    add_midi_event(SetInstrumentEvent(config.instr));
-    add_midi_event(SetTempoEvent(config.bpm));
-
-    // eprintf("scale: tonic: %i mode: %i octave: %i\n", config.scale.tonic, config.scale.mode, config.scale.octave);
-    // Scale test_scale = {.tonic = PTCH_C, .octave = 5, .mode = MODE_MAJ};
-    // for (int i = 0; i < DIATONIC; ++i) {
-    //     printf("%i -> %i\n", i+1, pitch_from_scale(&test_scale, i+1));
-    // }
-    for (int i = 0; i < main_sec.note_exprs.len; ++i)
-    {
-        Expr note_expr = ast_get(ctx.pgm, exprs, main_sec.note_exprs.ptr[i]);
-	SliceOf(Pitch) pitches = eval_chord(&ctx, note_expr.data.note.expr, &config.scale);
-	
-	size_t dots = note_expr.data.note.dots;
-	if (pitches.len == 0) {
-	    add_midi_event(PauseNoteEvent(dots));
-	    continue;
-	}
-	MidiNote first_note = {
-	    .channel = DEFAULT_CHANNEL,
-	    .length = dots,
-	    .pitch = pitches.ptr[0],
-	    .velocity = DEFAULT_VELOCITY,
-	};
-	add_midi_event(NoteOnEvent(&first_note));
-	for (size_t p = 1; p < pitches.len; ++p) {
-	    MidiNote midi_note = {
+    for (size_t ti = 0; ti < tracks.len; ++ti) {
+	Track *track = &tracks.ptr[ti];
+	add_midi_event(SetInstrumentEvent(track->config.instr));
+	add_midi_event(SetTempoEvent(track->config.bpm));
+	for (size_t ni = 0; ni < track->notes.len; ++ni)
+	{
+	    Note note = track->notes.ptr[ni];
+	    SliceOf(Pitch) pitches = note.chord;
+	    size_t dots = note.dots;
+	    if (pitches.len == 0) {
+		add_midi_event(PauseNoteEvent(dots));
+		continue;
+	    }
+	    MidiNote first_note = {
 		.channel = DEFAULT_CHANNEL,
 		.length = dots,
-		.pitch = pitches.ptr[p],
+		.pitch = pitches.ptr[0],
 		.velocity = DEFAULT_VELOCITY,
 	    };
-	    add_midi_event(NoteOnEvent(&midi_note));
+	    add_midi_event(NoteOnEvent(&first_note));
+	    for (size_t p = 1; p < pitches.len; ++p) {
+		MidiNote midi_note = {
+		    .channel = DEFAULT_CHANNEL,
+		    .length = dots,
+		    .pitch = pitches.ptr[p],
+		    .velocity = DEFAULT_VELOCITY,
+		};
+		add_midi_event(NoteOnEvent(&midi_note));
+	    }
+	    add_midi_event(NoteOffEvent(&first_note));
+	    for (size_t p = 1; p < pitches.len; ++p) {
+		MidiNote midi_note = {
+		    .channel = DEFAULT_CHANNEL,
+		    .length = dots,
+		    .pitch = pitches.ptr[p],
+		    .velocity = DEFAULT_VELOCITY,
+		};
+		struct _MTrkEvent event = NoteOffEvent(&midi_note);
+		event.delta_time = 0;
+		add_midi_event(event);
+	    }
+
+
 	}
-	add_midi_event(NoteOffEvent(&first_note));
-	for (size_t p = 1; p < pitches.len; ++p) {
-	    MidiNote midi_note = {
-		.channel = DEFAULT_CHANNEL,
-		.length = dots,
-		.pitch = pitches.ptr[p],
-		.velocity = DEFAULT_VELOCITY,
-	    };
-	    struct _MTrkEvent event = NoteOffEvent(&midi_note);
-	    event.delta_time = 0;
-	    add_midi_event(event);
-	}
+	// eprintf("scale: tonic: %i mode: %i octave: %i\n", config.scale.tonic, config.scale.mode, config.scale.octave);
+	// Scale test_scale = {.tonic = PTCH_C, .octave = 5, .mode = MODE_MAJ};
+	// for (int i = 0; i < DIATONIC; ++i) {
+	//     printf("%i -> %i\n", i+1, pitch_from_scale(&test_scale, i+1));
+	// }
 	// if (pitch_expr.tag == EXPR_NUM)
 
-        // {
+	// {
         //     MidiNote midi_note = {
         //         .channel = DEFAULT_CHANNEL,
         //         .length = expr.data.note.dots,

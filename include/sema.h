@@ -28,6 +28,7 @@ typedef enum {
 #define PTCH_A 9
 #define PTCH_B 11
 
+// evaluted scale
 typedef struct {
     Pitch tonic;
     Mode mode;
@@ -39,10 +40,6 @@ typedef struct {
     int instr;
 } SecConfig;
 
-typedef struct {
-
-
-} Value;
 #define DIATONIC 7
 static const int BASE_MODE[DIATONIC] = {0, 2, 4, 5, 7, 9, 11};
 // 1 <= degree <= 7
@@ -50,11 +47,14 @@ static const int BASE_MODE[DIATONIC] = {0, 2, 4, 5, 7, 9, 11};
 Pitch pitch_from_scale(Scale *scale, size_t degree);
 // x macro: https://en.wikipedia.org/wiki/X_macro
 // TY_PITCH refers to abosulte pitches e.g. A C G#
+// TY_DEGREE refers to relative position in a scale, 1 2 3 4 5 6 7
+// TY_INT is implicitly coerced to TY_DEGREE if it is the direct child of the notes part of a section, or a chord.
 #define TYPE_LISTX \
     X(TY_ERR) \
     X(TY_VOID) \
     X(TY_INT) \
     X(TY_PITCH) \
+    X(TY_DEGREE) \
     X(TY_CHORD) \
     X(TY_NOTE) \
     X(TY_SCALE) \
@@ -66,28 +66,59 @@ typedef enum {
 } Type;
 #undef X
 
-
-// #define X(x) case x: \
-//     printf(#x); \
-//     break;
-// void type_debug(Type ty) {
-//     switch (ty) {
-// 	TYPE_LISTX60
-// 	default:
-// 	    printf("unknown type");
-//     }
-// 
-// #undef X
+// Each type corresponds to one thing in ValData
+// INT -> int i
+// PITCH -> int i
+// DEGREE -> int i
+// CHORD -> SliceOf(Pitch)
+// NOTE -> Note
+// SCALE -> Scale
+// MODE -> Mode
+// Sec -> SliceOf(Note)
 
 const char *type_to_str(Type ty);
+
+
+make_slice(Pitch);
+typedef struct {
+
+} MidiTrack;
+typedef struct {
+    SliceOf(Pitch) chord;
+    int dots;
+} Note;
+make_slice(Note);
+typedef struct {
+    SliceOf(Note) notes;
+    SecConfig config;
+} Track;
+typedef union {
+    int i; 
+    SliceOf(Pitch) chord;
+    Note note;
+    Scale scale;
+    Track sec;
+} ValData;
+typedef struct {
+    ValData data;
+    Type ty;
+} Val;
+
+
 typedef struct {
     Symbol key;
     Type value; // could also holds a value in the future?
 } TypeEntry;
+typedef struct {
+    Symbol key;
+    Val value;
+} ValEntry;
 typedef TypeEntry * TypeEnv;
+typedef ValEntry * ValEnv; 
 
 make_slice(Type);
 make_slice(TypeEnv);
+make_slice(ValEnv);
 #define CONFIG_SYMS \
     X(scale) \
     X(bpm) \
@@ -111,9 +142,9 @@ typedef struct {
     SecIdx main;
     Lexer* lexer;
     SliceOf(Type) types; // len == pgm->exprs.len
-    TypeEnv pgm_env; // top level env
-    SliceOf(TypeEnv) sec_envs; // one for each section, len == pgm->sections.len
-    SecIdx curr_sec; // this is only used internally while type_check'ing
+    ValEnv pgm_env; // top level env
+    SliceOf(ValEnv) sec_envs; // one for each section, len == pgm->sections.len
+    TypeEnv config_builtin;
     bool success;
     SymbolTable sym_table;
 #define X(x) Symbol x;
@@ -127,11 +158,11 @@ typedef struct {
     } builtin_syms;
 #undef X
 } Context;
+ValEnv* get_curr_env(Context *ctx, SecIdx idx);
 void context_deinit(Context *ctx);
 void sema_analy(Pgm* pgm, Lexer* lexer, Context *ctx /* res arg */);
 bool sema_analy_pgm(Context *ctx);
-bool sema_analy_decl(Context *ctx, DeclIdx idx);
-bool sema_analy_sec(Context *ctx, SecIdx idx);
-bool sema_analy_formal(Context *ctx, FormalIdx idx, bool builtin);
-Type sema_analy_expr(Context *ctx, ExprIdx idx);
+bool sema_analy_formal(Context *ctx, FormalIdx idx, bool builtin, SecIdx sec_idx);
+Type sema_analy_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx);
+Type sema_analy_sec(Context *ctx, SecIdx idx);
 #endif

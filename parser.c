@@ -6,8 +6,8 @@
 #include "assert.h"
 #include "utils.h"
 
-DeclIdx parse_decl(Lexer *lexer, Gen *gen);
 SecIdx parse_section(Lexer *lexer, Gen *gen);
+ExprIdx parse_section_expr(Lexer *lexer, Gen *gen);
 LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_size);
 FormalIdx parse_formal(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr(Lexer *lexer, Gen *gen);
@@ -42,6 +42,8 @@ void expr_debug(Pgm* pgm, SymbolTable sym_table, ExprIdx idx) {
 	    }
 	    printf("]");
 	    break;
+	case EXPR_SEC:
+	    printf("Sec");
 	case EXPR_SCALE:
 	case EXPR_PREFIX:
 	    assert(false && "unimplemented");
@@ -56,37 +58,22 @@ void expr_debug(Pgm* pgm, SymbolTable sym_table, ExprIdx idx) {
 #define assert_next(lexer, name, ty) Token name = lexer_next(lexer); if (name.type != ty) THROW_EXCEPT();
 #define assert_next_before(lexer, name, ty, before) Token name = lexer_next(lexer); \
     if (name.type != ty) {  report(lexer, before.off, "Expect %s after %s, found %s", tk_str(ty), tk_str(before.type), tk_str(name.type)); THROW_EXCEPT(); }
-#define try_next(lexer, name, ty) Token name = lexer_peek(lexer); if (name.type != ty) return PR_NULL; else lexer_next(lexer);
+#define try_next(lexer, name, ty) Token name = lexer_peek(lexer); do { if (name.type != ty) return PR_NULL; else lexer_next(lexer); } while (0)
 
-make_arr(Decl);
 make_arr(Sec);
 make_arr(Formal);
 make_arr(Expr);
 make_arr(AstIdx);
 struct Gen
 {
-    DeclArr decls;
+    ArrOf(AstIdx) toplevel;
     SecArr secs;
     FormalArr formals;
     ExprArr exprs;
     LabelArr labels;
+    bool inside_sec;
 };
 
-DeclIdx parse_decl(Lexer *lexer, Gen *gen)
-{
-    try_next(lexer, id, TK_IDENT);
-
-    assert_next_before(lexer, assign, '=', id); // assert_next never returns TK_NULL
-
-    SecIdx sec = parse_section(lexer, gen);
-    if (sec == PR_NULL)
-    {
-        report(lexer, assign.off, "Expect section after '='");
-	THROW_EXCEPT();
-    }
-    da_append(gen->decls, ((Decl){.name = id.data.integer, .sec = sec, .off = assign.off}));
-    return gen->decls.size - 1;
-}
 // TOOD assumes never fails
 LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_ct) {
     try_next(lexer, ldiamon, '<');
@@ -143,11 +130,20 @@ SliceOf(AstIdx) parse_formals(Lexer *lexer, Gen *gen) {
     return res;
 
 }
+ExprIdx parse_section_expr(Lexer *lexer, Gen *gen) {
+    SecIdx sec = parse_section(lexer, gen) == PR_NULL;
+    if (sec) return PR_NULL;
+    Expr expr ={.off = gen->secs.items[sec].off, .tag = EXPR_SEC, .data.sec = sec};
+    da_append(gen->exprs, expr);
+    return gen->exprs.size - 1;
+}
 SecIdx parse_section(Lexer *lexer, Gen *gen)
 {
     
     // TODO parse var decl skipped
-    try_next(lexer, bar, '|')
+    if (gen->inside_sec) return PR_NULL;
+    gen->inside_sec = true;
+    try_next(lexer, bar, '|');
     Sec sec = {0};
     sec.vars = parse_formals(lexer, gen);
     assert_next_before(lexer, colon1, ':', bar);
@@ -175,7 +171,9 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
 
 	}
     }
+
     assert_next_before(lexer, bar2, '|', colon2); // TODO: more accurate loc
+    gen->inside_sec = false;
 out:
     da_move(notes, sec.note_exprs);
     da_move(labels, sec.labels);
@@ -187,8 +185,8 @@ err_out:
 }
 FormalIdx parse_formal(Lexer *lexer, Gen *gen)
 {
-    Token test = lexer_peek(lexer);
-    try_next(lexer, ident, TK_IDENT)
+    try_next(lexer, ident, TK_IDENT);
+
 
     assert_next_before(lexer, assign, '=', ident)
     ExprIdx expr = parse_expr(lexer, gen);
@@ -205,11 +203,11 @@ FormalIdx parse_formal(Lexer *lexer, Gen *gen)
 
 
 ExprIdx parse_chord(Lexer *lexer, Gen *gen) {
-    try_next(lexer, lbrac, '[')
+    try_next(lexer, lbrac, '[');
     Expr expr;
     ExprIdx sub_expr;
     ArrOf(AstIdx) sub_exprs = {0};
-    while ((sub_expr = parse_expr(lexer, gen)) > 0) { 
+    while ((sub_expr = parse_expr(lexer, gen)) > PR_NULL) { 
 	da_append(sub_exprs, sub_expr);
     }
     assert_next_before(lexer, rbrac, ']', lbrac) // TODO: more accurate loc
@@ -222,7 +220,7 @@ ExprIdx parse_chord(Lexer *lexer, Gen *gen) {
 }
 typedef ExprIdx(*ParseFn)(Lexer *, Gen *);
 ExprIdx parse_scale(Lexer *lexer, Gen *gen) {
-    try_next(lexer, lslash, '/')
+    try_next(lexer, lslash, '/');
     ExprIdx tonic = parse_expr(lexer, gen);
     if (tonic == PR_NULL) {
 	report(lexer, lslash.off, "Expect expression for tonic in scale expression");
@@ -238,7 +236,7 @@ ExprIdx parse_scale(Lexer *lexer, Gen *gen) {
 	report(lexer, gen->exprs.items[octave].off, "Expect expression for mode in scale expression");
 	THROW_EXCEPT();
     }
-    try_next(lexer, rslash, '/')
+    try_next(lexer, rslash, '/');
     if (rslash.type == PR_NULL) {
 	report(lexer, gen->exprs.items[mode].off, "Unclosed scale expression");
 	THROW_EXCEPT();
@@ -253,7 +251,7 @@ ExprIdx parse_scale(Lexer *lexer, Gen *gen) {
 // currently only have one kind of prefix operator
 ExprIdx parse_prefix(Lexer *lexer, Gen *gen) {
 
-    try_next(lexer, qual, TK_QUAL)
+    try_next(lexer, qual, TK_QUAL);
     int lbp = prefix_bp(qual);
     ExprIdx sub_expr = parse_expr_climb(lexer, gen, lbp);
     if (sub_expr == PR_NULL) {
@@ -279,17 +277,17 @@ int postfix_bp(Token tk) {
 
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp) {
 // the order of this matter; atomic expr must be tried last.
-    static const ParseFn prefix_parsers[] = {parse_prefix, parse_scale, parse_chord, parse_atomic_expr };
+    static const ParseFn prefix_parsers[] = {parse_prefix, parse_scale, parse_chord, parse_section_expr, parse_atomic_expr };
     static const size_t prefix_parsers_len = sizeof(prefix_parsers)/sizeof(prefix_parsers[0]);
     ExprIdx lhs;
     for (size_t i = 0; i < prefix_parsers_len; ++i) {
 	lhs = prefix_parsers[i](lexer, gen);
-	if (lhs > 0) break;
+	if (lhs > PR_NULL) break;
     }
     if (lhs == PR_NULL) return PR_NULL;
     // postfix parser
     Token op; 
-    while ((op = lexer_peek(lexer)).type > 0) {
+    while ((op = lexer_peek(lexer)).type > TK_NULL) {
 	int lbp = postfix_bp(op);
 	if (lbp < min_bp) break;
 	lexer_next(lexer);
@@ -336,7 +334,7 @@ ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen)
 Pgm parse_ast(Lexer *lexer)
 {
     Pgm pgm;
-    DeclIdx decl;
+    FormalIdx toplevel;
     Gen gen = {0};
     //  da_append(gen.decls, (Decl){});
     //  da_append(gen.secs, (Sec){});
@@ -344,18 +342,19 @@ Pgm parse_ast(Lexer *lexer)
     //  da_append(gen.exprs, (Expr){});
     //  da_append(gen.labels, (Label){});
     bool find_main = false;
-    while ((decl = parse_decl(lexer, &gen)) > 0)
+    while ((toplevel = parse_formal(lexer, &gen)) != PR_NULL)
     {
+	da_append(gen.toplevel, toplevel);
     }
 
-    da_move(gen.decls, pgm.decls);
+    da_move(gen.toplevel, pgm.toplevel);
     da_move(gen.secs, pgm.secs);
     da_move(gen.formals, pgm.formals);
     da_move(gen.exprs, pgm.exprs);
 
     return pgm.success = true, pgm;
 err_out:
-    da_free(gen.decls);
+    da_free(gen.toplevel);
     da_free(gen.secs);
     da_free(gen.formals);
     da_free(gen.exprs);
@@ -370,7 +369,7 @@ void ast_get_form(Pgm* pgm, AstIdx i);
 void ast_deinit(Pgm *pgm)
 {
     free(pgm->secs.ptr);
-    free(pgm->decls.ptr);
+    free(pgm->toplevel.ptr);
     free(pgm->formals.ptr);
     free(pgm->exprs.ptr);
 }
