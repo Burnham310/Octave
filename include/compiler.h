@@ -5,6 +5,7 @@
 #include "ds.h"
 
 // https://en.wikipedia.org/wiki/Mode_(music)
+make_slice(Track);
 struct CpGen; // temp storage for intermediate objects generateed during compilation
 typedef struct CpGen CpGen;
 // returns a shallow copy. The next call to eval_chord invalidates the slice
