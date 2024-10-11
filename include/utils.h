@@ -2,7 +2,7 @@
 #define UTILS_H_
 
 #include "backend.h"
-
+#define THROW_EXCEPT() exit(1)
 #define eprintf(fmt, ...) fprintf(stderr, fmt, ##__VA_ARGS__)
 #define report(lexer, off, fmt, ...)                                                       \
     do                                                                                     \

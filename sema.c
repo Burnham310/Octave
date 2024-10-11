@@ -58,7 +58,7 @@ void sema_analy(Pgm *pgm, Lexer *lexer, Context *ctx) {
 	.pgm_env = NULL,
 	.sec_envs = {.ptr = calloc(sizeof(TypeEnv), ast_len(pgm, secs)), .len = ast_len(pgm, secs)},
 	.curr_sec = 0,
-	.main = 0,
+	.main = -1,
 	.sym_table = lexer->sym_table,
     };
 #define X(x) ctx->builtin_syms.x = symt_intern(ctx->sym_table, #x);
@@ -84,10 +84,10 @@ void sema_analy(Pgm *pgm, Lexer *lexer, Context *ctx) {
     ctx->success = sema_analy_pgm(ctx);
 }
 bool sema_analy_pgm(Context *ctx) {
-    for (size_t di = 1; di < ast_len(ctx->pgm, decls); ++di) {
+    for (size_t di = 0; di < ast_len(ctx->pgm, decls); ++di) {
 	if (!sema_analy_decl(ctx, di)) return false;
     }
-    if (ctx->main == 0) {
+    if (ctx->main == -1) {
 	report(ctx->lexer, 0, "section main is undefiend");
 	return false;
     }
@@ -204,7 +204,7 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx) {
 	    if (sub_t == TY_ERR) return TY_ERR;
 	    if (sub_t != TY_PITCH) {
 		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_PITCH), type_to_str(sub_t));
-		return TK_ERR;
+		return TY_ERR;
 	    }
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.octave);
 	    if (sub_t == TY_ERR) return TY_ERR;
@@ -229,6 +229,7 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx) {
 	    }
 	    return sub_t;
 	default:
+	    eprintf("tag %i\n", expr->tag);
 	    assert(false && "unknown tag");
     }
     

@@ -13,7 +13,6 @@ typedef struct
 } Loc;
 typedef enum
 {
-	TK_ERR = -2,
 	TK_EOF = -1,
 	TK_NULL = 0,
 	TK_IDENT,
@@ -41,7 +40,7 @@ typedef struct
 	size_t off;
 } Token;
 Loc off_to_loc(const char *src, const size_t src_len, const size_t off);
-const char* ty_str(TokenType ty);
+const char* tk_str(TokenType ty);
 typedef struct
 {
 	char *src;
