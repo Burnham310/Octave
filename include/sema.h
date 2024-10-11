@@ -54,7 +54,6 @@ Pitch pitch_from_scale(Scale *scale, size_t degree);
     X(TY_VOID) \
     X(TY_INT) \
     X(TY_PITCH) \
-    X(TY_DEGREE) \
     X(TY_CHORD) \
     X(TY_NOTE) \
     X(TY_SCALE) \

@@ -282,8 +282,9 @@ int postfix_bp(Token tk) {
 
 BP infix_bp(Token tk) {
     switch (tk.type) {
-	case '&': return (BP) {.lbp = 5, .rbp = 5 };
-	default: return (BP) {.lbp = -1, .rbp = -1 };
+	case '&': return (BP) 	{.lbp = 5, 	.rbp = 5 };
+	// case '\'':return (BP) 	{.lbp = 9,	.rbp = 10 };
+	default: return (BP)	{.lbp = -1, 	.rbp = -1 };
     }
 }
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp) {
@@ -322,6 +323,7 @@ ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp) {
 	    Expr expr = {.tag = EXPR_INFIX, .off = op.off};
 	    expr.data.infix.lhs = lhs;
 	    expr.data.infix.rhs = rhs;
+	    printf("infix\n");
 	    da_append(gen->exprs, expr);
 	    lhs = gen->exprs.size - 1;
 	}

@@ -7,7 +7,7 @@ ENTRY_DIR = entry
 
 CC = clang
 INCLUDES = -Iinclude
-CFLAGS += -g
+CFLAGS += -g -Wno-switch
 
 all: main
 $(OBJ_DIR):
@@ -15,11 +15,11 @@ $(OBJ_DIR):
 $(OUT_DIR):
 	mkdir -p $(OUT_DIR)
 main: $(OBJ) $(ENTRY_DIR)/main.c | $(OUT_DIR)
-	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
+	$(CC) $(CFLAGS) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 lexer: $(OBJ) $(ENTRY_DIR)/lexer.c | $(OUT_DIR)
-	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
+	$(CC)  $(CFLAGS) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 parser: $(OBJ) $(ENTRY_DIR)/parser.c | $(OUT_DIR)
-	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
+	$(CC)  $(CFLAGS) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 
 backend:
 	gcc $(ENTRY_DIR)/backend.c backend.c midi.c -Iinclude -g -o $(OUT_DIR)/backend

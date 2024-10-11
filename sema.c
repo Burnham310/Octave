@@ -10,6 +10,7 @@
 
 #include "stb_ds.h"
 // TODO variable scopes
+Type sema_analy_infix(Context *ctx, ExprIdx idx, Token op, Type lhs_t, Type rhs_t);
 #define type_only_val(ty) ((Val) {.ty = ty })
 ValEnv* get_curr_env(Context *ctx, SecIdx idx) {
     if (idx < 0) return &ctx->pgm_env;
@@ -106,8 +107,6 @@ bool sema_analy_pgm(Context *ctx) {
     }
     return true;
 }
-
-
 Type sema_analy_sec(Context *ctx, SecIdx idx) {
 
     Sec *sec = &ast_get(ctx->pgm, secs, idx);
@@ -171,6 +170,22 @@ bool sema_analy_formal(Context *ctx, FormalIdx idx, bool builtin, SecIdx sec_idx
     return true;
     
 }
+#define assert_type(ty, expect, off) do { if (ty != expect) { report(ctx->lexer, off, "Expect %s, got %s", type_to_str(expect), type_to_str(ty)); return TY_ERR; } } while (0);
+Type sema_analy_infix(Context *ctx, ExprIdx idx, Token op, Type lhs_t, Type rhs_t) {
+    if (op.type == '&') {
+	assert_type(lhs_t, TY_SEC, op.off);	
+	assert_type(rhs_t, TY_SEC, op.off);	
+	return TY_CHORUS;
+    } else if (op.type == '\'') {
+	assert_type(lhs_t, TY_INT, op.off);
+	assert_type(lhs_t, TY_PITCH, op.off);
+	return TY_PITCH;
+    }
+    eprintf("op: %s\n", tk_str(op.type));
+    assert(false && "unreachable");
+}
+
+
 Type sema_analy_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx) {
     Type ty = sema_analy_expr_impl(ctx, idx, sec_idx);
     ctx->types.ptr[idx] = ty;
@@ -178,7 +193,7 @@ Type sema_analy_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx) {
 }
 Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx) {
     Expr *expr = &ast_get(ctx->pgm, exprs, idx);
-    Type sub_t;
+    Type sub_t, sub_t2;
     ptrdiff_t env_i = -1;
     switch (expr->tag) {
 	case EXPR_NUM: return TY_INT;
@@ -250,16 +265,18 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx) {
 	    return sema_analy_sec(ctx, expr->data.sec);
 	case EXPR_INFIX:
 	    sub_t = sema_analy_expr(ctx, expr->data.infix.lhs, sec_idx);
-	    if (sub_t != TY_SEC) {
-		report(ctx->lexer, expr->off, "Expect TY_SEC for lhs of operator &, find %s", type_to_str(sub_t));
-		return TY_ERR;
-	    }
-	    sub_t = sema_analy_expr(ctx, expr->data.infix.rhs, sec_idx);
-	    if (sub_t != TY_SEC) {
-		report(ctx->lexer, expr->off, "Expect TY_SEC for rhs of operator &, find %s", type_to_str(sub_t));
-		return TY_ERR;
-	    }
-	    return TY_CHORUS;
+
+           if (sub_t != TY_SEC) {
+               report(ctx->lexer, expr->off, "Expect TY_SEC for lhs of operator &, find %s", type_to_str(sub_t));
+               return TY_ERR;
+           }
+           sub_t = sema_analy_expr(ctx, expr->data.infix.rhs, sec_idx);
+           if (sub_t != TY_SEC) {
+               report(ctx->lexer, expr->off, "Expect TY_SEC for rhs of operator &, find %s", type_to_str(sub_t));
+               return TY_ERR;
+           }
+           return TY_CHORUS;
+
 	default:
 	    eprintf("tag %i\n", expr->tag);
 	    assert(false && "unknown tag");
