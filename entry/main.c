@@ -5,6 +5,7 @@
 
 #include "lexer.h"
 #include "ast.h"
+#include "midi.h"
 #include "parser.h"
 #include "backend.h"
 #include "utils.h"
@@ -75,98 +76,36 @@ extern int main(const int argc, char **argv)
     }
     SliceOf(Track) tracks = eval_pgm(&ctx);
     // backend initialization
-    init_midi_backend(output_f, &(MidiConfig){.volume = 100, .devision = 120});
-        // default configuration
+    init_midi_backend(output_f, &(MidiConfig){.devision = 120, .track_n = 1, .volume = 100});
+    // default configuration
 
     for (size_t ti = 0; ti < tracks.len; ++ti) {
 	Track *track = &tracks.ptr[ti];
-	add_midi_event(SetInstrumentEvent(track->config.instr));
-	add_midi_event(SetTempoEvent(track->config.bpm));
+	add_midi_event(ti, SetInstrumentEvent(track->config.instr));
+	add_midi_event(ti, SetTempoEvent(track->config.bpm));
+	    printf("here\n");
 	for (size_t ni = 0; ni < track->notes.len; ++ni)
 	{
 	    Note note = track->notes.ptr[ni];
 	    SliceOf(Pitch) pitches = note.chord;
 	    size_t dots = note.dots;
 	    if (pitches.len == 0) {
-		add_midi_event(PauseNoteEvent(dots));
+		add_midi_event(ti, PauseNoteEvent(dots));
 		continue;
 	    }
-	    MidiNote first_note = {
-		.channel = DEFAULT_CHANNEL,
-		.length = dots,
-		.pitch = pitches.ptr[0],
-		.velocity = DEFAULT_VELOCITY,
-	    };
-	    add_midi_event(NoteOnEvent(&first_note));
-	    for (size_t p = 1; p < pitches.len; ++p) {
-		MidiNote midi_note = {
-		    .channel = DEFAULT_CHANNEL,
-		    .length = dots,
-		    .pitch = pitches.ptr[p],
-		    .velocity = DEFAULT_VELOCITY,
-		};
-		add_midi_event(NoteOnEvent(&midi_note));
+
+	    MidiNote midi_notes[pitches.len];
+	    for (size_t mi = 0; mi < pitches.len; ++mi) {
+		midi_notes[mi].length = dots;
+		midi_notes[mi].pitch = pitches.ptr[mi];
+		midi_notes[mi].velocity = DEFAULT_VELOCITY;
 	    }
-	    add_midi_event(NoteOffEvent(&first_note));
-	    for (size_t p = 1; p < pitches.len; ++p) {
-		MidiNote midi_note = {
-		    .channel = DEFAULT_CHANNEL,
-		    .length = dots,
-		    .pitch = pitches.ptr[p],
-		    .velocity = DEFAULT_VELOCITY,
-		};
-		struct _MTrkEvent event = NoteOffEvent(&midi_note);
-		event.delta_time = 0;
-		add_midi_event(event);
-	    }
+	    add_midi_note(ti, CHORD(midi_notes));
+	     
 
 
 	}
-	// eprintf("scale: tonic: %i mode: %i octave: %i\n", config.scale.tonic, config.scale.mode, config.scale.octave);
-	// Scale test_scale = {.tonic = PTCH_C, .octave = 5, .mode = MODE_MAJ};
-	// for (int i = 0; i < DIATONIC; ++i) {
-	//     printf("%i -> %i\n", i+1, pitch_from_scale(&test_scale, i+1));
-	// }
-	// if (pitch_expr.tag == EXPR_NUM)
 
-	// {
-        //     MidiNote midi_note = {
-        //         .channel = DEFAULT_CHANNEL,
-        //         .length = expr.data.note.dots,
-        //         .pitch = pitch_expr.data.num,
-        //         .velocity = DEFAULT_VELOCITY,
-        //     };
-        //     add_midi_event(NoteOnEvent(midi_conf.scale, &midi_note));
-        //     add_midi_event(NoteOffEvent(midi_conf.scale, &midi_note));
-        // }
-        // else if (pitch_expr.tag == EXPR_CHORD)
-        // {
-        //     size_t chord_len = pitch_expr.data.chord_notes.len;
-        //     struct _MidiEvent note_off_buf[chord_len];
-        //     for (size_t i = 0; i < chord_len; ++i)
-        //     {
-        //         AstIdx chrod_pitch_idx = pitch_expr.data.chord_notes.ptr[i];
-        //         Expr chrod_pitch_expr = pgm.exprs.ptr[chrod_pitch_idx];
-        // 	MidiNote midi_note = {
-        // 	    .channel = DEFAULT_CHANNEL,
-        // 	    .length = expr.data.note.dots,
-        // 	    .pitch = chrod_pitch_expr.data.num,
-        // 	    .velocity = DEFAULT_VELOCITY,
-        // 	};
-        // 	add_midi_event(NoteOnEvent(midi_conf.scale, &midi_note));
-        // 	note_off_buf[i] = NoteOffEvent(midi_conf.scale, &midi_note);
-        //     }
-
-        //     // inject note off events
-        //     add_midi_event(note_off_buf[0]);
-        //
-        //     for (size_t i = 1; i < chord_len; ++i) {
-        // 	note_off_buf[i].delta_time = 0;
-        //         add_midi_event(note_off_buf[i]);
-        //     }
-        // }
-        // else
-        //     report(dummy, expr.off, "unknown bug");
     }
 
     // dump events to file
