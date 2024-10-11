@@ -79,33 +79,32 @@ extern int main(const int argc, char **argv)
     init_midi_backend(output_f, &(MidiConfig){.devision = 120, .track_n = tracks.len, .volume = 100});
     // default configuration
 
-    for (size_t ti = 0; ti < tracks.len; ++ti) {
-	Track *track = &tracks.ptr[ti];
-	printf("instr %i\n", track->config.instr);
-	add_midi_event(ti, SetInstrumentEvent(track->config.instr));
-	add_midi_event(GLOBAL, SetTempoEvent(track->config.bpm));
-	for (size_t ni = 0; ni < track->notes.len; ++ni)
-	{
-	    Note note = track->notes.ptr[ni];
-	    SliceOf(Pitch) pitches = note.chord;
-	    size_t dots = note.dots;
-	    if (pitches.len == 0) {
-		add_midi_event(ti, PauseNoteEvent(dots));
-		continue;
-	    }
+    for (size_t ti = 0; ti < tracks.len; ++ti)
+    {
+        Track *track = &tracks.ptr[ti];
+        printf("instr %i\n", track->config.instr);
+        add_midi_event(ti, SetInstrumentEvent(track->config.instr));
+        add_midi_event(GLOBAL, SetTempoEvent(track->config.bpm));
+        for (size_t ni = 0; ni < track->notes.len; ++ni)
+        {
+            Note note = track->notes.ptr[ni];
+            SliceOf(Pitch) pitches = note.chord;
+            size_t dots = note.dots;
+            if (pitches.len == 0)
+            {
+                add_midi_event(ti, PauseNoteEvent(dots));
+                continue;
+            }
 
-	    MidiNote midi_notes[pitches.len];
-	    for (size_t mi = 0; mi < pitches.len; ++mi) {
-		midi_notes[mi].length = dots;
-		midi_notes[mi].pitch = pitches.ptr[mi];
-		midi_notes[mi].velocity = DEFAULT_VELOCITY;
-	    }
-	    add_midi_note(ti, CHORD(midi_notes));
-	     
-
-
-	}
-
+            MidiNote midi_notes[pitches.len];
+            for (size_t mi = 0; mi < pitches.len; ++mi)
+            {
+                midi_notes[mi].length = dots;
+                midi_notes[mi].pitch = pitches.ptr[mi];
+                midi_notes[mi].velocity = DEFAULT_VELOCITY;
+            }
+            add_midi_note(ti, CHORD(midi_notes));
+        }
     }
 
     // dump events to file

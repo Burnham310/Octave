@@ -10,8 +10,8 @@ void add_iFunc(int track_id, enum MTrkEventType event, int duration, float (*wra
 
 void _add_midi_note(int track_id, MidiNote *note, size_t note_n);
 
-
 void free_backend();
 
 // buildin interpolator
 float iFunc_linear(int idx, int n);
+float iFunc_zoom(int idx, int n);

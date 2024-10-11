@@ -285,6 +285,7 @@ BP infix_bp(Token tk) {
 	case '&': return (BP) 	{.lbp = 5, 	.rbp = 5 };
 	// case '\'':return (BP) 	{.lbp = 9,	.rbp = 10 };
 	default: return (BP)	{.lbp = -1, 	.rbp = -1 };
+
     }
 }
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp) {

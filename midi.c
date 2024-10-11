@@ -3,7 +3,7 @@
 
 static FILE *midi_fp;
 static struct _MidiTrack *midi_tracks;
-static struct _MidiTrack midi_gloabl_ev;
+static struct _MidiTrackGloEv midi_gloabl_ev;
 
 static MidiConfig midi_config = {
     .devision = DEFAULT_DEVISION,
@@ -75,8 +75,8 @@ EVENT_CALLBACK(NoteOnEvent)
 
 EVENT_DECLARE(NoteOnEvent, MidiNote *note)
 {
-    midi_assert(note->pitch >= 0 && note->pitch <= 127, midi_printf("bad note pitch value '%d'", note->pitch));
-    midi_assert(note->velocity >= 0 && note->velocity <= 127, midi_printf("bad velocity '%d'", note->velocity));
+    midi_assert(note->pitch >= 0 && note->pitch <= 127, midi_eprintf("bad note pitch value '%d'", note->pitch));
+    midi_assert(note->velocity >= 0 && note->velocity <= 127, midi_eprintf("bad velocity '%d'", note->velocity));
 
     MidiNote *note_copy = (MidiNote *)malloc(sizeof(MidiNote));
     *note_copy = *note;
@@ -105,7 +105,7 @@ EVENT_CALLBACK(NoteOffEvent)
 
 EVENT_DECLARE(NoteOffEvent, MidiNote *note, int force_immed)
 {
-    midi_assert(note->pitch >= 0 && note->pitch <= 127, midi_printf("bad note pitch value '%d'", note->pitch));
+    midi_assert(note->pitch >= 0 && note->pitch <= 127, midi_eprintf("bad note pitch value '%d'", note->pitch));
 
     MidiNote *note_copy = (MidiNote *)malloc(sizeof(MidiNote));
     *note_copy = *note;
@@ -125,7 +125,7 @@ EVENT_DECLARE(NoteOffEvent, MidiNote *note, int force_immed)
     return event;
 }
 
-EVENT_CALLBACK(SetTempoEvent)
+GLOABL_EV EVENT_CALLBACK(SetTempoEvent)
 {
 
     int tempo_sec = *(int *)data;
@@ -140,9 +140,9 @@ EVENT_CALLBACK(SetTempoEvent)
     write_byte(tempo_sec & 0xFF);
 }
 
-EVENT_DECLARE(SetTempoEvent, int bpm)
+GLOABL_EV EVENT_DECLARE(SetTempoEvent, int bpm)
 {
-    midi_assert(bpm > 0, midi_printf("bpm should be greater than 0"));
+    midi_assert(bpm > 0, midi_eprintf("bpm should be greater than 0"));
 
     int *tempo_sec = malloc(sizeof(int));
     *tempo_sec = 60 * 1000000 / bpm;
@@ -171,7 +171,7 @@ EVENT_CALLBACK(SetInstrumentEvent)
 
 EVENT_DECLARE(SetInstrumentEvent, int pc)
 {
-    midi_assert(pc >= 1 && pc <= 128, midi_printf("invalid PC number '%d'", pc));
+    midi_assert(pc >= 1 && pc <= 128, midi_eprintf("invalid PC number '%d'", pc));
 
     int *pc_data = malloc(sizeof(int));
     *pc_data = pc;
@@ -202,7 +202,7 @@ EVENT_CALLBACK(SetVolumeEvent)
 
 EVENT_DECLARE(SetVolumeEvent, int volume)
 {
-    midi_assert(volume >= 1 && volume <= 128, midi_printf("invalid volume number '%d'", volume));
+    midi_assert(volume >= 1 && volume <= 128, midi_eprintf("invalid volume number '%d'", volume));
 
     int *volume_data = malloc(sizeof(int));
     *volume_data = volume;
@@ -225,7 +225,8 @@ EVENT_CALLBACK(SetVolumeRatioEvent)
     float ratio = *(float *)data;
     int volume = get_midi_tr_meta(event_data.track_id)->volume * ratio;
 
-    if (ratio <= 0) {
+    if (ratio <= 0)
+    {
         volume = 1;
     }
 
@@ -317,10 +318,10 @@ void init_midi_backend(FILE *fp, MidiConfig *config)
 
 void add_midi_event(int track_id, struct _MTrkEvent event)
 {
-    midi_assert(track_id == GLOBAL || track_id < midi_config.track_n, midi_printf("no such track id"));
+    midi_assert(track_id == GLOBAL || track_id < midi_config.track_n, midi_eprintf("no such track id"));
 
     midi_assert((track_id == GLOBAL) == (event.eventType == _SetTempoEvent),
-                midi_printf("set invalid GLOABL event flag for: %d", event.eventType));
+                midi_eprintf("set invalid GLOABL event flag for: %d", event.eventType));
 
     // global event
     if (track_id == GLOBAL)
@@ -345,7 +346,26 @@ void add_midi_event(int track_id, struct _MTrkEvent event)
     cur_track->events[cur_track->event_count++] = event;
 }
 
-static void dump_track_to_file(int track_id)
+static void dump_gloabl_to_file()
+{
+    for (size_t i = 0; i < midi_gloabl_ev.event_count; ++i)
+    {
+        for (size_t j = 0; j < _get_array_len(midi_gloabl_ev.events[i].callbacks); ++j)
+        {
+            if (midi_gloabl_ev.events[i].callbacks[j])
+            {
+                midi_gloabl_ev.events[i].callbacks[j](
+                    midi_gloabl_ev.events[i].delta_time,
+                    (struct _EventData){},
+                    midi_gloabl_ev.events[i].data);
+            }
+            else
+                break;
+        }
+    }
+}
+
+static void dump_track_to_file(int track_id, int global_inj_flag)
 {
     struct _MidiTrack cur_track = midi_tracks[track_id];
 
@@ -355,6 +375,12 @@ static void dump_track_to_file(int track_id)
     fwrite("MTrk", 1, 4, midi_fp);          // Chunk type
     long track_length_pos = ftell(midi_fp); // Write a placeholder for the track length (we'll go back and fill this in later)
     write_dword(0);                         // Placeholder
+
+    if (global_inj_flag)
+    {
+        midi_printf("dumping global event align to Track: %d", track_id);
+        dump_gloabl_to_file();
+    }
 
     midi_printf("prepare %zu event.", cur_track.event_count);
 
@@ -370,20 +396,20 @@ static void dump_track_to_file(int track_id)
         struct _MTrkEvent event = cur_track.events[i];
 
         // simple state machine with two states to count total notes in track
-        if (event.eventType = _NoteOnEvent)
+        if (event.eventType == _NoteOnEvent)
         {
             note_on_state = 1;
             note_on_t++;
         }
         else if (event.eventType == _NoteOffEvent)
         {
-            midi_assert(note_on_state, midi_printf("bad midi, standalone NoteOff event"));
-            note_on_state = 0;
+            midi_assert(note_on_state, midi_eprintf("bad midi, standalone NoteOff event (NoteOn: %d NoteOff: %d)", note_on_t, note_off_t));
             note_n++;
             note_off_t++;
+            note_on_state = note_on_t > note_off_t;
         }
     }
-    midi_assert(note_on_t == note_off_t, midi_printf("bad midi, NoteOn event diff than NoteOff Event"));
+    midi_assert(note_on_t == note_off_t, midi_eprintf("bad midi, NoteOn event diff than NoteOff Event"));
 
     // force writing global volume
     callback_SetVolumeEvent(0, (struct _EventData){.track_id = track_id}, &midi_config.volume);
@@ -396,17 +422,16 @@ static void dump_track_to_file(int track_id)
         struct _MTrkEvent event = cur_track.events[i];
 
         // calculate the number of note to update _EventData
-        if (event.eventType = _NoteOnEvent)
+        if (event.eventType == _NoteOnEvent)
         {
             note_on_state = 1;
         }
         else if (event.eventType == _NoteOffEvent)
         {
-            midi_assert(note_on_state, midi_printf("bad midi, standalone NoteOff event"));
-            note_on_state = 0;
-            cur_note_idx++;
+            note_on_state = note_on_t > note_off_t;
+            if (!note_on_state)
+                cur_note_idx++;
         }
-
         for (size_t j = 0; j < _get_array_len(event.callbacks); ++j)
         {
             if (event.callbacks[j])
@@ -444,18 +469,8 @@ void dump_midi_to_file()
 
     for (int i = 0; i < midi_config.track_n; ++i)
     {
-        // inject global event
-        for (size_t j = 0; j < _get_array_len(midi_gloabl_ev.events); ++j)
-        {
-            for (size_t k = 0; k < _get_array_len(midi_gloabl_ev.events[k].callbacks); ++k)
-                midi_gloabl_ev.events[j].callbacks[k](
-                    midi_gloabl_ev.events[j].delta_time,
-                    (struct _EventData){},
-                    midi_gloabl_ev.events[j].data);
-        }
-
-        // inject track event
-        dump_track_to_file(i);
+        // inject track event and global event align to track 1
+        dump_track_to_file(i, i == 0);
     }
 
     midi_printf("all done");

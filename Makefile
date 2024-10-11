@@ -22,10 +22,12 @@ parser: $(OBJ) $(ENTRY_DIR)/parser.c | $(OUT_DIR)
 	$(CC)  $(CFLAGS) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 
 backend:
-	gcc $(ENTRY_DIR)/backend.c backend.c midi.c -Iinclude -g -o $(OUT_DIR)/backend
+	mkdir -p $(OUT_DIR)
+	${CC} $(ENTRY_DIR)/backend.c backend.c midi.c ds.c -Iinclude -g -o $(OUT_DIR)/backend
 
 test_backend:
-	gcc $(ENTRY_DIR)/backend.c backend.c midi.c ds.c -Iinclude -g -o $(OUT_DIR)/backend
+	mkdir -p $(OUT_DIR)
+	${CC} $(ENTRY_DIR)/backend.c backend.c midi.c ds.c -Iinclude -g -o $(OUT_DIR)/backend
 	$(OUT_DIR)/backend
 	rm $(OUT_DIR)/backend
 
