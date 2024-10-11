@@ -12,8 +12,8 @@ static MidiConfig midi_config = {
 
 static inline int get_delta_time_dely(int track_id)
 {
-    int tmp = midi_tracks[track_id].delta_time_dely_buf;
-    midi_tracks[track_id].delta_time_dely_buf = 0;
+    int tmp = midi_tracks[track_id].meta.delta_time_dely_buf;
+    midi_tracks[track_id].meta.delta_time_dely_buf = 0;
 
     return tmp;
 }
@@ -66,9 +66,9 @@ EVENT_CALLBACK(NoteOnEvent)
 {
     MidiNote *note = (MidiNote *)data;
 
-    write_var_len(delta_time + get_delta_time_dely(track_id));
+    write_var_len(delta_time + get_delta_time_dely(event_data.track_id));
 
-    write_byte(0x90 | (channel & 0x0F)); // Note On event
+    write_byte(0x90 | (event_data.channel & 0x0F)); // Note On event
     write_byte(note->pitch);
     write_byte(note->velocity);
 }
@@ -98,7 +98,7 @@ EVENT_CALLBACK(NoteOffEvent)
     MidiNote *note = (MidiNote *)data;
 
     write_var_len(delta_time);
-    write_byte(0x80 | (channel & 0x0F));
+    write_byte(0x80 | (event_data.channel & 0x0F));
     write_byte(note->pitch);    // MIDI pitch
     write_byte(note->velocity); // Velocity (volume)
 }
@@ -165,7 +165,7 @@ EVENT_CALLBACK(SetInstrumentEvent)
 
     int pc = *(int *)data;
 
-    write_byte(0xC0 + channel);
+    write_byte(0xC0 + event_data.channel);
     write_byte(pc);
 }
 
@@ -193,9 +193,11 @@ EVENT_CALLBACK(SetVolumeEvent)
 
     int volume = *(int *)data;
 
-    write_byte(0xB0 + channel);
+    write_byte(0xB0 + event_data.channel);
     write_byte(0x07);
     write_byte(volume);
+
+    midi_tracks[event_data.track_id].meta.volume = volume;
 }
 
 EVENT_DECLARE(SetVolumeEvent, int volume)
@@ -216,10 +218,46 @@ EVENT_DECLARE(SetVolumeEvent, int volume)
     return event;
 }
 
+EVENT_CALLBACK(SetVolumeRatioEvent)
+{
+    write_var_len(0);
+
+    float ratio = *(float *)data;
+    int volume = get_midi_tr_meta(event_data.track_id)->volume * ratio;
+
+    if (ratio <= 0) {
+        volume = 1;
+    }
+
+    write_byte(0xB0 + event_data.channel);
+    write_byte(0x07);
+    write_byte(volume);
+
+    // midi_printf("volume: %d %f", volume, ratio);
+    get_midi_tr_meta(event_data.track_id)->volume = volume;
+}
+
+EVENT_DECLARE(SetVolumeRatioEvent, float ratio)
+{
+
+    float *ratio_data = malloc(sizeof(float));
+    *ratio_data = ratio;
+
+    struct _MTrkEvent event =
+        {
+            .eventType = _SetVolumeRatioEvent,
+            .callbacks = USE_CALLBACK(SetVolumeRatioEvent),
+            .data = ratio_data,
+            .destroyer = free,
+        };
+
+    return event;
+}
+
 EVENT_CALLBACK(PauseNoteEvent)
 {
     int note_length_f = *(int *)data;
-    midi_tracks[track_id].delta_time_dely_buf = midi_config.devision * NoteLenRatio(note_length_f);
+    midi_tracks[event_data.track_id].meta.delta_time_dely_buf = midi_config.devision * NoteLenRatio(note_length_f);
 }
 
 EVENT_DECLARE(PauseNoteEvent, MidiNoteLength length)
@@ -241,6 +279,11 @@ EVENT_DECLARE(PauseNoteEvent, MidiNoteLength length)
         };
 
     return event;
+}
+
+struct MidiTrackMeta *get_midi_tr_meta(int track_id)
+{
+    return &midi_tracks[track_id].meta;
 }
 
 void init_midi_backend(FILE *fp, MidiConfig *config)
@@ -315,13 +358,67 @@ static void dump_track_to_file(int track_id)
 
     midi_printf("prepare %zu event.", cur_track.event_count);
 
+    int note_n = 0;
+    int note_on_state = 0;
+
+    int note_on_t = 0;
+    int note_off_t = 0;
+
+    // check track, and count note number for iFunc
     for (size_t i = 0; i < cur_track.event_count; ++i)
     {
         struct _MTrkEvent event = cur_track.events[i];
+
+        // simple state machine with two states to count total notes in track
+        if (event.eventType = _NoteOnEvent)
+        {
+            note_on_state = 1;
+            note_on_t++;
+        }
+        else if (event.eventType == _NoteOffEvent)
+        {
+            midi_assert(note_on_state, midi_printf("bad midi, standalone NoteOff event"));
+            note_on_state = 0;
+            note_n++;
+            note_off_t++;
+        }
+    }
+    midi_assert(note_on_t == note_off_t, midi_printf("bad midi, NoteOn event diff than NoteOff Event"));
+
+    // force writing global volume
+    callback_SetVolumeEvent(0, (struct _EventData){.track_id = track_id}, &midi_config.volume);
+
+    int cur_note_idx = 0;
+    note_on_state = 0;
+
+    for (size_t i = 0; i < cur_track.event_count; ++i)
+    {
+        struct _MTrkEvent event = cur_track.events[i];
+
+        // calculate the number of note to update _EventData
+        if (event.eventType = _NoteOnEvent)
+        {
+            note_on_state = 1;
+        }
+        else if (event.eventType == _NoteOffEvent)
+        {
+            midi_assert(note_on_state, midi_printf("bad midi, standalone NoteOff event"));
+            note_on_state = 0;
+            cur_note_idx++;
+        }
+
         for (size_t j = 0; j < _get_array_len(event.callbacks); ++j)
         {
             if (event.callbacks[j])
-                event.callbacks[j](event.delta_time, track_id, midi_tracks[track_id].channel, event.data);
+                event.callbacks[j](
+                    event.delta_time,
+                    (struct _EventData){
+                        .track_id = track_id,
+                        .nidx = cur_note_idx,
+                        .nt = note_n,
+                        .channel = midi_tracks[track_id].channel,
+                    },
+                    event.data);
             else
                 break;
         }
@@ -353,9 +450,11 @@ void dump_midi_to_file()
             for (size_t k = 0; k < _get_array_len(midi_gloabl_ev.events[k].callbacks); ++k)
                 midi_gloabl_ev.events[j].callbacks[k](
                     midi_gloabl_ev.events[j].delta_time,
-                    0, 0,
+                    (struct _EventData){},
                     midi_gloabl_ev.events[j].data);
         }
+
+        // inject track event
         dump_track_to_file(i);
     }
 

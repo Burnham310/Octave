@@ -22,12 +22,12 @@ parser: $(OBJ) $(ENTRY_DIR)/parser.c | $(OUT_DIR)
 	$(CC) $(INCLUDES) $^ -o $(OUT_DIR)/$@ 
 
 backend:
-	gcc $(ENTRY_DIR)/backend.c backend.c midi.c -Iinclude -g -o backend
+	gcc $(ENTRY_DIR)/backend.c backend.c midi.c -Iinclude -g -o $(OUT_DIR)/backend
 
 test_backend:
-	gcc $(ENTRY_DIR)/backend.c backend.c midi.c -Iinclude -g -o backend
-	./backend
-	rm backend
+	gcc $(ENTRY_DIR)/backend.c backend.c midi.c -Iinclude -g -o $(OUT_DIR)/backend
+	$(OUT_DIR)/backend
+	rm $(OUT_DIR)/backend
 
 webasm:
 	emcc $(SRC) $(ENTRY_DIR)/main.c $(INCLUDES) -o web/octc.js -s WASM=1 -s EXPORTED_FUNCTIONS='["_main"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["callMain"]'

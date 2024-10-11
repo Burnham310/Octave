@@ -24,6 +24,7 @@ typedef struct
 
 typedef struct
 {
+    int volume;
     int devision;
     int track_n;
 } MidiConfig;
@@ -37,7 +38,16 @@ enum MTrkEventType
     _SetTempoEvent,
     _SetInstrumentEvent,
     _SetVolumeEvent,
-    _BufUpdateEvent
+    _SetVolumeRatioEvent,
+    _BufUpdateEvent,
+};
+
+struct _EventData
+{
+    int track_id;
+    unsigned char channel;
+    int nidx;
+    int nt;
 };
 
 struct _MTrkEvent
@@ -45,7 +55,7 @@ struct _MTrkEvent
     enum MTrkEventType eventType;
     int delta_time;
     void *data;
-    void (*callbacks[5])(int delta_time, int track_id, unsigned char channel, void *data);
+    void (*callbacks[5])(int delta_time, struct _EventData, void *data);
     void (*destroyer)(void *data);
 };
 
@@ -71,15 +81,21 @@ struct _MTrkEvent
         }                         \
     } while (0);
 
-#define EVENT_CALLBACK(event_name) static void callback_##event_name(int delta_time, int track_id, unsigned char channel, void *data)
+#define EVENT_CALLBACK(event_name) static void callback_##event_name(int delta_time, struct _EventData event_data, void *data)
 #define USE_CALLBACK(event_name) {&callback_##event_name}
+
+struct MidiTrackMeta
+{
+    int delta_time_dely_buf;
+    int volume;
+};
 
 struct _MidiTrack
 {
     size_t cap;
     size_t event_count;
-    int delta_time_dely_buf;
     int channel;
+    struct MidiTrackMeta meta;
     struct _MTrkEvent *events;
 };
 
@@ -93,6 +109,8 @@ void add_midi_event(int track_id, struct _MTrkEvent event);
 void dump_midi_to_file();
 // free the backend
 void free_midi_backend();
+// get metadata for track
+struct MidiTrackMeta *get_midi_tr_meta(int track_id);
 
 /*
     MTrk Events <MTrk event>:
@@ -106,7 +124,7 @@ void free_midi_backend();
     - *SetTempoEvent: change current tempo(bpm)
     - SetInstrumentEvent: change instrument, pc refer to midi document
     - SetVolumeEvent: set volume
-    -
+    - SetVolumeRatioEvent: set volume to ratio wrt current volume
 */
 
 #define EVENT_DECLARE(event_name, ...) struct _MTrkEvent event_name(__VA_ARGS__)
@@ -125,3 +143,5 @@ EVENT_DECLARE(SetTempoEvent, int bpm);
 EVENT_DECLARE(SetInstrumentEvent, int pc);
 // change volume
 EVENT_DECLARE(SetVolumeEvent, int volume);
+// set volume to ratio wrt current volume
+EVENT_DECLARE(SetVolumeRatioEvent, float ratio);
