@@ -82,8 +82,7 @@ extern int main(const int argc, char **argv)
     for (size_t ti = 0; ti < tracks.len; ++ti) {
 	Track *track = &tracks.ptr[ti];
 	add_midi_event(ti, SetInstrumentEvent(track->config.instr));
-	add_midi_event(ti, SetTempoEvent(track->config.bpm));
-	    printf("here\n");
+	add_midi_event(GLOBAL, SetTempoEvent(track->config.bpm));
 	for (size_t ni = 0; ni < track->notes.len; ++ni)
 	{
 	    Note note = track->notes.ptr[ni];
