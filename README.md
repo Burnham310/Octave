@@ -55,7 +55,19 @@ main = guitar & bass
 ```
 
 ## Run
-make executable via:
+
+To compile and run the project, use the following command:
+
 ```bash
 make
 ```
+For playing the generated output, it is recommended to use [TiMidity++](https://timidity.sourceforge.net/).
+
+## Webasm
+
+To generate WebAssembly, use:
+```bash
+make webasm
+```
+Note: Due to limitations in the JavaScript library, certain features (e.g., the [interpolate function]) are not supported in the frontend player.
+
