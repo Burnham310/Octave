@@ -1,0 +1,30 @@
+{
+  "name": "octave",
+  "displayName": "Octave",
+  "description": "language highlight support for Octave Music Programming Language",
+  "version": "0.0.1",
+  "publisher": "NyaLab",
+  "engines": {
+    "vscode": "^1.94.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "contributes": {
+    "languages": [{
+      "id": "octave",
+      "aliases": ["Octave", "octave"],
+      "extensions": [".oct"],
+      "configuration": "./language-configuration.json",
+      "icon": {
+        "light": "./icon/Octave.png",
+        "dark": "./icon/Octave.png"
+      }
+    }],
+    "grammars": [{
+      "language": "octave",
+      "scopeName": "source.oct",
+      "path": "./syntaxes/octave.tmLanguage.json"
+    }]
+  }
+}
