@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
     <script
         src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.29.1/min/vs/loader.min.js"></script>
     <style>
         body {
             font-family: 'Roboto', sans-serif;
@@ -39,11 +40,10 @@
             box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        textarea {
+        #editor-container {
             width: 100%;
-            font-size: 1.2em;
+            height: 400px;
             border-radius: 6px;
-            border: 1px solid #ddd;
             margin-bottom: 20px;
         }
 
@@ -114,10 +114,10 @@
         <a href="./example.html" target="_blank">Example Octave</a>
         <hr>
 
-        <textarea id="editor" rows="10" placeholder="Edit your Octave code here..."></textarea>
+        <!-- Monaco Editor Container -->
+        <div id="editor-container"></div>
 
-        <p id="out" style="background-color: #f0f0f0;">
-        </p>
+        <p id="out" style="background-color: #f0f0f0;"></p>
 
         <button id="compile-btn" onclick="compileBtnCallback()">Compile</button>
 
@@ -132,15 +132,68 @@
 
     <script src="octc.js"></script>
     <script>
+        let editor;
+        
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.29.1/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: 'Write your Octave code here...',
+                language: 'octave',
+                theme: 'vs-light'
+            });
+
+            monaco.languages.register({ id: 'octave' });
+
+            monaco.languages.setMonarchTokensProvider('octave', {
+                tokenizer: {
+                    root: [
+                        [/\b(volume|bpm|instrument|scale)\b/, 'keyword.control.octave'],
+                        [/\b(linear|zoom)\b/, 'keyword.operator.octave'],
+                        [/<[a-zA-Z_][a-zA-Z0-9_]*>/, 'entity.name.tag.octave'],
+                        [/\|/, 'keyword.operator.octave'],
+                        [/(((o|#|s|b)+)')?([1-9])(\\.+)/, {
+                            cases: {
+                                '$2': 'constant.numeric.note.modifier.highlight.octave',
+                                '$4': 'keyword.operator.octave'
+                            }
+                        }],
+                        [/\/\/.*$/, 'comment.line.double-slash.octave'],
+                        [/\b[a-zA-Z_][a-zA-Z0-9_]*\b/, 'variable.other.octave'],
+                        [/"/, { token: 'string.quote', bracket: '@open', next: '@string' }],
+                    ],
+
+                    string: [
+                        [/[^\\"]+/, 'string'],
+                        [/\\./, 'constant.character.escape.octave'],
+                        [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
+                    ]
+                },
+
+                tokenPostfix: '.octave',
+
+                brackets: [
+                    { open: '[', close: ']', token: 'delimiter.bracket' },
+                    { open: '{', close: '}', token: 'delimiter.bracket' },
+                    { open: '(', close: ')', token: 'delimiter.parenthesis' }
+                ]
+            });
+
+            // Set theme and load existing code from localStorage
+            const savedCode = localStorage.getItem('octaveCode');
+            if (savedCode) {
+                editor.setValue(savedCode); // Set the value from localStorage
+            }
+        });
+
         window.onload = function () {
             const savedCode = localStorage.getItem('octaveCode');
             if (savedCode) {
-                document.getElementById('editor').value = savedCode;
+                editor.setValue(savedCode);
             }
         }
 
         function compileOctave() {
-            const input = document.getElementById('editor').value;
+            const input = editor.getValue();
             const inputFile = 'tmp.oct';  // Virtual input file
             const outputFile = 'tmp.mid'; // Virtual output file
 
@@ -149,11 +202,11 @@
             try {
                 Module.callMain([inputFile, '-o', outputFile]);
             } catch {
-                return false
+                return false;
             }
 
             if (FS.readFile(outputFile).byteLength === 0) {
-                return false
+                return false;
             }
 
             const midiData = FS.readFile(outputFile, { encoding: 'binary' });
@@ -164,7 +217,6 @@
 
             return true;
         }
-
 
         // override error message output
         function err(msg) {
@@ -179,7 +231,7 @@
             document.getElementById("out").innerText = ""
             const compile_ret = compileOctave();
 
-            const code = document.getElementById('editor').value;
+            const code = editor.getValue();
             localStorage.setItem('octaveCode', code);
 
             if (compile_ret) {
@@ -190,15 +242,12 @@
                 await new Promise(r => setTimeout(r, 1000));
                 document.getElementById("compile-btn").innerText = "Compile"
                 document.getElementById("compile-btn").style.background = "#007bff"
-
-            }
-            else {
+            } else {
                 document.getElementById("compile-btn").innerText = "Compile Failed!"
                 document.getElementById("compile-btn").style.background = "red"
                 await new Promise(r => setTimeout(r, 1000));
                 document.getElementById("compile-btn").innerText = "Compile"
                 document.getElementById("compile-btn").style.background = "#007bff"
-
             }
         }
 
