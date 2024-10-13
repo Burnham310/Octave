@@ -258,7 +258,7 @@ EVENT_DECLARE(SetVolumeRatioEvent, float ratio)
 EVENT_CALLBACK(PauseNoteEvent)
 {
     int note_length_f = *(int *)data;
-    midi_tracks[event_data.track_id].meta.delta_time_dely_buf = midi_config.devision * NoteLenRatio(note_length_f);
+    get_midi_tr_meta(event_data.track_id)->delta_time_dely_buf += midi_config.devision * NoteLenRatio(note_length_f);
 }
 
 EVENT_DECLARE(PauseNoteEvent, MidiNoteLength length)
