@@ -3,7 +3,7 @@
 #include "ast.h"
 #include "utils.h"
 
-typedef int Pitch;
+typedef int AbsPitch;
 #define MODE_SYMS \
     X(ION) \
     X(DOR) \
@@ -30,7 +30,7 @@ typedef enum {
 
 // evaluted scale
 typedef struct {
-    Pitch tonic;
+    AbsPitch tonic;
     Mode mode;
     int octave;
 } Scale;
@@ -42,18 +42,17 @@ typedef struct {
 
 #define DIATONIC 7
 static const int BASE_MODE[DIATONIC] = {0, 2, 4, 5, 7, 9, 11};
-// 1 <= degree <= 7
-// returns absolute pitch
-Pitch pitch_from_scale(Scale *scale, size_t degree);
 // x macro: https://en.wikipedia.org/wiki/X_macro
 // TY_PITCH refers to abosulte pitches e.g. A C G#
-// TY_DEGREE refers to relative position in a scale, 1 2 3 4 5 6 7
-// TY_INT is implicitly coerced to TY_DEGREE if it is the direct child of the notes part of a section, or a chord.
+// TY_DEGREE refers to relative position in a scale, 1 2 3 4 5 6 7, along with a shift
+// TY_INT is implicitly coerced to TY_DEGREE
 #define TYPE_LISTX \
     X(TY_ERR) \
     X(TY_VOID) \
     X(TY_INT) \
+    X(TY_DEGREE) \
     X(TY_PITCH) \
+    X(TY_ABSPITCH) \
     X(TY_CHORD) \
     X(TY_NOTE) \
     X(TY_SCALE) \
@@ -68,17 +67,27 @@ typedef enum {
 
 // Each type corresponds to one thing in ValData
 // INT -> int i
-// PITCH -> int i
-// DEGREE -> int i
+// ABS_PITCH -> int i
+// PITCH -> Pitch pitch
+// DEGREE -> Degree deg
 // CHORD -> SliceOf(Pitch)
 // NOTE -> Note
 // SCALE -> Scale
 // MODE -> Mode
-// Sec -> SliceOf(Note)
-
+// SEC -> SliceOf(Note)
+// Here the interal data structure represening `Value` in our language
 const char *type_to_str(Type ty);
-
-
+typedef struct {
+    u8 degree;
+    int shift;
+} Degree;
+typedef struct {
+    bool is_abs;
+    union {
+	Degree deg;
+	AbsPitch abs;
+    } data;
+} Pitch;
 make_slice(Pitch);
 typedef struct {
     SliceOf(Pitch) chord;
@@ -98,6 +107,8 @@ typedef union {
     Scale scale;
     Track sec;
     SliceOf(Track) chorus;
+    Degree deg;
+    Pitch pitch;
 } ValData;
 typedef struct {
     ValData data;
@@ -107,7 +118,7 @@ typedef struct {
 
 typedef struct {
     Symbol key;
-    Type value; // could also holds a value in the future?
+    Type value;
 } TypeEntry;
 typedef struct {
     Symbol key;

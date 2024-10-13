@@ -31,18 +31,7 @@ const char *type_to_str(Type ty) {
 #undef X
 
 // 1 <= degree <= 7
-Pitch pitch_from_scale(Scale *scale, size_t degree) {
-    assert(degree <= DIATONIC && degree >= 1 && "degree out of bound");
-    assert(scale->tonic < DIATONIC && scale->tonic >= 0 && "tonic out of bound");
-    size_t base = scale->tonic + scale->octave * 12;
-    // degree is 1-based
-    size_t degree_shift = degree + scale->mode - 1;
-    // Step is how much we should walk from the tonic
-    size_t step = degree_shift < DIATONIC 
-	? BASE_MODE[degree_shift] - BASE_MODE[scale->mode]
-	: 12 + BASE_MODE[degree_shift % DIATONIC] - BASE_MODE[scale->mode];
-    return base + step;    
-}
+
 void context_deinit(Context *ctx) {
     assert(ctx->types.ptr && ctx->types.len > 0);
     free(ctx->types.ptr);
@@ -77,7 +66,7 @@ void sema_analy(Pgm *pgm, Lexer *lexer, Context *ctx) {
     // builtin constants
     for (size_t i = 0; i < DIATONIC; ++i) {
 	ctx->builtin_syms.pitches[i] = symt_intern(ctx->sym_table, CONST_PITCH[i]);
-	Val pitch_val = {.ty = TY_PITCH, .data.i = BASE_MODE[i]};
+	Val pitch_val = {.ty = TY_ABSPITCH, .data.i = BASE_MODE[i]};
 	hmput(ctx->pgm_env, ctx->builtin_syms.pitches[i], pitch_val);
 	
 	ctx->builtin_syms.modes[i] = symt_intern(ctx->sym_table, CONST_MODE[i]);
@@ -170,35 +159,38 @@ bool sema_analy_formal(Context *ctx, FormalIdx idx, bool builtin, SecIdx sec_idx
     return true;
     
 }
-Type coerce(Context *ctx, SecIdx sec_idx, Type from, Type to, size_t off) {
+Type ty_coerce(Context *ctx, SecIdx sec_idx, Type from, Type to, size_t off) {
     
-    if ((from == TY_INT || from == TY_CHORD) && to == TY_PITCH) {
-	if (sec_idx < 0) {
-	    report(ctx->lexer, off, "TY_INT or TY_CHORD cannot be coerced to TY_PITCH outside of a section");
-	    return from;
-	}
-	ValEntry *scale = hmgetp_null(ctx->sec_envs.ptr[sec_idx], ctx->builtin_syms.scale);
-	if (scale == NULL) {
-	    report(ctx->lexer, off, "attribute scale must be defined for coercion from TY_INT or TY_CHORD to TY_PITCH");
-	    return from;
-	}
+    if ((from == TY_INT || from == TY_DEGREE || from == TY_ABSPITCH) && to == TY_PITCH) {
+	// if (sec_idx < 0) {
+	//     report(ctx->lexer, off, "TY_INT or TY_CHORD cannot be ty_coerced to TY_PITCH outside of a section");
+	//     return from;
+	// }
+	// ValEntry *scale = hmgetp_null(ctx->sec_envs.ptr[sec_idx], ctx->builtin_syms.scale);
+	// if (scale == NULL) {
+	//     report(ctx->lexer, off, "attribute scale must be defined for coercion from TY_INT or TY_CHORD to TY_PITCH");
+	//     return from;
+	// }
 	return to;
-	
+    } else if ((from == TY_INT || from == TY_DEGREE || from == TY_ABSPITCH || from == TY_PITCH) && to == TY_CHORD) {
+	return to;
+    } else if (from == TY_SEC && to == TY_CHORUS) {
+	return to;
     }
     return from;
 }
 #define assert_type(ty, expect, off) do { \
-    if (coerce(ctx, sec_idx, ty, expect, off) != expect) { report(ctx->lexer, off, "Expect %s, got %s", type_to_str(expect), type_to_str(ty)); return TY_ERR; } \
+    if (ty_coerce(ctx, sec_idx, ty, expect, off) != expect) { report(ctx->lexer, off, "Expect %s, got %s", type_to_str(expect), type_to_str(ty)); return TY_ERR; } \
 } while (0);
 Type sema_analy_infix(Context *ctx, ExprIdx idx, SecIdx sec_idx, Token op, Type lhs_t, Type rhs_t) {
     if (op.type == '&') {
-	assert_type(lhs_t, TY_SEC, op.off);	
-	assert_type(rhs_t, TY_SEC, op.off);	
+	assert_type(lhs_t, TY_CHORUS, op.off);	
+	assert_type(rhs_t, TY_CHORUS, op.off);	
 	return TY_CHORUS;
     } else if (op.type == '\'') {
 	assert_type(lhs_t, TY_INT, op.off);
-	assert_type(lhs_t, TY_PITCH, op.off);
-	return TY_PITCH;
+	assert_type(lhs_t, TY_CHORD, op.off);
+	return TY_CHORD;
     }
     assert(false && "unreachable");
 }
@@ -233,60 +225,47 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx) {
 	    assert(expr->data.note.dots > 0);
 	    sub_t = sema_analy_expr(ctx, expr->data.note.expr, sec_idx);
 	    if (sub_t == TY_ERR) return TY_ERR;
-	    if (coerce(ctx, sec_idx, sub_t, TY_PITCH, expr->off) != TY_PITCH) {
-		report(ctx->lexer, expr->off, "Expect either type `int` or `chord` in note, found %s", type_to_str(sub_t));
+	    if (ty_coerce(ctx, sec_idx, sub_t, TY_CHORD, expr->off) != TY_CHORD) {
+		report(ctx->lexer, expr->off, "Expect either TY_PITCH or TY_CHORD in note, found %s", type_to_str(sub_t));
 		return TY_ERR;
 	    }
 	    return TY_NOTE;
 	case EXPR_CHORD: 
 	    {
-		Type res_ty = TY_CHORD;
 		for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
 		    Type sub_t = sema_analy_expr(ctx, expr->data.chord_notes.ptr[i], sec_idx);
 		    if (sub_t == TY_ERR) return TY_ERR;
-		    if (sub_t == TY_PITCH) {
-			res_ty = TY_PITCH;
-		    }
-		    else if (sub_t != TY_INT && sub_t != TY_CHORD) {
-			report(ctx->lexer, expr->off, "Expect either TY_INT, TY_CHORD, or TY_PITCH in chord, found %s", type_to_str(sub_t));
+		    if (ty_coerce(ctx, sec_idx, sub_t, TY_CHORD, expr->off) != TY_CHORD) {
+			report(ctx->lexer, expr->off, "Expect either TY_CHORD, or TY_PITCH in chord, found %s", type_to_str(sub_t));
 			return TY_ERR;
 		    }
 		}
-		return res_ty;
+		return TY_CHORD;
 	    }
 	case EXPR_SCALE:
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.tonic, sec_idx);
 	    if (sub_t == TY_ERR) return TY_ERR;
-	    if (sub_t != TY_PITCH) {
-		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_PITCH), type_to_str(sub_t));
-		return TY_ERR;
-	    }
+	    assert_type(sub_t, TY_PITCH, expr->off);
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.octave, sec_idx);
 	    if (sub_t == TY_ERR) return TY_ERR;
-	    if (sub_t != TY_INT) {
-		report(ctx->lexer, expr->off, "Expect %s, got %s in octave of scale", type_to_str(TY_INT), type_to_str(sub_t));
-		return TY_ERR;
-	    }
+	    assert_type(sub_t, TY_INT, expr->off);
 	    sub_t = sema_analy_expr(ctx, expr->data.scale.mode, sec_idx);
 	    if (sub_t == TY_ERR) return TY_ERR;
-	    if (sub_t != TY_MODE) {
-		report(ctx->lexer, expr->off, "Expect %s, got %s in tonic of scale", type_to_str(TY_MODE), type_to_str(sub_t));	
-		return TY_ERR;
-	    }
+	    assert_type(sub_t, TY_MODE, expr->off);
 	    return TY_SCALE;
-	case EXPR_PREFIX:
-	    // current only have pitch qualifiers as prefix operator
-	    sub_t = sema_analy_expr(ctx, expr->data.prefix.expr, sec_idx);
-	    if (sub_t == TY_ERR) return TY_ERR;
-	    if (sub_t != TY_PITCH && sub_t != TY_INT && sub_t != TY_CHORD) {
-		report(ctx->lexer, expr->off, "Expect INT, PITCH, or CHORD after pitch qualifier, got %s", type_to_str(sub_t));
-		return TY_ERR;
-	    }
-	    return sub_t;
+	// case EXPR_PREFIX:
+	//     // current only have pitch qualifiers as prefix operator
+	//     sub_t = sema_analy_expr(ctx, expr->data.prefix.expr, sec_idx);
+	//     if (sub_t == TY_ERR) return TY_ERR;
+	//     if (ty_coerce(ctx, sec_idx, sub_t, TY_CHORD, expr->off) != TY_CHORD) {
+	// 	report(ctx->lexer, expr->off, "Expect TY_PITCH, or TY_CHORD after pitch qualifier, got %s", type_to_str(sub_t));
+	// 	return TY_ERR;
+	//     }
+	//     return sub_t;
 	case EXPR_SEC:
-
 	    return sema_analy_sec(ctx, expr->data.sec);
 	case EXPR_INFIX:
+	    // eprintf("sub_t %i\n", ast_get(ctx->pgm, exprs, expr->data.infix.lhs).tag);
 	    sub_t = sema_analy_expr(ctx, expr->data.infix.lhs, sec_idx);
 	    sub_t2 = sema_analy_expr(ctx, expr->data.infix.rhs, sec_idx);
 	    return sema_analy_infix(ctx, idx, sec_idx, expr->data.infix.op, sub_t, sub_t2);

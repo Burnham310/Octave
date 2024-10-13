@@ -8,7 +8,6 @@
 
 
 make_arr(Pitch);
-static ArrOf(Pitch) pitches_tmp = {0};
 size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx);
 
 SliceOf(Track) eval_pgm(Context* ctx) {
@@ -33,6 +32,7 @@ void eval_formal(Context* ctx, FormalIdx idx, SecIdx sec_idx) {
     ValEnv *env = get_curr_env(ctx, sec_idx);
     ValData v = eval_expr(ctx, formal->expr, sec_idx);
     hmgetp(*env, formal->ident)->value.data = v;
+    
 }
 make_arr(Note);
 
@@ -70,119 +70,187 @@ Track eval_section(Context* ctx, SecIdx idx) {
     track.config.scale = hmget(*env, ctx->builtin_syms.scale).data.scale;
     return track;
 }
+// The type checking is already done so this function should always succeed
+// TODO bound checks for int to degree
+ValData val_coerce(Context *ctx, ValData *from, Type from_ty, Type to) {
+    if (from_ty == to) return *from;
+    ValData res;
+    if (to == TY_CHORD) {
+	res.chord = (SliceOf(Pitch)) {.ptr = calloc(sizeof(Pitch), 1), .len = 1};
+	if (from_ty == TY_INT) {
+	   res.chord.ptr[0].is_abs = false;
+	   res.chord.ptr[0].data.deg = (Degree) {.shift = 0, .degree = from->i };
+	} else if (from_ty == TY_DEGREE) {
+	   res.chord.ptr[0].is_abs = false;
+	   res.chord.ptr[0].data.deg = from->deg;
+	} else if (from_ty == TY_ABSPITCH) {
+	    res.chord.ptr[0].is_abs = true;
+	    res.chord.ptr[0].data.abs = from->i;
+	} else if (from_ty == TY_PITCH) {
+	    res.chord.ptr[0] = from->pitch;
+	}
+	return res;
+    } else if (to == TY_PITCH) {
+	if (from_ty == TY_INT) {
+	   res.pitch.is_abs = false;
+	   res.pitch.data.deg = (Degree) {.degree = from->i, .shift = 0 };
+	} else if (from_ty == TY_DEGREE) {
+	    res.pitch.is_abs = false;
+	    res.pitch.data.deg = from->deg;
+	} else if (from_ty == TY_ABSPITCH) {
+	    res.chord.ptr[0].is_abs = true;
+	    res.chord.ptr[0].data.abs = from->i;
+	}
+	return res;
+    } else if (to == TY_CHORUS) {
+	res.chorus = (SliceOf(Track)) {.ptr = calloc(sizeof(Track), 1), .len = 1};
+	res.chorus.ptr[0] = from->sec;
+	return res;
+    }
+    assert(false && "unexpected coercion");
+}
 ValData eval_expr(Context* ctx, ExprIdx idx, SecIdx sec_idx) {
     Expr *expr = &ast_get(ctx->pgm, exprs, idx);
     ValEnv *env = get_curr_env(ctx, sec_idx);
     Scale *scale = NULL;
-    ValData v;
-    ValData v2;
-    ValData v3;
+    ValData res;
     ptrdiff_t env_i;
     switch (expr->tag) {
 	case EXPR_NUM: return (ValData) {.i = expr->data.num };
 
 	case EXPR_IDENT:
 	    env_i = -1;
-	    if (sec_idx > 0) {
+	    if (sec_idx >= 0) {
 		env_i = hmgeti(ctx->sec_envs.ptr[sec_idx], expr->data.ident);
 		if (env_i >= 0) return ctx->sec_envs.ptr[sec_idx][env_i].value.data;
 	    }
-	    eprintf("IDENT %s\n", symt_lookup(ctx->sym_table, expr->data.ident));
-	    v = hmget(ctx->pgm_env, expr->data.ident).data;
-	    return v;
+	    res = hmget(ctx->pgm_env, expr->data.ident).data;
+	    return res;
 	case EXPR_SCALE: return (ValData) { .scale = eval_scale(ctx, idx, sec_idx) };
-	case EXPR_NOTE: 
-	    scale = &hmgetp(*env, ctx->builtin_syms.scale)->value.data.scale; // scale must be defined in the current scope
-	    return (ValData) { .note = (Note) { .chord = eval_chord(ctx, expr->data.note.expr, scale, sec_idx), .dots = expr->data.note.dots } };
-	case EXPR_SEC:
-	    v = (ValData) {.sec = eval_section(ctx, expr->data.sec) };
-	    return v;
-	case EXPR_INFIX:
-	    v = eval_expr(ctx, expr->data.infix.lhs, sec_idx); 
-	    v2 = eval_expr(ctx, expr->data.infix.rhs, sec_idx);
-	    v3 = (ValData) {.chorus = (SliceOf(Track)) {.ptr = calloc(sizeof(Track), 2), .len = 2 } };
-	    v3.chorus.ptr[0] = v.sec;
-	    v3.chorus.ptr[1] = v2.sec;
-	    return v3;
-	case EXPR_CHORD:
+	case EXPR_NOTE:
 	    {
-		// two types: TY_CHORD or TY_PITCH
-		// TY_CHORD is unresolved degree
-		
-		Type ty = ctx->types.ptr[idx];
-		if (ty == TY_CHORD) {
-		    for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
-			Expr *sub_expr = &ast_get(ctx->pgm, exprs, expr->data.chord_notes.ptr[i]);
-			if (sub_expr->tag == EXPR_NUM) {
-			    da_append(pitches_tmp, sub_expr->data.num);
+		ExprIdx sub_expr = expr->data.note.expr;
+		ValData sub_data = eval_expr(ctx, sub_expr, sec_idx);
+		sub_data = val_coerce(ctx, &sub_data, ctx->types.ptr[sub_expr], TY_CHORD);
+		res.note.dots = expr->data.note.dots;
+		res.note.chord = sub_data.chord;
+		return res;
+	    }
+	case EXPR_SEC:
+	    res = (ValData) {.sec = eval_section(ctx, expr->data.sec) };
+	    return res;
+	case EXPR_INFIX: 
+	    {
+		ExprIdx lhs = expr->data.infix.lhs;
+		ExprIdx rhs = expr->data.infix.rhs;
+		ValData lhs_v = eval_expr(ctx, lhs, sec_idx); 
+		ValData rhs_v = eval_expr(ctx, rhs, sec_idx);
+		TokenType op = expr->data.infix.op.type;
+		if (op == '&') {
+		    lhs_v = val_coerce(ctx, &lhs_v, ctx->types.ptr[lhs], TY_CHORUS);
+		    rhs_v = val_coerce(ctx, &rhs_v, ctx->types.ptr[rhs], TY_CHORUS);
+		    size_t lhs_len = lhs_v.chorus.len;
+		    size_t rhs_len = rhs_v.chorus.len;
+		    size_t res_len = lhs_len + rhs_len;
+		    res = (ValData) {.chorus = (SliceOf(Track)) {.ptr = calloc(sizeof(Track), res_len), .len = res_len } };
+		    memcpy(res.chorus.ptr, lhs_v.chorus.ptr, lhs_len * sizeof(Track));
+		    memcpy(res.chorus.ptr + lhs_len, rhs_v.chorus.ptr, rhs_len * sizeof(Track));
+		    return res;
+		} else if (op == '\'') {
+		    int shift = lhs_v.i;
+		    // lhs_v = coerce(ctx, &v1, ctx->types.ptr[idx], TY_INT);
+		    rhs_v = val_coerce(ctx, &rhs_v, ctx->types.ptr[rhs], TY_CHORD);
+		    res.chord = rhs_v.chord;	
+		    for (size_t ci = 0; ci < res.chord.len; ++ci) {
+			if (res.chord.ptr[ci].is_abs) {
+			    res.chord.ptr[ci].data.abs += shift;
+			} else {
+			    res.chord.ptr[ci].data.deg.shift += shift;
 			}
 		    }
-		} else if (ty == TY_PITCH) {
-
+		    return res;
 		}
-		assert(false && "unreachable");
+	    assert(false && "unknown infix op");
 	    }
-	case EXPR_PREFIX:
-	    assert(false && "unimplemented, currently hacked");
+	case EXPR_CHORD:
+	    {
 
+		static ArrOf(Pitch) pitches_tmp = {0};
+		for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
+		    ExprIdx sub_expr = expr->data.chord_notes.ptr[i];
+		    ValData sub_v = eval_expr(ctx, sub_expr, sec_idx);
+		    sub_v = val_coerce(ctx, &sub_v, ctx->types.ptr[sub_expr], TY_CHORD);
+		    da_append_slice(pitches_tmp, sub_v.chord);
+		    // free(sub_v.chord.ptr);
+		    // printf("res.chord %zu\n", pitches_tmp.size);
+		}
+		da_move(pitches_tmp, res.chord);
+		// printf("here\n");
+		//
+		return res;
+	    }
+	// case EXPR_PREFIX:
+	default:
+	    eprintf("EXPR %i\n", expr->tag);
+	    assert(false && "unknown expr tag\n");
     }
 
 }
 
 
 
-SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx) {
-
-    eval_chord_recur(ctx, idx, scale, sec_idx);
-    SliceOf(Pitch) res = {0};
-    da_move(pitches_tmp, res);
-    return res;
-}
-// returns the number of pitch added to the chord
-size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx) {
-    Type ty = ctx->types.ptr[idx];
-    assert(ty == TY_INT || ty == TY_CHORD || ty == TY_PITCH);  
-    Expr *expr = &ast_get(ctx->pgm, exprs, idx);
-    ExprTag tag = expr->tag;
-    if (tag == EXPR_NUM) {
-	da_append(pitches_tmp, pitch_from_scale(scale, expr->data.num));
-	return 1;
-    }
-    else if (tag == EXPR_CHORD) {
-	size_t total = 0;
-	for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
-	    total += eval_chord_recur(ctx, expr->data.chord_notes.ptr[i], scale, sec_idx);
-	}
-	return total;
-    } else if (tag == EXPR_PREFIX) {
-	assert(expr->data.prefix.op.type == TK_QUAL);
-	size_t count = eval_chord_recur(ctx, expr->data.prefix.expr, scale, sec_idx);
-	Token qual = expr->data.prefix.op;
-	ssize_t shift = 
-	    - 12 * qual.data.qualifier.suboctave 
-	    + 12 * qual.data.qualifier.octave 
-	    - qual.data.qualifier.flats 
-	    + qual.data.qualifier.sharps;
-	for (size_t i = pitches_tmp.size - count; i < pitches_tmp.size; ++i) {
-	    pitches_tmp.items[i] += shift;
-	}
-	return count;
-
-    } else if (tag == EXPR_INFIX) {
-	assert(expr->data.infix.op.type == '\'');
-	size_t count = eval_chord_recur(ctx, expr->data.infix.rhs, scale, sec_idx);
-	ssize_t shift = eval_expr(ctx, expr->data.infix.lhs, sec_idx).i;
-	for (size_t i = pitches_tmp.size - count; i < pitches_tmp.size; ++i) {
-	    pitches_tmp.items[i] += shift;
-	}
-	return count;
-
-    }
-    eprintf("EXPR %i\n", expr->tag); 
-    assert(false && "unreachable");
-     
-
-}
+// SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx) {
+// 
+//     eval_chord_recur(ctx, idx, scale, sec_idx);
+//     SliceOf(Pitch) res = {0};
+//     da_move(pitches_tmp, res);
+//     return res;
+// }
+// // returns the number of pitch added to the chord
+// size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx) {
+//     Type ty = ctx->types.ptr[idx];
+//     assert(ty == TY_INT || ty == TY_CHORD || ty == TY_PITCH);  
+//     Expr *expr = &ast_get(ctx->pgm, exprs, idx);
+//     ExprTag tag = expr->tag;
+//     if (tag == EXPR_NUM) {
+// 	da_append(pitches_tmp, pitch_from_scale(scale, expr->data.num));
+// 	return 1;
+//     }
+//     else if (tag == EXPR_CHORD) {
+// 	size_t total = 0;
+// 	for (size_t i = 0; i < expr->data.chord_notes.len; ++i) {
+// 	    total += eval_chord_recur(ctx, expr->data.chord_notes.ptr[i], scale, sec_idx);
+// 	}
+// 	return total;
+//     } else if (tag == EXPR_PREFIX) {
+// 	assert(expr->data.prefix.op.type == TK_QUAL);
+// 	size_t count = eval_chord_recur(ctx, expr->data.prefix.expr, scale, sec_idx);
+// 	Token qual = expr->data.prefix.op;
+// 	ssize_t shift = 
+// 	    - 12 * qual.data.qualifier.suboctave 
+// 	    + 12 * qual.data.qualifier.octave 
+// 	    - qual.data.qualifier.flats 
+// 	    + qual.data.qualifier.sharps;
+// 	for (size_t i = pitches_tmp.size - count; i < pitches_tmp.size; ++i) {
+// 	    pitches_tmp.items[i] += shift;
+// 	}
+// 	return count;
+// 
+//     } else if (tag == EXPR_INFIX) {
+// 	assert(expr->data.infix.op.type == '\'');
+// 	size_t count = eval_chord_recur(ctx, expr->data.infix.rhs, scale, sec_idx);
+// 	ssize_t shift = eval_expr(ctx, expr->data.infix.lhs, sec_idx).i;
+// 	for (size_t i = pitches_tmp.size - count; i < pitches_tmp.size; ++i) {
+// 	    pitches_tmp.items[i] += shift;
+// 	}
+// 	return count;
+// 
+//     }
+//     eprintf("EXPR %i\n", expr->tag); 
+//     assert(false && "unreachable");
+//      
+// 
+// }
 
 
 // ssize_t eval_int(Context *ctx, ExprIdx idx) {
@@ -219,3 +287,23 @@ Scale eval_scale(Context *ctx, ExprIdx idx, SecIdx sec_idx) {
     scale.mode = eval_expr(ctx, expr->data.scale.mode, sec_idx).i;
     return scale; 
 }
+
+AbsPitch abspitch_from_scale(Scale *scale, size_t degree) {
+    // eprintf("degree %zu\n", degree);
+    // eprintf("tonic %zu\n", scale->tonic);
+    assert(degree <= DIATONIC && degree >= 1 && "degree out of bound");
+    size_t base = scale->tonic + scale->octave * 12;
+    // degree is 1-based
+    size_t degree_shift = degree + scale->mode - 1;
+    // Step is how much we should walk from the tonic
+    size_t step = degree_shift < DIATONIC 
+	? BASE_MODE[degree_shift] - BASE_MODE[scale->mode]
+	: 12 + BASE_MODE[degree_shift % DIATONIC] - BASE_MODE[scale->mode];
+    return base + step;    
+}
+
+AbsPitch resolve_pitch(Scale *scale, Pitch pitch) {
+    if (pitch.is_abs) return pitch.data.abs;
+    return abspitch_from_scale(scale, pitch.data.deg.degree) + pitch.data.deg.shift;
+}
+

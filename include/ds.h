@@ -43,6 +43,16 @@ typedef struct
         }                                                                       \
         (da).items[(da).size++] = (x);                                          \
     } while (0)
+#define da_append_slice(da, slice) \
+    do { \
+	if ((da).cap == 0) (da).cap = 5; \
+	while ((da).cap < (da).size + (slice).len) { \
+	    (da).cap *= 2; \
+	} \
+	(da).items = realloc((da).items, (da).cap * sizeof((da).items[0])); \
+	memcpy((da.items) + (da).size, (slice).ptr, (slice).len * sizeof((da).items[0])); \
+	(da).size += (slice).len; \
+    } while (0)
 // ---
 #define SliceOf(ty) ty##Slice
 #define ArrOf(ty) ty##Arr

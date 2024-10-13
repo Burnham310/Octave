@@ -7,10 +7,11 @@
 // https://en.wikipedia.org/wiki/Mode_(music)
 struct CpGen; // temp storage for intermediate objects generateed during compilation
 typedef struct CpGen CpGen;
-// returns a shallow copy. The next call to eval_chord invalidates the slice
-// The pithches are absolute, from 0~128
-SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx);
-// ssize_t eval_int(Context *ctx, ExprIdx idx);
+// 1 <= degree <= 7
+// returns absolute pitch
+AbsPitch abspitch_from_scale(Scale *scale, size_t degree);
+AbsPitch resolve_pitch(Scale *scale, Pitch pitch);
+
 Scale eval_scale(Context *scale, ExprIdx idx, SecIdx sec_idx);
 SecConfig eval_config(Context *ctx, SecIdx idx);
 

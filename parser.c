@@ -49,7 +49,7 @@ void expr_debug(Pgm* pgm, SymbolTable sym_table, ExprIdx idx) {
 	case EXPR_SEC:
 	    printf("Sec");
 	case EXPR_SCALE:
-	case EXPR_PREFIX:
+	// case EXPR_PREFIX:
 	case EXPR_INFIX:
 	    assert(false && "unimplemented");
     }
@@ -254,8 +254,8 @@ ExprIdx parse_scale(Lexer *lexer, Gen *gen) {
     return gen->exprs.size - 1; 
 }
 // currently only have one kind of prefix operator
+// we desugar it to the infix opeator e.g. #'1 => 1'1
 ExprIdx parse_prefix(Lexer *lexer, Gen *gen) {
-
     try_next(lexer, qual, TK_QUAL);
     int lbp = prefix_bp(qual);
     ExprIdx sub_expr = parse_expr_climb(lexer, gen, lbp);
@@ -263,7 +263,15 @@ ExprIdx parse_prefix(Lexer *lexer, Gen *gen) {
 	report(lexer, qual.off, "Expect expression after qualifiers");
 	THROW_EXCEPT();
     }	
-    Expr expr = {.off = qual.off, .tag = EXPR_PREFIX, .data.prefix = {.op = qual, .expr = sub_expr } };
+    ssize_t shift = 
+ 	    - 12 * qual.data.qualifier.suboctave 
+ 	    + 12 * qual.data.qualifier.octave 
+ 	    - qual.data.qualifier.flats 
+ 	    + qual.data.qualifier.sharps;
+    Expr lhs = {.off = qual.off, .tag = EXPR_NUM, .data.num = shift };
+    da_append(gen->exprs, lhs);
+    ExprIdx lhs_idx = gen->exprs.size - 1;
+    Expr expr = {.off = qual.off, .tag = EXPR_INFIX, .data.infix = {.op = '\'', .lhs = lhs_idx, .rhs = sub_expr } };
     da_append(gen->exprs, expr);
     return gen->exprs.size - 1;
 }
