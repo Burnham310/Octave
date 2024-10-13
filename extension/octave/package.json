@@ -17,8 +17,8 @@
       "extensions": [".oct"],
       "configuration": "./language-configuration.json",
       "icon": {
-        "light": "./icon/Octave.png",
-        "dark": "./icon/Octave.png"
+        "light": "./icon/octave.png",
+        "dark": "./icon/octave.png"
       }
     }],
     "grammars": [{

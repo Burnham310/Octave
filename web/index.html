@@ -117,7 +117,9 @@
         <!-- Monaco Editor Container -->
         <div id="editor-container"></div>
 
-        <p id="out" style="background-color: #f0f0f0;"></p>
+        <p id="out" style="background-color: #f0f0f0;">
+            Welcome to Octave Music Programming Language!!!
+        </p>
 
         <button id="compile-btn" onclick="compileBtnCallback()">Compile</button>
 
@@ -133,11 +135,11 @@
     <script src="octc.js"></script>
     <script>
         let editor;
-        
+        let first_use = true;
+
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.29.1/min/vs' } });
         require(['vs/editor/editor.main'], function () {
             editor = monaco.editor.create(document.getElementById('editor-container'), {
-                value: 'Write your Octave code here...',
                 language: 'octave',
                 theme: 'vs-light'
             });
@@ -185,12 +187,18 @@
             }
         });
 
-        window.onload = function () {
-            const savedCode = localStorage.getItem('octaveCode');
-            if (savedCode) {
-                editor.setValue(savedCode);
-            }
+        // override error message output
+        function err(msg) {
+            if (first_use) {
+                first_use = false;
+            } else
+                document.getElementById("out").innerHTML += `<p style="color: red">${msg}</p>`;
         }
+
+        function out(msg) {
+            document.getElementById("out").innerHTML += `<p>${msg}</p>`;
+        }
+
 
         function compileOctave() {
             const input = editor.getValue();
@@ -202,11 +210,11 @@
             try {
                 Module.callMain([inputFile, '-o', outputFile]);
             } catch {
-                return false;
+                return false
             }
 
             if (FS.readFile(outputFile).byteLength === 0) {
-                return false;
+                return false
             }
 
             const midiData = FS.readFile(outputFile, { encoding: 'binary' });
@@ -216,15 +224,6 @@
             midiPlayer.src = url;
 
             return true;
-        }
-
-        // override error message output
-        function err(msg) {
-            document.getElementById("out").innerHTML += `<p style="color: red">${msg}</p>`;
-        }
-
-        function out(msg) {
-            document.getElementById("out").innerHTML += `<p>${msg}</p>`;
         }
 
         async function compileBtnCallback() {
