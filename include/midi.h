@@ -29,7 +29,7 @@ typedef struct
     int track_n;
 } MidiConfig;
 
-#define midi_printf(fmt, ...) printf("[MidiBackend] " fmt "\n", ##__VA_ARGS__);
+#define midi_printf(fmt, ...) fprintf(stderr, "[MidiBackend] " fmt "\n", ##__VA_ARGS__);
 #define midi_eprintf(fmt, ...) fprintf(stderr, "[💀 MidiBackend] " fmt "\n", ##__VA_ARGS__)
 enum MTrkEventType
 {

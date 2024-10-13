@@ -42,17 +42,20 @@ extern int main(const int argc, char **argv)
         perror("Cannot open src file");
         RETURN(1);
     }
-    if ((output_f = fopen(output_path, "w")) == NULL)
+    if (strcmp(output_path, "-") == 0)
+        output_f = stdout;
+    else if ((output_f = fopen(output_path, "w")) == NULL)
     {
         perror("Cannot create output file");
         RETURN(1);
     }
+
     // get size of input buffer
     fseek(input_f, 0, SEEK_END);
     size_t input_size = ftell(input_f);
     fseek(input_f, 0, SEEK_SET);
     buf = malloc(input_size);
-    printf("Reading input file of size: %zu\n", input_size);
+    eprintf("Reading input file of size: %zu\n", input_size);
     if (fread(buf, input_size, 1, input_f) == 0)
     {
         perror("Cannot read src file");
@@ -84,7 +87,7 @@ extern int main(const int argc, char **argv)
     {
         Track *track = &tracks.ptr[ti];
 
-        printf("instr %i\n", track->config.instr);
+        // printf("instr %i\n", track->config.instr);
         add_midi_event(ti, SetInstrumentEvent(track->config.instr));
         add_midi_event(GLOBAL, SetTempoEvent(track->config.bpm));
 
@@ -122,7 +125,7 @@ extern int main(const int argc, char **argv)
             }
 
             MidiNote midi_notes[pitches.len];
-	    
+
             for (size_t mi = 0; mi < pitches.len; ++mi)
             {
                 midi_notes[mi].length = dots;
