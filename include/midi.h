@@ -66,7 +66,6 @@ struct _MTrkEvent
 #define TRACK5 4
 #define TRACK6 5
 
-#define GLOABL_EV 
 #define GLOBAL 114514
 
 #define _get_array_len(arr) sizeof(arr) / sizeof(arr[0])
@@ -83,6 +82,7 @@ struct _MTrkEvent
     } while (0);
 
 #define EVENT_CALLBACK(event_name) static void callback_##event_name(int delta_time, struct _EventData event_data, void *data)
+#define GLOBAL_CALLBACK(event_name) EVENT_CALLBACK(event_name)
 #define USE_CALLBACK(event_name) {&callback_##event_name}
 
 struct MidiTrackMeta
@@ -136,7 +136,7 @@ struct MidiTrackMeta *get_midi_tr_meta(int track_id);
 */
 
 #define EVENT_DECLARE(event_name, ...) struct _MTrkEvent event_name(__VA_ARGS__)
-
+#define GLOBAL_DECLARE(event_name, ...) EVENT_DECLARE(event_name, __VA_ARGS__)
 // note on event, must follow with the noteoff event with same note specified
 EVENT_DECLARE(NoteOnEvent, MidiNote *note);
 // note off event, If the first event in a track occurs at the very beginning of a track

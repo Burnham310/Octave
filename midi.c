@@ -125,7 +125,7 @@ EVENT_DECLARE(NoteOffEvent, MidiNote *note, int force_immed)
     return event;
 }
 
-GLOABL_EV EVENT_CALLBACK(SetTempoEvent)
+GLOBAL_CALLBACK(SetTempoEvent)
 {
 
     int tempo_sec = *(int *)data;
@@ -140,7 +140,7 @@ GLOABL_EV EVENT_CALLBACK(SetTempoEvent)
     write_byte(tempo_sec & 0xFF);
 }
 
-GLOABL_EV EVENT_DECLARE(SetTempoEvent, int bpm)
+GLOBAL_DECLARE(SetTempoEvent, int bpm)
 {
     midi_assert(bpm > 0, midi_eprintf("bpm should be greater than 0"));
 

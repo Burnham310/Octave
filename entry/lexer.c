@@ -48,6 +48,8 @@ int main(const int argc, char **argv)
     Token tk;
     while ((tk = lexer_next(&lexer)).type > 0)
     {
+        // if (tk.type == TK_IDENT) 
+        //     printf("%s ", lexer.sym_table[tk.off].key ? lexer.sym_table[tk.off].key : "(null)");
         printf("%s\n", tk_str(tk.type));
     }	
 

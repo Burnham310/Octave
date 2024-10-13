@@ -36,6 +36,11 @@ webasm:
 	emcc $(SRC) $(ENTRY_DIR)/main.c $(INCLUDES) -o web/octc.js -s WASM=1 -s EXPORTED_FUNCTIONS='["_main"]' -s EXTRA_EXPORTED_RUNTIME_METHODS='["callMain"]'
 	echo "web generate successfully!"
 
+swan:
+	make
+	bin/main test/swan.oct -o swan.mid
+	timidity swan.mid
+
 clean:
 	rm -rf $(OUT_DIR) $(OBJ_DIR)
 

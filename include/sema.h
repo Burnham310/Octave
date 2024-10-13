@@ -58,7 +58,8 @@ static const int BASE_MODE[DIATONIC] = {0, 2, 4, 5, 7, 9, 11};
     X(TY_SCALE) \
     X(TY_MODE) \
     X(TY_SEC) \
-    X(TY_CHORUS)
+    X(TY_CHORUS) \
+    X(TY_BOOL)
 #define X(x) x,
 typedef enum {
     TYPE_LISTX

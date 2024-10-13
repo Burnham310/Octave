@@ -49,6 +49,7 @@ typedef enum
     // EXPR_PREFIX,
     EXPR_INFIX,
     EXPR_SEC,
+    EXPR_BOOL,
 } ExprTag;
 typedef struct
 {

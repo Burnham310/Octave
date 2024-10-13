@@ -32,6 +32,16 @@ const char *tk_str(TokenType ty)
 		return "TK_QUAL";
 	case TK_EOF:
 		return "TK_EOF";
+	case TK_BOOL:
+		return "TK_BOOL";
+	case TK_EQ:
+		return "TK_EQ";
+	case TK_NEQ:
+		return "TK_NEQ";
+	case TK_GEQ:
+		return "TK_GEQ";
+	case TK_LEQ:
+		return "TK_LEQ";
 	case ';':
 		return ";";
 	case '=':
@@ -54,6 +64,16 @@ const char *tk_str(TokenType ty)
 		return "|";
 	case '&':
 		return "&";
+	case '+':
+		return "+";
+	case '-':
+		return "-";
+	case '*':
+		return "*";
+	case '(':
+		return "(";
+	case ')':
+		return ")";
 	case '\'':
 		return "'";
 	default:
@@ -181,6 +201,11 @@ Token match_single(Lexer *self)
 	case '<':
 	case '>':
 	case '&':
+	case '+':
+	case '-':
+	case '*':
+	case '(':
+	case ')':
 	case '\'':
 		tk.type = (unsigned char)c;
 		return tk;
@@ -237,7 +262,6 @@ Token match_qualifier(Lexer *self)
 Token match_num(Lexer *self)
 {
 	Token tk = {.off = self->off};
-
 	char c = next_char(self);
 	if (c == 0)
 		RETURN_TK(TK_EOF);
@@ -269,31 +293,98 @@ Token match_num(Lexer *self)
 	return tk;
 }
 
-// Token match_many(Lexer *self, const TokenType exp_token_type, const char *target)
-// {
-// 	Token tk = {.off = self->off};
-// 	int len = strlen(target);
-//
-// 	for (int i = 0; i < len; ++i)
-// 	{
-// 		if (next_char(self) != target[i])
-// 		{
-// 			do
-// 			{
-// 				rewind_char(self);
-// 				--i;
-// 			} while (i > 0);
-// 			THROW_EXCEPT();
-// 		}
-// 	}
-//
-// 	RETURN_TK(exp_token_type);
-// }
+Token match_many(Lexer *self, const TokenType exp_token_type, const char *target, bool is_exact)
+{
+	Token tk = {.off = self->off};
+	int len = strlen(target);
+
+	if (peek_char(self) == 0)
+		RETURN_TK(TK_EOF);
+
+	char c;
+	for (int i = 0; i < len; ++i)
+	{
+		if (next_char(self) != target[i])
+		{
+			do
+			{
+				rewind_char(self);
+
+			} while (i-- > 0);
+			// printf("%s %d reset at: %c\n", tk_str(exp_token_type), i,  peek_char(self));
+
+			RETURN_TK(TK_NULL);
+		}
+	}
+
+	// check one char after
+	if (!is_exact)
+		RETURN_TK(exp_token_type);
+
+	char of = next_char(self);
+	if (of != ' ' & of != '\n' & of != '\t' & of != 0)
+	{
+		for (int i = 0; i < len + 1; ++i)
+			rewind_char(self);
+		// printf("%c\n", peek_char(self));
+		RETURN_TK(TK_NULL);
+	}
+	RETURN_TK(exp_token_type);
+}
+
+Token match_bool(Lexer *self)
+{
+	Token tk = match_many(self, TK_BOOL, "true", true);
+	if (tk.type != 0)
+	{
+		tk.data.integer = 1;
+		return tk;
+	}
+	tk = match_many(self, TK_BOOL, "false", true);
+	if (tk.type != 0)
+	{
+		tk.data.integer = 0;
+		return tk;
+	}
+	RETURN_TK(TK_NULL);
+}
+
+Token match_eq(Lexer *self)
+{
+	Token tk = {.off = self->off};
+	char c = peek_char(self);
+
+	switch (c) {
+		case '=':
+			tk.type = TK_EQ;
+			break;
+		case '<':
+			tk.type = TK_LEQ;
+			break;
+		case '>':
+			tk.type = TK_GEQ;
+			break;
+		case '!':
+			tk.type = TK_NEQ;
+			break;
+		default:
+			RETURN_TK(TK_NULL);
+	}
+	next_char(self);
+	c = peek_char(self);
+	if (c != '=') {
+		self->off = tk.off;
+		RETURN_TK(TK_NULL);
+	}
+	next_char(self);
+	return tk;
+}
 
 Token match_ident(Lexer *self)
 {
 	Token tk = {.off = self->off};
 	char c = next_char(self);
+
 	if (c == 0)
 		RETURN_TK(TK_EOF);
 	if (!isalpha(c) && c != '_')
@@ -362,9 +453,11 @@ Token match_dots(Lexer *self)
 typedef Token (*match_fn)(Lexer *);
 match_fn fns[] = {
 	match_dots,
+	match_eq,
 	match_qualifier,
 	match_single,
 	match_num,
+	match_bool,
 	match_ident,
 };
 const size_t fns_len = sizeof(fns) / sizeof(match_fn);
@@ -380,10 +473,11 @@ Token lexer_next(Lexer *self)
 	skip_comment(self);
 
 	Token tk;
+
 	for (int i = 0; i < fns_len; i++)
 	{
 		tk = fns[i](self);
-		if (tk.type != 0)
+		if (tk.type != TK_NULL)
 			break;
 	}
 	return tk;
