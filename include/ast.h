@@ -38,6 +38,11 @@ typedef union
 	ExprIdx rhs;
     } infix;
     SecIdx sec;
+    struct { 
+	ExprIdx cond_expr;
+	ExprIdx then_expr;
+	ExprIdx else_expr;
+    } if_then_else;
 } ExprData;
 typedef enum
 {
@@ -50,6 +55,8 @@ typedef enum
     EXPR_INFIX,
     EXPR_SEC,
     EXPR_BOOL,
+    EXPR_VOID,
+    EXPR_IF,
 } ExprTag;
 typedef struct
 {

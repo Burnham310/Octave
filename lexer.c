@@ -32,8 +32,10 @@ const char *tk_str(TokenType ty)
 		return "TK_QUAL";
 	case TK_EOF:
 		return "TK_EOF";
-	case TK_BOOL:
-		return "TK_BOOL";
+	case TK_TRUE:
+		return "TK_TRUE";
+	case TK_FALSE:
+		return "TK_FALSE";
 	case TK_EQ:
 		return "TK_EQ";
 	case TK_NEQ:
@@ -42,6 +44,16 @@ const char *tk_str(TokenType ty)
 		return "TK_GEQ";
 	case TK_LEQ:
 		return "TK_LEQ";
+	case TK_IF:
+		return "TK_IF";
+	case TK_FOR:
+		return "TK_FOR";
+	case TK_THEN:
+		return "TK_THEN";
+	case TK_ELSE:
+		return "TK_ELSE";
+	case TK_VOID:
+		return "TK_VOID";
 	case ';':
 		return ";";
 	case '=':
@@ -85,10 +97,17 @@ LexerDummy lexer_dummy_init(const char *src, const size_t src_len, const char *p
 {
 	return (LexerDummy){.path = path, .src = src, .src_len = src_len};
 }
+static const char* keywords[] = {"if", "then", "else", "for", "true", "false", "void" };
+// static const size_t keyword_syms[sizeof(keywords)/sizeof(keywords[0])] = {};
+static const TokenType keywords_tk[] = {TK_IF, TK_THEN, TK_ELSE, TK_FOR, TK_TRUE, TK_FALSE, TK_VOID};
 Lexer lexer_init(char *src, const size_t src_len, const char *path)
 {
 	Lexer lexer = {.src = src, .src_len = src_len, .off = 0, .path = path, .peakbuf = {0}, .sym_table = NULL};
 	sh_new_arena(lexer.sym_table);
+
+	for (size_t i = 0; i < sizeof(keywords)/sizeof(keywords[0]); ++i) {
+	    symt_put_keyword_tk(lexer.sym_table, keywords[i], keywords_tk[i]);
+	}
 
 	return lexer;
 }
@@ -201,9 +220,6 @@ Token match_single(Lexer *self)
 	case '<':
 	case '>':
 	case '&':
-	case '+':
-	case '-':
-	case '*':
 	case '(':
 	case ')':
 	case '\'':
@@ -262,6 +278,7 @@ Token match_qualifier(Lexer *self)
 Token match_num(Lexer *self)
 {
 	Token tk = {.off = self->off};
+
 	char c = next_char(self);
 	if (c == 0)
 		RETURN_TK(TK_EOF);
@@ -293,98 +310,31 @@ Token match_num(Lexer *self)
 	return tk;
 }
 
-Token match_many(Lexer *self, const TokenType exp_token_type, const char *target, bool is_exact)
-{
-	Token tk = {.off = self->off};
-	int len = strlen(target);
-
-	if (peek_char(self) == 0)
-		RETURN_TK(TK_EOF);
-
-	char c;
-	for (int i = 0; i < len; ++i)
-	{
-		if (next_char(self) != target[i])
-		{
-			do
-			{
-				rewind_char(self);
-
-			} while (i-- > 0);
-			// printf("%s %d reset at: %c\n", tk_str(exp_token_type), i,  peek_char(self));
-
-			RETURN_TK(TK_NULL);
-		}
-	}
-
-	// check one char after
-	if (!is_exact)
-		RETURN_TK(exp_token_type);
-
-	char of = next_char(self);
-	if (of != ' ' & of != '\n' & of != '\t' & of != 0)
-	{
-		for (int i = 0; i < len + 1; ++i)
-			rewind_char(self);
-		// printf("%c\n", peek_char(self));
-		RETURN_TK(TK_NULL);
-	}
-	RETURN_TK(exp_token_type);
-}
-
-Token match_bool(Lexer *self)
-{
-	Token tk = match_many(self, TK_BOOL, "true", true);
-	if (tk.type != 0)
-	{
-		tk.data.integer = 1;
-		return tk;
-	}
-	tk = match_many(self, TK_BOOL, "false", true);
-	if (tk.type != 0)
-	{
-		tk.data.integer = 0;
-		return tk;
-	}
-	RETURN_TK(TK_NULL);
-}
-
-Token match_eq(Lexer *self)
-{
-	Token tk = {.off = self->off};
-	char c = peek_char(self);
-
-	switch (c) {
-		case '=':
-			tk.type = TK_EQ;
-			break;
-		case '<':
-			tk.type = TK_LEQ;
-			break;
-		case '>':
-			tk.type = TK_GEQ;
-			break;
-		case '!':
-			tk.type = TK_NEQ;
-			break;
-		default:
-			RETURN_TK(TK_NULL);
-	}
-	next_char(self);
-	c = peek_char(self);
-	if (c != '=') {
-		self->off = tk.off;
-		RETURN_TK(TK_NULL);
-	}
-	next_char(self);
-	return tk;
-}
+// Token match_many(Lexer *self, const TokenType exp_token_type, const char *target)
+// {
+// 	Token tk = {.off = self->off};
+// 	int len = strlen(target);
+//
+// 	for (int i = 0; i < len; ++i)
+// 	{
+// 		if (next_char(self) != target[i])
+// 		{
+// 			do
+// 			{
+// 				rewind_char(self);
+// 				--i;
+// 			} while (i > 0);
+// 			THROW_EXCEPT();
+// 		}
+// 	}
+//
+// 	RETURN_TK(exp_token_type);
+// }
 
 Token match_ident(Lexer *self)
 {
 	Token tk = {.off = self->off};
 	char c = next_char(self);
-
 	if (c == 0)
 		RETURN_TK(TK_EOF);
 	if (!isalpha(c) && c != '_')
@@ -408,13 +358,19 @@ Token match_ident(Lexer *self)
 		}
 	}
 
-	tk.type = TK_IDENT;
 	c = self->src[self->off];
 	// a hack because stb sh wants NULL terminated string
 	self->src[self->off] = '\0';
-	shput(self->sym_table, self->src + tk.off, '\0');
-	ptrdiff_t i = shgeti(self->sym_table, self->src + tk.off);
-	tk.data.integer = i;
+	ssize_t symbol = shgeti(self->sym_table, self->src + tk.off);
+	
+	if (symbol >= 0) {
+	    
+	    tk.type = self->sym_table[symbol].value;
+	    tk.data.integer = symbol;
+	} else {
+	    tk.type = TK_IDENT;
+	    tk.data.integer = symt_intern(self->sym_table, self->src + tk.off);
+	}
 	self->src[self->off] = c; // restore the char
 	return tk;
 }
@@ -450,6 +406,36 @@ Token match_dots(Lexer *self)
 	tk.off = self->off;
 	return tk;
 }
+Token match_eq(Lexer *self)
+{
+	Token tk = {.off = self->off};
+	char c = peek_char(self);
+
+	switch (c) {
+		case '=':
+			tk.type = TK_EQ;
+			break;
+		case '<':
+			tk.type = TK_LEQ;
+			break;
+		case '>':
+			tk.type = TK_GEQ;
+			break;
+		case '!':
+			tk.type = TK_NEQ;
+			break;
+		default:
+			RETURN_TK(TK_NULL);
+	}
+	next_char(self);
+	c = peek_char(self);
+	if (c != '=') {
+		self->off = tk.off;
+		RETURN_TK(TK_NULL);
+	}
+	next_char(self);
+	return tk;
+}
 typedef Token (*match_fn)(Lexer *);
 match_fn fns[] = {
 	match_dots,
@@ -457,7 +443,6 @@ match_fn fns[] = {
 	match_qualifier,
 	match_single,
 	match_num,
-	match_bool,
 	match_ident,
 };
 const size_t fns_len = sizeof(fns) / sizeof(match_fn);
@@ -473,11 +458,10 @@ Token lexer_next(Lexer *self)
 	skip_comment(self);
 
 	Token tk;
-
 	for (int i = 0; i < fns_len; i++)
 	{
 		tk = fns[i](self);
-		if (tk.type != TK_NULL)
+		if (tk.type != 0)
 			break;
 	}
 	return tk;

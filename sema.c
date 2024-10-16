@@ -8,6 +8,7 @@
 #include <stdlib.h>
 
 #include "stb_ds.h"
+Type ty_coerce(Context *ctx, SecIdx sec_idx, Type from, Type to, size_t off);
 // TODO variable scopes
 Type sema_analy_infix(Context *ctx, ExprIdx idx, SecIdx sec_idx, Token op, Type lhs_t, Type rhs_t);
 #define type_only_val(ty) ((Val){.ty = ty})
@@ -89,7 +90,7 @@ void sema_analy(Pgm *pgm, Lexer *lexer, Context *ctx)
 	hmput(ctx->pgm_env, ctx->builtin_syms.maj, maj_mode_val);
 	ctx->builtin_syms.min = symt_intern(ctx->sym_table, "MIN");
 	hmput(ctx->pgm_env, ctx->builtin_syms.min, min_mode_val);
-
+	// "true" and "false" are its own expression, not identifiers
 	ctx->success = sema_analy_pgm(ctx);
 }
 bool sema_analy_pgm(Context *ctx)
@@ -124,12 +125,13 @@ Type sema_analy_sec(Context *ctx, SecIdx idx)
 	for (size_t i = 0; i < sec->note_exprs.len; ++i)
 	{
 		ExprIdx expr_idx = sec->note_exprs.ptr[i];
+		size_t off = ast_get(ctx->pgm, exprs, expr_idx).off;
 		Type ty = sema_analy_expr(ctx, sec->note_exprs.ptr[i], idx);
 		if (ty == TY_ERR)
 			return TY_ERR;
-		if (ty != TY_NOTE)
+		if (ty_coerce(ctx, idx, ty, TY_NOTE, off) != TY_NOTE)
 		{
-			report(ctx->lexer, ast_get(ctx->pgm, exprs, expr_idx).off, "Expect type `note` in this part of section, found %s", type_to_str(ty));
+			report(ctx->lexer, off, "Expect type `note` in this part of section, found %s", type_to_str(ty));
 			return TY_ERR;
 		}
 	}
@@ -211,6 +213,9 @@ Type ty_coerce(Context *ctx, SecIdx sec_idx, Type from, Type to, size_t off)
 	else if (from == TY_SEC && to == TY_CHORUS)
 	{
 		return to;
+	} else if (from == TY_VOID && to == TY_NOTE) // may be TY_VOID should coerced to anything
+	{
+	   	return to; 
 	}
 	return from;
 }
@@ -281,6 +286,8 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		return TY_INT;
 	case EXPR_BOOL:
 		return TY_BOOL;
+	case EXPR_VOID:
+		return TY_VOID;
 	case EXPR_IDENT:
 
 		if (sec_idx >= 0)
@@ -353,6 +360,26 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		sub_t = sema_analy_expr(ctx, expr->data.infix.lhs, sec_idx);
 		sub_t2 = sema_analy_expr(ctx, expr->data.infix.rhs, sec_idx);
 		return sema_analy_infix(ctx, idx, sec_idx, expr->data.infix.op, sub_t, sub_t2);
+	case EXPR_IF:
+		{	
+			ExprIdx cond_expr = expr->data.if_then_else.cond_expr;
+			ExprIdx then_expr = expr->data.if_then_else.then_expr;
+			ExprIdx else_expr = expr->data.if_then_else.else_expr;
+			Type cond_t = sema_analy_expr(ctx, cond_expr, sec_idx);
+			Type then_t = sema_analy_expr(ctx, then_expr, sec_idx);			
+			Type else_t = sema_analy_expr(ctx, else_expr, sec_idx);
+			
+			assert_type(cond_t, TY_BOOL, ast_get(ctx->pgm, exprs, cond_expr).off);
+			size_t then_off = ast_get(ctx->pgm, exprs, then_expr).off;
+			if (ty_coerce(ctx, sec_idx, else_t, then_t, then_off) == then_t) {
+				return then_t;
+			} else if (ty_coerce(ctx, sec_idx, then_t, else_t, then_off) == else_t) {
+				return else_t;
+			}
+			report(ctx->lexer, then_off, "two branches of an if expression must have the same type");
+			return TY_ERR;
+
+		}
 	default:
 		eprintf("tag %i\n", expr->tag);
 		assert(false && "unknown tag");

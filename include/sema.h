@@ -136,7 +136,8 @@ make_slice(ValEnv);
     X(bpm) \
     X(instrument)
 #define BUILTIN_SYMS \
-    X(main)
+    X(main) \
+
 #define PITCH_SYMS \
     X(C) \
     X(D) \

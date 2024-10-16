@@ -72,6 +72,7 @@ Track eval_section(Context *ctx, SecIdx idx)
 	track.notes = (SliceOf(Note)){.ptr = calloc(sizeof(Note), ast_len(sec, note_exprs)), .len = ast_len(sec, note_exprs)}; // TODO hacked
 	for (ssize_t ni = 0; ni < ast_len(sec, note_exprs); ++ni)
 	{
+		if (ctx->types.ptr[ni] == TY_VOID) continue;
 		ValData note = eval_expr(ctx, ast_get(sec, note_exprs, ni), idx);
 		track.notes.ptr[ni] = note.note;
 	}
@@ -151,6 +152,8 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		return (ValData){.i = expr->data.num};
 	case EXPR_BOOL:
 		return (ValData){.i = expr->data.num};
+	case EXPR_VOID:
+		return res;
 	case EXPR_IDENT:
 		env_i = -1;
 		if (sec_idx >= 0)
@@ -248,6 +251,15 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		// printf("here\n");
 		//
 		return res;
+	}
+	case EXPR_IF:
+	{
+		ExprIdx cond_expr = expr->data.if_then_else.cond_expr;
+		ExprIdx then_expr = expr->data.if_then_else.then_expr;
+		ExprIdx else_expr = expr->data.if_then_else.else_expr;	
+		bool cond = eval_expr(ctx, cond_expr, sec_idx).i;
+		ExprIdx branch = cond ? then_expr : else_expr;
+		return eval_expr(ctx, branch, sec_idx);
 	}
 	// case EXPR_PREFIX:
 	default:

@@ -6,6 +6,8 @@
 #include <sys/types.h>
 #include "ds.h"
 #include "stb_ds.h"
+
+
 typedef struct
 {
 	size_t row;
@@ -19,13 +21,29 @@ typedef enum
 	TK_INT,
 	TK_DOTS,
 	TK_QUAL,
-	TK_BOOL,
+	TK_TRUE,
+	TK_FALSE,
 	TK_EQ,
 	TK_NEQ,
 	TK_GEQ,
 	TK_LEQ,
+	TK_IF,
+	TK_THEN,
+	TK_ELSE,
+	TK_FOR,
+	TK_VOID,
 } TokenType;
-// TODO refactor and remove the goddam union
+typedef struct
+{
+    const char *key;
+    TokenType value;
+} SymbolEntry;
+typedef SymbolEntry *SymbolTable;
+typedef size_t Symbol;
+#define symt_put_keyword_tk(sym_table, s, tk) (shput(sym_table, s, tk))
+#define symt_get_keyword_tk(sym_table, s) (sym_table[s].tk)
+#define symt_intern(sym_table, s) (shput(sym_table, s, TK_IDENT), shgeti(sym_table, s))
+#define symt_lookup(sym_table, s) sym_table[s].key
 typedef unsigned char u8;
 typedef union
 {

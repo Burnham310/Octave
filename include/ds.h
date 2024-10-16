@@ -90,13 +90,4 @@ typedef struct
 // void hm_delete(Hashmap *hashmap, String str);
 // void hm_free(Hashmap *hashmap);
 
-typedef struct
-{
-    const char *key;
-    char value; // dummy
-} SymbolEntry;
-typedef SymbolEntry *SymbolTable;
-typedef size_t Symbol;
-#define symt_intern(sym_table, s) (shput(sym_table, s, '\0'), shgeti(sym_table, s))
-#define symt_lookup(sym_table, s) sym_table[s].key
 #endif

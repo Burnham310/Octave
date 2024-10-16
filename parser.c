@@ -19,6 +19,7 @@ ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp);
 ExprIdx parse_chord(Lexer *lexer, Gen *gen);
 ExprIdx parse_scale(Lexer *lexer, Gen *gen);
 ExprIdx parse_prefix(Lexer *lexer, Gen *gen);
+ExprIdx parse_if(Lexer *lexer, Gen *gen);
 ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen);
 int prefix_bp(Token tk);
 int postfix_bp(Token tk);
@@ -33,6 +34,9 @@ void expr_debug(Pgm *pgm, SymbolTable sym_table, ExprIdx idx)
     case EXPR_NUM:
         printf("%zi", expr.data.num);
         break;
+    case EXPR_BOOL:
+	printf("%s", expr.data.num ? "true" : "false");
+	break;
     case EXPR_IDENT:
         printf("%s", symt_lookup(sym_table, expr.data.ident));
         break;
@@ -288,6 +292,17 @@ ExprIdx parse_scale(Lexer *lexer, Gen *gen)
 }
 // currently only have one kind of prefix operator
 // we desugar it to the infix opeator e.g. #'1 => 1'1
+ExprIdx parse_if(Lexer *lexer, Gen *gen) {
+    try_next(lexer, if_tk, TK_IF);
+    ExprIdx cond_expr = parse_expr(lexer, gen);
+    assert_next_before(lexer, then, TK_THEN, if_tk);
+    ExprIdx then_expr = parse_expr(lexer, gen);
+    assert_next_before(lexer, else_tk, TK_ELSE, then);
+    ExprIdx else_expr = parse_expr(lexer, gen);
+    Expr expr = {.off = if_tk.off, .tag = EXPR_IF, .data.if_then_else = {.cond_expr = cond_expr, .then_expr = then_expr, .else_expr = else_expr } }; 
+    da_append(gen->exprs, expr);
+    return gen->exprs.size - 1;
+}
 ExprIdx parse_prefix(Lexer *lexer, Gen *gen)
 {
     try_next(lexer, qual, TK_QUAL);
@@ -342,8 +357,6 @@ BP infix_bp(Token tk)
         return (BP){.lbp = 5, .rbp = 4};
     case '*':
         return (BP){.lbp = 7, .rbp = 6};
-    case TK_BOOL:
-        return (BP){.lbp = 1, .rbp = 1};
     default:
         return (BP){.lbp = -1, .rbp = -1};
     }
@@ -351,7 +364,7 @@ BP infix_bp(Token tk)
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp)
 {
     // the order of this matter; atomic expr must be tried last.
-    static const ParseFn prefix_parsers[] = {parse_prefix, parse_scale, parse_chord, parse_section_expr, parse_atomic_expr};
+    static const ParseFn prefix_parsers[] = {parse_prefix, parse_if, parse_scale, parse_chord, parse_section_expr, parse_atomic_expr};
     static const size_t prefix_parsers_len = sizeof(prefix_parsers) / sizeof(prefix_parsers[0]);
     ExprIdx lhs;
     for (size_t i = 0; i < prefix_parsers_len; ++i)
@@ -422,12 +435,24 @@ ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen)
         lexer_next(lexer);
         expr.off = tk.off;
         break;
-    case TK_BOOL:
+    case TK_FALSE:
         expr.tag = EXPR_BOOL;
-        expr.data.num = tk.data.integer;
+        expr.data.num = 0;
         lexer_next(lexer);
         expr.off = tk.off;
         break;
+
+    case TK_TRUE:
+        expr.tag = EXPR_BOOL;
+        expr.data.num = 1;
+        lexer_next(lexer);
+        expr.off = tk.off;
+        break;
+    case TK_VOID:
+	expr.tag = EXPR_VOID;
+	lexer_next(lexer);
+	expr.off = tk.off;
+	break;
     case '(':
         lexer_next(lexer);
         ExprIdx tmp = parse_expr(lexer, gen);
