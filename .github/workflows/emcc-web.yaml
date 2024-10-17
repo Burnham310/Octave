@@ -19,7 +19,9 @@ jobs:
 
       - name: Build Webasm
         run: make webasm
-
+      
+      - name: build tutorial
+        run: python3 .github/generate_examply.py
       # Deploy to GitHub Pages
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
