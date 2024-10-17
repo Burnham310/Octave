@@ -35,5 +35,14 @@
         }
     </style>
 </head>
-    <body><h2>if then else</h2><pre><code>main = |:scale=/C 4 MAJ/: 1.. 2.. (if true then 3.. else 1..) [4 if false then 1 else s'4].. | // the parenthesis is optional
+    <body><h2>var</h2><pre><code>main = |c1=[o'1 3 7], c4=[4 6 o'3], c5=[5 b'7 o'4], c6=[6 o'1 o'5]:scale=/A 3 MAJ/:
+    c1. c6. c4. c5.|
+</code></pre><h2>if then else</h2><pre><code>main = |:scale=/C 4 MAJ/: 1.. 2.. (if true then 3.. else 1..) [4 if false then 1 else s'4].. | // the parenthesis is optional
+</code></pre><h2>for loop</h2><pre><code>main = |:scale=/A 3 MAJ/, instrument=27:
+    for 0~<5 loop
+	for 0~<4 loop 2... [2 4 o'1]... end
+    	for 0~<4 loop 5... [5 7 o'2]... end
+    	for 0~<8 loop 1... [1 3 7]... end
+    end
+|
 </code></pre></body></html>
