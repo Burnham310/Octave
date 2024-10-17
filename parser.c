@@ -20,6 +20,7 @@ ExprIdx parse_chord(Lexer *lexer, Gen *gen);
 ExprIdx parse_scale(Lexer *lexer, Gen *gen);
 ExprIdx parse_prefix(Lexer *lexer, Gen *gen);
 ExprIdx parse_if(Lexer *lexer, Gen *gen);
+ExprIdx parse_for(Lexer *lexer, Gen *gen);
 ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen);
 int prefix_bp(Token tk);
 int postfix_bp(Token tk);
@@ -295,13 +296,68 @@ ExprIdx parse_scale(Lexer *lexer, Gen *gen)
 ExprIdx parse_if(Lexer *lexer, Gen *gen) {
     try_next(lexer, if_tk, TK_IF);
     ExprIdx cond_expr = parse_expr(lexer, gen);
+    if (cond_expr == PR_NULL) {
+	report(lexer, if_tk.off, "Expect conditional expression after `if`");
+	THROW_EXCEPT();
+    }
     assert_next_before(lexer, then, TK_THEN, if_tk);
     ExprIdx then_expr = parse_expr(lexer, gen);
+    if (then_expr == PR_NULL) {
+	report(lexer, then.off, "Expect expression after `then`");
+	THROW_EXCEPT();
+    }
     assert_next_before(lexer, else_tk, TK_ELSE, then);
     ExprIdx else_expr = parse_expr(lexer, gen);
+    if (else_expr == PR_NULL) {
+	report(lexer, then.off, "Expect expression after `else`");
+	THROW_EXCEPT();
+    }
     Expr expr = {.off = if_tk.off, .tag = EXPR_IF, .data.if_then_else = {.cond_expr = cond_expr, .then_expr = then_expr, .else_expr = else_expr } }; 
     da_append(gen->exprs, expr);
     return gen->exprs.size - 1;
+}
+ExprIdx parse_for(Lexer *lexer, Gen *gen) {
+    try_next(lexer, for_tk, TK_FOR);
+    ExprIdx lower_expr = parse_expr(lexer, gen);
+    if (lower_expr == PR_NULL) {
+	report(lexer, for_tk.off, "Expect lower bound expression after `for`");
+	THROW_EXCEPT();
+    }
+    // parse bound
+    assert_next_before(lexer, to_tk, '~', for_tk);
+    Token bound = lexer_peek(lexer); 
+    bool is_leq;
+    if (bound.type == '<') {
+	is_leq = false;
+    } else if (bound.type == TK_LEQ) {
+	is_leq = true;
+    } else {
+	report(lexer, to_tk.off, "Expect either `<` or `<=` after `~`");
+	THROW_EXCEPT();
+    }
+    lexer_next(lexer);
+    ExprIdx upper_bound = parse_expr(lexer, gen);
+    if (upper_bound == PR_NULL) {
+	report(lexer, bound.off, "Expect upper bound expression after bound");
+	THROW_EXCEPT();
+    }
+
+    assert_next_before(lexer, loop, TK_LOOP, bound); 
+    // parse body
+    ArrOf(AstIdx) body_arr = {0};
+    ExprIdx body; 
+    while ((body = parse_expr(lexer, gen)) != PR_NULL) {
+	da_append(body_arr, body);
+    }
+    assert_next_before(lexer, end, TK_END, loop);
+    SliceOf(AstIdx) body_slice = {0};
+    da_move(body_arr, body_slice);
+
+
+    Expr expr = {.off = for_tk.off, .tag = EXPR_FOR, .data.for_expr = {.is_leq = is_leq, .lower_bound = lower_expr, .upper_bound = upper_bound, .body = body_slice } };
+    da_append(gen->exprs, expr);
+    return gen->exprs.size - 1;
+
 }
 ExprIdx parse_prefix(Lexer *lexer, Gen *gen)
 {
@@ -364,7 +420,7 @@ BP infix_bp(Token tk)
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp)
 {
     // the order of this matter; atomic expr must be tried last.
-    static const ParseFn prefix_parsers[] = {parse_prefix, parse_if, parse_scale, parse_chord, parse_section_expr, parse_atomic_expr};
+    static const ParseFn prefix_parsers[] = {parse_prefix, parse_if, parse_for, parse_scale, parse_chord, parse_section_expr, parse_atomic_expr};
     static const size_t prefix_parsers_len = sizeof(prefix_parsers) / sizeof(prefix_parsers[0]);
     ExprIdx lhs;
     for (size_t i = 0; i < prefix_parsers_len; ++i)

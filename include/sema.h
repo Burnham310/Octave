@@ -59,6 +59,7 @@ static const int BASE_MODE[DIATONIC] = {0, 2, 4, 5, 7, 9, 11};
     X(TY_MODE) \
     X(TY_SEC) \
     X(TY_CHORUS) \
+    X(TY_FOR) \
     X(TY_BOOL)
 #define X(x) x,
 typedef enum {
@@ -75,7 +76,10 @@ typedef enum {
 // NOTE -> Note
 // SCALE -> Scale
 // MODE -> Mode
-// SEC -> SliceOf(Note)
+// SEC -> Track sec
+// CHORUS -> SliceOf(SecIdx) chorus
+// FOR -> SliceOf(Note) notes
+// BOOL -> int i
 // Here the interal data structure represening `Value` in our language
 const char *type_to_str(Type ty);
 typedef struct {
@@ -95,8 +99,9 @@ typedef struct {
     int dots;
 } Note;
 make_slice(Note);
+make_arr(Note);
 typedef struct {
-    SliceOf(Note) notes;
+    ArrOf(Note) notes;
     SecConfig config;
     SliceOf(Label) labels;
 } Track;
@@ -110,6 +115,7 @@ typedef union {
     SliceOf(Track) chorus;
     Degree deg;
     Pitch pitch;
+    SliceOf(Note) notes;
 } ValData;
 typedef struct {
     ValData data;

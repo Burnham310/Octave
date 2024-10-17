@@ -129,7 +129,7 @@ Type sema_analy_sec(Context *ctx, SecIdx idx)
 		Type ty = sema_analy_expr(ctx, sec->note_exprs.ptr[i], idx);
 		if (ty == TY_ERR)
 			return TY_ERR;
-		if (ty_coerce(ctx, idx, ty, TY_NOTE, off) != TY_NOTE)
+		if (ty_coerce(ctx, idx, ty, TY_NOTE, off) != TY_NOTE && ty_coerce(ctx, idx, ty, TY_FOR, off) != TY_FOR)
 		{
 			report(ctx->lexer, off, "Expect type `note` in this part of section, found %s", type_to_str(ty));
 			return TY_ERR;
@@ -361,25 +361,46 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		sub_t2 = sema_analy_expr(ctx, expr->data.infix.rhs, sec_idx);
 		return sema_analy_infix(ctx, idx, sec_idx, expr->data.infix.op, sub_t, sub_t2);
 	case EXPR_IF:
-		{	
-			ExprIdx cond_expr = expr->data.if_then_else.cond_expr;
-			ExprIdx then_expr = expr->data.if_then_else.then_expr;
-			ExprIdx else_expr = expr->data.if_then_else.else_expr;
-			Type cond_t = sema_analy_expr(ctx, cond_expr, sec_idx);
-			Type then_t = sema_analy_expr(ctx, then_expr, sec_idx);			
-			Type else_t = sema_analy_expr(ctx, else_expr, sec_idx);
-			
-			assert_type(cond_t, TY_BOOL, ast_get(ctx->pgm, exprs, cond_expr).off);
-			size_t then_off = ast_get(ctx->pgm, exprs, then_expr).off;
-			if (ty_coerce(ctx, sec_idx, else_t, then_t, then_off) == then_t) {
-				return then_t;
-			} else if (ty_coerce(ctx, sec_idx, then_t, else_t, then_off) == else_t) {
-				return else_t;
-			}
-			report(ctx->lexer, then_off, "two branches of an if expression must have the same type");
-			return TY_ERR;
+	{	
+		ExprIdx cond_expr = expr->data.if_then_else.cond_expr;
+		ExprIdx then_expr = expr->data.if_then_else.then_expr;
+		ExprIdx else_expr = expr->data.if_then_else.else_expr;
+		Type cond_t = sema_analy_expr(ctx, cond_expr, sec_idx);
+		Type then_t = sema_analy_expr(ctx, then_expr, sec_idx);			
+		Type else_t = sema_analy_expr(ctx, else_expr, sec_idx);
 
+		assert_type(cond_t, TY_BOOL, ast_get(ctx->pgm, exprs, cond_expr).off);
+		size_t then_off = ast_get(ctx->pgm, exprs, then_expr).off;
+		if (ty_coerce(ctx, sec_idx, else_t, then_t, then_off) == then_t) {
+			return then_t;
+		} else if (ty_coerce(ctx, sec_idx, then_t, else_t, then_off) == else_t) {
+			return else_t;
 		}
+		report(ctx->lexer, then_off, "two branches of an if expression must have the same type");
+		return TY_ERR;
+
+	}
+	case EXPR_FOR:
+	{
+		ExprIdx lower_expr = expr->data.for_expr.lower_bound;	  	  
+		ExprIdx upper_expr = expr->data.for_expr.upper_bound;
+		SliceOf(AstIdx) body = expr->data.for_expr.body;
+
+		Type lower_ty = sema_analy_expr(ctx, lower_expr, sec_idx);
+		Type upper_ty = sema_analy_expr(ctx, upper_expr, sec_idx);
+		assert_type(lower_ty, TY_INT, ast_get(ctx->pgm, exprs, lower_expr).off);
+		assert_type(upper_ty, TY_INT, ast_get(ctx->pgm, exprs, upper_expr).off);
+		for (size_t i = 0; i < body.len; ++i) {
+			ExprIdx body_expr = body.ptr[i];
+			Type body_type = sema_analy_expr(ctx, body_expr, sec_idx);
+			size_t off = ast_get(ctx->pgm, exprs, body_expr).off;
+			if (ty_coerce(ctx, idx, body_type, TY_NOTE, off) != TY_NOTE && ty_coerce(ctx, idx, body_type, TY_FOR, off) != TY_FOR) {
+				report(ctx->lexer, off, "Expect type `note` in this part of section, found %s", type_to_str(body_type));
+				return TY_ERR;
+			}
+		}
+		return TY_FOR;
+	}
 	default:
 		eprintf("tag %i\n", expr->tag);
 		assert(false && "unknown tag");

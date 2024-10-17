@@ -31,6 +31,8 @@ typedef enum
 	TK_THEN,
 	TK_ELSE,
 	TK_FOR,
+	TK_LOOP,
+	TK_END,
 	TK_VOID,
 } TokenType;
 typedef struct

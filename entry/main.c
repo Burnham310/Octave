@@ -92,14 +92,14 @@ extern int main(const int argc, char **argv)
         add_midi_event(GLOBAL, SetTempoEvent(track->config.bpm));
 
         size_t label_c = 0;
-        for (size_t ni = 0; ni < track->notes.len; ++ni)
+        for (size_t ni = 0; ni < track->notes.size; ++ni)
         {
             if (label_c < track->labels.len && track->labels.ptr[label_c].note_pos == ni)
             {
                 int is_last_label = label_c == track->labels.len - 1;
 
                 Label cur_label = track->labels.ptr[label_c];
-                int duration = track->notes.len - cur_label.note_pos;
+                int duration = track->notes.size - cur_label.note_pos;
                 if (!is_last_label)
                 {
                     duration = track->labels.ptr[label_c + 1].note_pos - cur_label.note_pos;
@@ -115,9 +115,10 @@ extern int main(const int argc, char **argv)
 
                 label_c++;
             }
-            Note note = track->notes.ptr[ni];
+            Note note = track->notes.items[ni];
             SliceOf(Pitch) pitches = note.chord;
             size_t dots = note.dots;
+	    if (dots == 0) continue;
             if (pitches.len == 0)
             {
                 add_midi_event(ti, PauseNoteEvent(dots));

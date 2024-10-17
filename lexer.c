@@ -48,6 +48,10 @@ const char *tk_str(TokenType ty)
 		return "TK_IF";
 	case TK_FOR:
 		return "TK_FOR";
+	case TK_LOOP:
+		return "TK_LOOP";
+	case TK_END:
+		return "TK_END";
 	case TK_THEN:
 		return "TK_THEN";
 	case TK_ELSE:
@@ -88,6 +92,8 @@ const char *tk_str(TokenType ty)
 		return ")";
 	case '\'':
 		return "'";
+	case '~':
+		return "~";
 	default:
 		return "TK_UNKNOWN";
 	}
@@ -97,9 +103,9 @@ LexerDummy lexer_dummy_init(const char *src, const size_t src_len, const char *p
 {
 	return (LexerDummy){.path = path, .src = src, .src_len = src_len};
 }
-static const char* keywords[] = {"if", "then", "else", "for", "true", "false", "void" };
+static const char* keywords[] = {"if", "then", "else", "for", "loop", "end", "true", "false", "void" };
 // static const size_t keyword_syms[sizeof(keywords)/sizeof(keywords[0])] = {};
-static const TokenType keywords_tk[] = {TK_IF, TK_THEN, TK_ELSE, TK_FOR, TK_TRUE, TK_FALSE, TK_VOID};
+static const TokenType keywords_tk[] = {TK_IF, TK_THEN, TK_ELSE, TK_FOR, TK_LOOP, TK_END, TK_TRUE, TK_FALSE, TK_VOID};
 Lexer lexer_init(char *src, const size_t src_len, const char *path)
 {
 	Lexer lexer = {.src = src, .src_len = src_len, .off = 0, .path = path, .peakbuf = {0}, .sym_table = NULL};
@@ -223,6 +229,7 @@ Token match_single(Lexer *self)
 	case '(':
 	case ')':
 	case '\'':
+	case '~':
 		tk.type = (unsigned char)c;
 		return tk;
 	default:

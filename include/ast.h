@@ -43,6 +43,12 @@ typedef union
 	ExprIdx then_expr;
 	ExprIdx else_expr;
     } if_then_else;
+    struct {
+	ExprIdx lower_bound;
+	ExprIdx upper_bound;
+	bool is_leq;
+	SliceOf(AstIdx) body;
+    } for_expr;
 } ExprData;
 typedef enum
 {
@@ -57,6 +63,7 @@ typedef enum
     EXPR_BOOL,
     EXPR_VOID,
     EXPR_IF,
+    EXPR_FOR,
 } ExprTag;
 typedef struct
 {

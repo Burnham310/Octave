@@ -37,7 +37,6 @@ void eval_formal(Context *ctx, FormalIdx idx, SecIdx sec_idx)
 	ValData v = eval_expr(ctx, formal->expr, sec_idx);
 	hmgetp(*env, formal->ident)->value.data = v;
 }
-make_arr(Note);
 
 static const SecConfig default_config = {.bpm = 120, .scale = (Scale){.mode = MODE_MAJ, .tonic = PTCH_C, .octave = 5}, .instr = 2};
 Track eval_section(Context *ctx, SecIdx idx)
@@ -68,13 +67,20 @@ Track eval_section(Context *ctx, SecIdx idx)
 	env_i = hmgeti(*env, ctx->builtin_syms.scale);
 	if (env_i < 0)
 		hmput(*env, ctx->builtin_syms.scale, (Val){.data.scale = default_config.scale});
-
-	track.notes = (SliceOf(Note)){.ptr = calloc(sizeof(Note), ast_len(sec, note_exprs)), .len = ast_len(sec, note_exprs)}; // TODO hacked
+	track.notes = (ArrOf(Note)) {0};
 	for (ssize_t ni = 0; ni < ast_len(sec, note_exprs); ++ni)
 	{
 		if (ctx->types.ptr[ni] == TY_VOID) continue;
-		ValData note = eval_expr(ctx, ast_get(sec, note_exprs, ni), idx);
-		track.notes.ptr[ni] = note.note;
+		ExprIdx expr = ast_get(sec, note_exprs, ni);
+		ValData note = eval_expr(ctx, expr, idx);
+		Type ty = ctx->types.ptr[expr];
+		if (TY_NOTE == ty) {
+			da_append(track.notes, note.note);
+		} else if (TY_FOR == ty) {
+			da_append_slice(track.notes, note.notes);
+		} else {
+			assert(false && "unexpected type");
+		}
 	}
 	track.config.bpm = hmget(*env, ctx->builtin_syms.bpm).data.i;
 	track.config.instr = hmget(*env, ctx->builtin_syms.instrument).data.i;
@@ -153,7 +159,7 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 	case EXPR_BOOL:
 		return (ValData){.i = expr->data.num};
 	case EXPR_VOID:
-		return res;
+		return (ValData) {0};
 	case EXPR_IDENT:
 		env_i = -1;
 		if (sec_idx >= 0)
@@ -260,6 +266,35 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		bool cond = eval_expr(ctx, cond_expr, sec_idx).i;
 		ExprIdx branch = cond ? then_expr : else_expr;
 		return eval_expr(ctx, branch, sec_idx);
+	}
+	case EXPR_FOR:
+	{
+		ExprIdx lower_expr = expr->data.for_expr.lower_bound;	  	  
+		ExprIdx upper_expr = expr->data.for_expr.upper_bound;
+		SliceOf(AstIdx) body = expr->data.for_expr.body;
+
+		ValData lower_v = eval_expr(ctx, lower_expr, sec_idx);
+		ValData upper_v = eval_expr(ctx, upper_expr, sec_idx);
+		ssize_t start = lower_v.i;
+		ssize_t end = upper_v.i + expr->data.for_expr.is_leq;
+		assert(start <= end);
+		ArrOf(Note) note_arr = {0};
+			
+		for (size_t loop = start; loop < end; ++loop)
+			for (size_t i = 0; i < body.len; ++i) {
+				ExprIdx body_expr = body.ptr[i];
+				Type body_t = ctx->types.ptr[body_expr];
+				ValData body_v = eval_expr(ctx, body_expr, sec_idx);
+				if (TY_NOTE == body_t) {
+					da_append(note_arr, body_v.note);
+				} else if (TY_FOR == body_t) {
+					da_append_slice(note_arr, body_v.notes);
+				} else {
+					assert(false && "unexpected type");	
+				}
+			}
+		da_move(note_arr, res.notes)
+		return res;
 	}
 	// case EXPR_PREFIX:
 	default:
