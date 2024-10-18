@@ -1,7 +1,7 @@
 guitar = |c1=[1 3 7], c2=[2 4 o'1], c6=[6 o'1 o'5], c4=[4 6 o'3], c5=[5 7 o'2]
 :scale=/A 3 MAJ/, instrument=27:
     for 0~<5 loop
-	for 0~<4 loop 2... c2... end
+		for 0~<4 loop 2... c2... end
     	for 0~<4 loop 5... c5... end
     	for 0~<8 loop 1... c1... end
     end
