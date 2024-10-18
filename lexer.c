@@ -94,6 +94,8 @@ const char *tk_str(TokenType ty)
 		return "'";
 	case '~':
 		return "~";
+	case '@':
+		return "@";
 	default:
 		return "TK_UNKNOWN";
 	}
@@ -103,7 +105,7 @@ LexerDummy lexer_dummy_init(const char *src, const size_t src_len, const char *p
 {
 	return (LexerDummy){.path = path, .src = src, .src_len = src_len};
 }
-static const char* keywords[] = {"if", "then", "else", "for", "loop", "end", "true", "false", "void" };
+static const char *keywords[] = {"if", "then", "else", "for", "loop", "end", "true", "false", "void"};
 // static const size_t keyword_syms[sizeof(keywords)/sizeof(keywords[0])] = {};
 static const TokenType keywords_tk[] = {TK_IF, TK_THEN, TK_ELSE, TK_FOR, TK_LOOP, TK_END, TK_TRUE, TK_FALSE, TK_VOID};
 Lexer lexer_init(char *src, const size_t src_len, const char *path)
@@ -111,8 +113,9 @@ Lexer lexer_init(char *src, const size_t src_len, const char *path)
 	Lexer lexer = {.src = src, .src_len = src_len, .off = 0, .path = path, .peakbuf = {0}, .sym_table = NULL};
 	sh_new_arena(lexer.sym_table);
 
-	for (size_t i = 0; i < sizeof(keywords)/sizeof(keywords[0]); ++i) {
-	    symt_put_keyword_tk(lexer.sym_table, keywords[i], keywords_tk[i]);
+	for (size_t i = 0; i < sizeof(keywords) / sizeof(keywords[0]); ++i)
+	{
+		symt_put_keyword_tk(lexer.sym_table, keywords[i], keywords_tk[i]);
 	}
 
 	return lexer;
@@ -233,6 +236,7 @@ Token match_single(Lexer *self)
 	case '+':
 	case '-':
 	case '*':
+	case '@':
 		tk.type = (unsigned char)c;
 		return tk;
 	default:
@@ -372,14 +376,17 @@ Token match_ident(Lexer *self)
 	// a hack because stb sh wants NULL terminated string
 	self->src[self->off] = '\0';
 	ssize_t symbol = shgeti(self->sym_table, self->src + tk.off);
-	
-	if (symbol >= 0) {
-	    
-	    tk.type = self->sym_table[symbol].value;
-	    tk.data.integer = symbol;
-	} else {
-	    tk.type = TK_IDENT;
-	    tk.data.integer = symt_intern(self->sym_table, self->src + tk.off);
+
+	if (symbol >= 0)
+	{
+
+		tk.type = self->sym_table[symbol].value;
+		tk.data.integer = symbol;
+	}
+	else
+	{
+		tk.type = TK_IDENT;
+		tk.data.integer = symt_intern(self->sym_table, self->src + tk.off);
 	}
 	self->src[self->off] = c; // restore the char
 	return tk;
@@ -421,25 +428,27 @@ Token match_eq(Lexer *self)
 	Token tk = {.off = self->off};
 	char c = peek_char(self);
 
-	switch (c) {
-		case '=':
-			tk.type = TK_EQ;
-			break;
-		case '<':
-			tk.type = TK_LEQ;
-			break;
-		case '>':
-			tk.type = TK_GEQ;
-			break;
-		case '!':
-			tk.type = TK_NEQ;
-			break;
-		default:
-			RETURN_TK(TK_NULL);
+	switch (c)
+	{
+	case '=':
+		tk.type = TK_EQ;
+		break;
+	case '<':
+		tk.type = TK_LEQ;
+		break;
+	case '>':
+		tk.type = TK_GEQ;
+		break;
+	case '!':
+		tk.type = TK_NEQ;
+		break;
+	default:
+		RETURN_TK(TK_NULL);
 	}
 	next_char(self);
 	c = peek_char(self);
-	if (c != '=') {
+	if (c != '=')
+	{
 		self->off = tk.off;
 		RETURN_TK(TK_NULL);
 	}

@@ -36,8 +36,8 @@ void expr_debug(Pgm *pgm, SymbolTable sym_table, ExprIdx idx)
         printf("%zi", expr.data.num);
         break;
     case EXPR_BOOL:
-	printf("%s", expr.data.num ? "true" : "false");
-	break;
+        printf("%s", expr.data.num ? "true" : "false");
+        break;
     case EXPR_IDENT:
         printf("%s", symt_lookup(sym_table, expr.data.ident));
         break;
@@ -107,12 +107,11 @@ struct Gen
 // TOOD assumes never fails
 LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_ct)
 {
-    try_next(lexer, ldiamon, '<');
+    try_next(lexer, ldiamon, '@');
     Label label = {.note_pos = note_ct};
 
     assert_next_before(lexer, name, TK_IDENT, ldiamon);
     label.name = name.data.integer;
-    assert_next_before(lexer, ldiamond, '>', name);
     assert_next_before(lexer, lbrac, '[', ldiamon);
     assert_next_before(lexer, volume, TK_IDENT, lbrac);
     assert(volume.data.integer == symt_intern(lexer->sym_table, "volume"));
@@ -226,8 +225,8 @@ FormalIdx parse_formal(Lexer *lexer, Gen *gen)
 {
     try_next(lexer, ident, TK_IDENT);
 
-    assert_next_before(lexer, assign, '=', ident)
-        ExprIdx expr = parse_expr(lexer, gen);
+    assert_next_before(lexer, assign, '=', ident);
+    ExprIdx expr = parse_expr(lexer, gen);
     if (expr == PR_NULL)
     {
         report(lexer, assign.off, "Expect expression after '='");
@@ -293,71 +292,82 @@ ExprIdx parse_scale(Lexer *lexer, Gen *gen)
 }
 // currently only have one kind of prefix operator
 // we desugar it to the infix opeator e.g. #'1 => 1'1
-ExprIdx parse_if(Lexer *lexer, Gen *gen) {
+ExprIdx parse_if(Lexer *lexer, Gen *gen)
+{
     try_next(lexer, if_tk, TK_IF);
     ExprIdx cond_expr = parse_expr(lexer, gen);
-    if (cond_expr == PR_NULL) {
-	report(lexer, if_tk.off, "Expect conditional expression after `if`");
-	THROW_EXCEPT();
+    if (cond_expr == PR_NULL)
+    {
+        report(lexer, if_tk.off, "Expect conditional expression after `if`");
+        THROW_EXCEPT();
     }
     assert_next_before(lexer, then, TK_THEN, if_tk);
     ExprIdx then_expr = parse_expr(lexer, gen);
-    if (then_expr == PR_NULL) {
-	report(lexer, then.off, "Expect expression after `then`");
-	THROW_EXCEPT();
+    if (then_expr == PR_NULL)
+    {
+        report(lexer, then.off, "Expect expression after `then`");
+        THROW_EXCEPT();
     }
     assert_next_before(lexer, else_tk, TK_ELSE, then);
     ExprIdx else_expr = parse_expr(lexer, gen);
-    if (else_expr == PR_NULL) {
-	report(lexer, then.off, "Expect expression after `else`");
-	THROW_EXCEPT();
+    if (else_expr == PR_NULL)
+    {
+        report(lexer, then.off, "Expect expression after `else`");
+        THROW_EXCEPT();
     }
-    Expr expr = {.off = if_tk.off, .tag = EXPR_IF, .data.if_then_else = {.cond_expr = cond_expr, .then_expr = then_expr, .else_expr = else_expr } }; 
+    Expr expr = {.off = if_tk.off, .tag = EXPR_IF, .data.if_then_else = {.cond_expr = cond_expr, .then_expr = then_expr, .else_expr = else_expr}};
     da_append(gen->exprs, expr);
     return gen->exprs.size - 1;
 }
-ExprIdx parse_for(Lexer *lexer, Gen *gen) {
+ExprIdx parse_for(Lexer *lexer, Gen *gen)
+{
     try_next(lexer, for_tk, TK_FOR);
     ExprIdx lower_expr = parse_expr(lexer, gen);
-    if (lower_expr == PR_NULL) {
-	report(lexer, for_tk.off, "Expect lower bound expression after `for`");
-	THROW_EXCEPT();
+    if (lower_expr == PR_NULL)
+    {
+        report(lexer, for_tk.off, "Expect lower bound expression after `for`");
+        THROW_EXCEPT();
     }
     // parse bound
     assert_next_before(lexer, to_tk, '~', for_tk);
-    Token bound = lexer_peek(lexer); 
+    Token bound = lexer_peek(lexer);
     bool is_leq;
-    if (bound.type == '<') {
-	is_leq = false;
-    } else if (bound.type == TK_LEQ) {
-	is_leq = true;
-    } else {
-	report(lexer, to_tk.off, "Expect either `<` or `<=` after `~`");
-	THROW_EXCEPT();
+    if (bound.type == '<')
+    {
+        is_leq = false;
+    }
+    else if (bound.type == TK_LEQ)
+    {
+        is_leq = true;
+    }
+    else
+    {
+        report(lexer, to_tk.off, "Expect either `<` or `<=` after `~`");
+        THROW_EXCEPT();
     }
     lexer_next(lexer);
     ExprIdx upper_bound = parse_expr(lexer, gen);
-    if (upper_bound == PR_NULL) {
-	report(lexer, bound.off, "Expect upper bound expression after bound");
-	THROW_EXCEPT();
+    if (upper_bound == PR_NULL)
+    {
+        report(lexer, bound.off, "Expect upper bound expression after bound");
+        THROW_EXCEPT();
     }
 
-    assert_next_before(lexer, loop, TK_LOOP, bound); 
+    assert_next_before(lexer, loop, TK_LOOP, bound);
     // parse body
     ArrOf(AstIdx) body_arr = {0};
-    ExprIdx body; 
-    while ((body = parse_expr(lexer, gen)) != PR_NULL) {
-	da_append(body_arr, body);
+    ExprIdx body;
+    while ((body = parse_expr(lexer, gen)) != PR_NULL)
+    {
+        da_append(body_arr, body);
     }
     assert_next_before(lexer, end, TK_END, loop);
     SliceOf(AstIdx) body_slice = {0};
     da_move(body_arr, body_slice);
 
-
-    Expr expr = {.off = for_tk.off, .tag = EXPR_FOR, .data.for_expr = {.is_leq = is_leq, .lower_bound = lower_expr, .upper_bound = upper_bound, .body = body_slice } };
+    Expr expr = {.off = for_tk.off, .tag = EXPR_FOR, .data.for_expr = {.is_leq = is_leq, .lower_bound = lower_expr, .upper_bound = upper_bound, .body = body_slice}};
     da_append(gen->exprs, expr);
     return gen->exprs.size - 1;
-
 }
 ExprIdx parse_prefix(Lexer *lexer, Gen *gen)
 {
@@ -413,6 +423,19 @@ BP infix_bp(Token tk)
         return (BP){.lbp = 5, .rbp = 4};
     case '*':
         return (BP){.lbp = 7, .rbp = 6};
+    case TK_EQ:
+        return (BP){.lbp = 3, .rbp = 3};
+    case TK_NEQ:
+        return (BP){.lbp = 3, .rbp = 3};
+    case TK_GEQ:
+        return (BP){.lbp = 3, .rbp = 3};
+    case TK_LEQ:
+        return (BP){.lbp = 3, .rbp = 3};
+    case '>':
+        return (BP){.lbp = 3, .rbp = 3};
+    case '<':
+        return (BP){.lbp = 3, .rbp = 3};
+
     default:
         return (BP){.lbp = -1, .rbp = -1};
     }
@@ -505,10 +528,10 @@ ExprIdx parse_atomic_expr(Lexer *lexer, Gen *gen)
         expr.off = tk.off;
         break;
     case TK_VOID:
-	expr.tag = EXPR_VOID;
-	lexer_next(lexer);
-	expr.off = tk.off;
-	break;
+        expr.tag = EXPR_VOID;
+        lexer_next(lexer);
+        expr.off = tk.off;
+        break;
     case '(':
         lexer_next(lexer);
         ExprIdx tmp = parse_expr(lexer, gen);

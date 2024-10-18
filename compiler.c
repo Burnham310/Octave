@@ -67,18 +67,24 @@ Track eval_section(Context *ctx, SecIdx idx)
 	env_i = hmgeti(*env, ctx->builtin_syms.scale);
 	if (env_i < 0)
 		hmput(*env, ctx->builtin_syms.scale, (Val){.data.scale = default_config.scale});
-	track.notes = (ArrOf(Note)) {0};
+	track.notes = (ArrOf(Note)){0};
 	for (ssize_t ni = 0; ni < ast_len(sec, note_exprs); ++ni)
 	{
-		if (ctx->types.ptr[ni] == TY_VOID) continue;
+		if (ctx->types.ptr[ni] == TY_VOID)
+			continue;
 		ExprIdx expr = ast_get(sec, note_exprs, ni);
 		ValData note = eval_expr(ctx, expr, idx);
 		Type ty = ctx->types.ptr[expr];
-		if (TY_NOTE == ty) {
+		if (TY_NOTE == ty)
+		{
 			da_append(track.notes, note.note);
-		} else if (TY_FOR == ty) {
+		}
+		else if (TY_FOR == ty)
+		{
 			da_append_slice(track.notes, note.notes);
-		} else {
+		}
+		else
+		{
 			assert(false && "unexpected type");
 		}
 	}
@@ -159,7 +165,7 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 	case EXPR_BOOL:
 		return (ValData){.i = expr->data.num};
 	case EXPR_VOID:
-		return (ValData) {0};
+		return (ValData){0};
 	case EXPR_IDENT:
 		env_i = -1;
 		if (sec_idx >= 0)
@@ -191,8 +197,9 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		ValData lhs_v = eval_expr(ctx, lhs, sec_idx);
 		ValData rhs_v = eval_expr(ctx, rhs, sec_idx);
 		TokenType op = expr->data.infix.op.type;
-		if (op == '&')
+		switch (op)
 		{
+		case '&':
 			lhs_v = val_coerce(ctx, &lhs_v, ctx->types.ptr[lhs], TY_CHORUS);
 			rhs_v = val_coerce(ctx, &rhs_v, ctx->types.ptr[rhs], TY_CHORUS);
 			size_t lhs_len = lhs_v.chorus.len;
@@ -202,8 +209,8 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 			memcpy(res.chorus.ptr, lhs_v.chorus.ptr, lhs_len * sizeof(Track));
 			memcpy(res.chorus.ptr + lhs_len, rhs_v.chorus.ptr, rhs_len * sizeof(Track));
 			return res;
-		}
-		else if (op == '\'')
+
+		case '\'':
 		{
 			int shift = lhs_v.i;
 			// lhs_v = coerce(ctx, &v1, ctx->types.ptr[idx], TY_INT);
@@ -222,24 +229,29 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 			}
 			return res;
 		}
-		else if (op == '+')
-		{
+		case '+':
 			return (ValData){.i = lhs_v.i + rhs_v.i};
-		}
-		else if (op == '-')
-		{
+		case '-':
 			return (ValData){.i = lhs_v.i - rhs_v.i};
-		}
-		else if (op == '*')
-		{
+		case '*':
 			return (ValData){.i = lhs_v.i * rhs_v.i};
-		}
-		else if (op == TK_EQ)
-		{
+		case '>':
+			return (ValData){.i = lhs_v.i > rhs_v.i};
+		case '<':
+			return (ValData){.i = lhs_v.i < rhs_v.i};
+		case TK_EQ:
 			return (ValData){.i = lhs_v.i == rhs_v.i};
+		case TK_NEQ:
+			return (ValData){.i = lhs_v.i != rhs_v.i};
+		case TK_LEQ:
+			return (ValData){.i = lhs_v.i <= rhs_v.i};
+		case TK_GEQ:
+			return (ValData){.i = lhs_v.i >= rhs_v.i};
+
+		default:
+			assert(false && "unknown infix op");
+			break;
 		}
-		assert(false && "unknown infix op");
-	}
 	case EXPR_CHORD:
 	{
 
@@ -262,14 +274,14 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 	{
 		ExprIdx cond_expr = expr->data.if_then_else.cond_expr;
 		ExprIdx then_expr = expr->data.if_then_else.then_expr;
-		ExprIdx else_expr = expr->data.if_then_else.else_expr;	
+		ExprIdx else_expr = expr->data.if_then_else.else_expr;
 		bool cond = eval_expr(ctx, cond_expr, sec_idx).i;
 		ExprIdx branch = cond ? then_expr : else_expr;
 		return eval_expr(ctx, branch, sec_idx);
 	}
 	case EXPR_FOR:
 	{
-		ExprIdx lower_expr = expr->data.for_expr.lower_bound;	  	  
+		ExprIdx lower_expr = expr->data.for_expr.lower_bound;
 		ExprIdx upper_expr = expr->data.for_expr.upper_bound;
 		SliceOf(AstIdx) body = expr->data.for_expr.body;
 
@@ -279,30 +291,35 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		ssize_t end = upper_v.i + expr->data.for_expr.is_leq;
 		assert(start <= end);
 		ArrOf(Note) note_arr = {0};
-			
+
 		for (size_t loop = start; loop < end; ++loop)
-			for (size_t i = 0; i < body.len; ++i) {
+			for (size_t i = 0; i < body.len; ++i)
+			{
 				ExprIdx body_expr = body.ptr[i];
 				Type body_t = ctx->types.ptr[body_expr];
 				ValData body_v = eval_expr(ctx, body_expr, sec_idx);
-				if (TY_NOTE == body_t) {
+				if (TY_NOTE == body_t)
+				{
 					da_append(note_arr, body_v.note);
-				} else if (TY_FOR == body_t) {
+				}
+				else if (TY_FOR == body_t)
+				{
 					da_append_slice(note_arr, body_v.notes);
-				} else {
-					assert(false && "unexpected type");	
+				}
+				else
+				{
+					assert(false && "unexpected type");
 				}
 			}
-		da_move(note_arr, res.notes)
-		return res;
+		da_move(note_arr, res.notes) return res;
 	}
 	// case EXPR_PREFIX:
 	default:
 		eprintf("EXPR %i\n", expr->tag);
 		assert(false && "unknown expr tag\n");
 	}
+	}
 }
-
 // SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx) {
 //
 //     eval_chord_recur(ctx, idx, scale, sec_idx);
