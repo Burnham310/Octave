@@ -105,3 +105,4 @@ bin/
 compile_commands.json
 web/octc.js
 web/octc.wasm
+web/tutorial.html
