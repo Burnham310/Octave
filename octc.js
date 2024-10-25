@@ -4436,7 +4436,7 @@ function run(args = arguments_) {
     return;
   }
 
-    stackCheckInit();
+  stackCheckInit();
 
   if (!calledPrerun) {
     calledPrerun = 1;
