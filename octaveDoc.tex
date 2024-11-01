@@ -164,23 +164,32 @@ intervals within the specified segment.
 The syntax of Octave is defined using BNF notation as follows. We assume parentheses are implicit in the syntax, used for grouping and to avoid ambiguity.
 
 \subsection{Grammar in BNF}
-\definecolor{syntax_color}{RGB}{91, 33, 6}
+\definecolor{syntax_color}{RGB}{200, 33, 6}
 
+\newcommand{\nt}[1]{\textcolor{syntax_color}{#1}}
+\newcommand{\ntext}[1]{\textcolor{syntax_color}{\text{#1}}}
+\newcommand{\term}[1]{\langle \text{#1} \rangle}
 \begin{align*}
-    \langle \text{Pgm} \rangle &::= \langle \text{Decl} \rangle^+ \\
-    \langle \text{Decl} \rangle &::= \langle \text{Ident} \rangle \ \textcolor{syntax_color}{=} \ \langle \text{Expr} \rangle \\
-    \langle \text{Ident} \rangle &::= \textcolor{syntax_color}{[a-z\_][a-z\_\langle \text{Digit} \rangle]*} \\
-    \langle \text{Qual} \rangle &::= \textcolor{syntax_color}{[so\#b]+'} \\
-    \langle \text{Expr} \rangle &::= \langle \text{Ident} \rangle \\
+    \term{Pgm} &::= \langle \text{Decl} \rangle^* \\
+    \langle \text{Decl} \rangle &::= \term{Ident} \ \ntext{=} \ \langle \text{Expr} \rangle \\
+    \term{Ident} &::= [a-z\_][a-z\_\term{Digit} \rangle]* \\
+    \term{Qual} &::= [so\#b]^+\textcolor{syntax_color}{'} \\
+    \term{Expr} &::= \langle \text{Ident} \rangle \\
     &\quad | \ \langle \text{Int} \rangle \\
-    &\quad | \ \langle \text{Expr} \rangle \ \textcolor{syntax_color}{.} \ \langle \text{Expr} \rangle \\
-    &\quad | \ \langle \text{Qual} \rangle \ \langle \text{Expr} \rangle \\
-    &\quad | \ \langle \text{Int} \rangle \ \textcolor{syntax_color}{'} \ \langle \text{Expr} \rangle \\
-    &\quad | \ \textcolor{syntax_color}{[} \langle \text{Expr} \rangle^* \textcolor{syntax_color}{]} \\
-    &\quad | \ \textcolor{syntax_color}{|} \textcolor{syntax_color}{\lbrace} \langle \text{Decl} \rangle, \langle \text{Decl} \rangle^* \textcolor{syntax_color}{\rbrace} \textcolor{syntax_color}{:} \langle \text{Expr} \rangle^* \textcolor{syntax_color}{|} \\
-    &\quad | \ \langle \text{Expr} \rangle \ \textcolor{syntax_color}{\&} \ \langle \text{Expr} \rangle \\
-    \langle \text{Digit} \rangle &::= \textcolor{syntax_color}{[0-9]} \\
-    \langle \text{Int} \rangle &::= \textcolor{syntax_color}{[1-9][0-9]*}
+    &\quad | \ \term{Expr} \ \textcolor{syntax_color}{.}^+ \\
+    &\quad | \ \term{Qual} \ \term{Expr} \\
+    &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
+    &\quad | \ \nt{[} \term{Expr}^* \nt{]} \\
+    &\quad | \ \nt{|} \nt{\lbrace} \term{Decl}^*, \term{Decl}^* \nt{\rbrace} \nt{:} \term{Expr}^* \nt{|} \\
+    &\quad | \ \term{Expr} \ \nt{\&} \ \term{Expr} \\
+    &\quad | \ \term{Expr} \ \nt{+} \ \term{Expr} \\
+    &\quad | \ \term{Expr} \ \nt{-} \ \term{Expr} \\
+    &\quad | \ \term{Expr} \ \nt{*} \ \term{Expr} \\
+    &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
+    &\quad | \ \ntext{\text{if}}\  \term{Expr} \ \ntext{then}\ \term{Expr} \ \ntext{else}\ \term{Expr} \ \ntext{end} \\
+    &\quad | \ \textcolor{syntax_color}{\text{for}}\  \term{Expr} \ \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ \term{Expr}^* \ \ntext{end} \\
+   \term{Digit} &::= {[0-9]} \\
+    \term{Int} &::= {[1-9][0-9]^*}
 \end{align*}
 
 \vspace{2mm}
