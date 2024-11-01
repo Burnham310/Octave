@@ -1,7 +1,7 @@
 # Octave: Music Programming Language
 
  
-### [Web Editor](https://burnham310.github.io/Octave) | [Compiler Manual](./doc/octaveDoc.pdf)
+### [Online Editor](https://burnham310.github.io/Octave) | [Compiler Manual](./doc/octaveDoc.pdf) | [IDE Support](https://github.com/Burnham310/Octave-Editor-Support)
 ### 
 ### 
 
