@@ -1,0 +1,377 @@
+\documentclass[letterpaper,12pt]{article}
+\usepackage[margin=1.0in]{geometry}
+\usepackage{graphicx}
+\usepackage[english]{babel}
+\usepackage{tcolorbox}
+\usepackage{xcolor}
+\usepackage{sectsty}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{amsthm}
+
+
+\begin{document}
+\definecolor{MyBlue}{rgb}{0.2,0.2,0.6}
+\sectionfont{\color{MyBlue}} % Apply color to sections
+\subsectionfont{\color{MyBlue}} % Apply color to subsections
+
+
+\begin{tcolorbox}[
+    fonttitle=\sffamily\bfseries,
+    colback=MyBlue!20, % Background color of the box
+    colframe=MyBlue!80, % Border color
+    coltitle=white, % Title text color
+    coltext=black, % Text color inside the box
+    colbacktitle=MyBlue!80, % Title background color
+    sharp corners, % Sharp corners for a clean, modern look
+    boxrule=1mm, % Border thickness
+    width=\textwidth, % Width of the box
+    leftrule=2mm, % Extra left border for a subtle effect
+    titlerule=0mm, % No rule under the title
+    bottomrule=0mm, % No rule at the bottom
+    arc=5mm, % Rounded corners
+    boxsep=5mm, % Spacing between text and the box border
+    before=\vskip10pt, % Vertical space before the box
+    after=\vskip10pt % Vertical space after the box
+]
+
+% Content inside the box
+\begin{center}
+    \textbf{\Large An Introduction to Octave Compiler} \\
+    \vspace{5pt}
+    \texttt{Burnham310 DevTeam} \\
+    \vspace{5pt}
+    \texttt{University of Illinois at Urbana-Champaign}
+\end{center}
+
+\end{tcolorbox}
+\section{Introduction}
+
+Octave is an experimental music programming language designed to facilitate music composition in a programmable way. In this language, users can write music using syntax reminiscent of traditional musical notation while defining variables, functions, conditional statements, and loops. These compositions are compiled into MIDI files.
+
+This document provides an introduction to the Octave language, detailing the core principles 
+behind its compiler's frontend and backend. 
+Like most programming language compilers, the Octave compiler has two main components: the frontend, 
+which includes the lexer and parser, and the backend, 
+which converts the Abstract Syntax Tree (AST) into MIDI binary output. 
+To understand these processes, we will first discuss how the backend 
+operates and the abstractions that drive it.
+Then, we will provide a formal description of the syntax, semantics, and type system of Octave. We use Backus-Naur Form (BNF) to define the syntax, Big-Step Structural Operational Semantics (SOS) for the semantics, and a type system to ensure type correctness.
+
+\section{Backend Concepts}
+This section introduces the key concepts derived from the Octave backend design and explain how it follows and builds upon an event-driven architecture. This abstraction has proven to be highly effective in supporting the development of both the parser and lexer, facilitating a seamless integration to the compuler fontend of the compiler.
+
+
+\subsection{MIDI Abstraction}
+
+A standard MIDI file (SMF) is organized into two main components: the header chunk and one or more track chunks. The header chunk sets the file’s format, timing, and the number of tracks, laying the groundwork for playback. Meanwhile, each track chunk contains the actual musical events in sequence, such as note instructions, tempo adjustments, and other performance parameters. This structure allows MIDI files to remain highly compatible across various devices and versatile for applications ranging from live performances to digital music production.
+
+In a track chunk, musical data is stored in a standardized sequence to ensure accurate playback. The general syntax for a track chunk is:
+
+
+\begin{verbatim}
+<MTrk event> = <delta-time><event>
+\end{verbatim}
+
+Here, \textless delta-time\textgreater\ is a variable-length quantity representing the time elapsed before the subsequent event. If two events occur simultaneously, a delta-time of zero is used. Delta-times are always required, with a granularity that can be adjusted based on the time units defined in the header chunk.
+
+\begin{itemize}
+    \item \textless MIDI event\textgreater\ - Events that include Note On (press key), Note Off (release key), Channel Volume (adjust the volume of a specific channel), among others.
+    \item \textless sysex event\textgreater\ - System-exclusive events for custom data.
+    \item \textless meta-event\textgreater\ - Additional metadata events, including global settings like tempo adjustments.
+\end{itemize}
+
+
+For instance, the tempo adjustment event is global, while a volume adjustment is specific to each track. In the Octave compiler, we simplify MIDI handling through two main abstractions: Track and Event.
+
+\begin{verbatim}
+struct _MTrkEvent
+{
+    enum MTrkEventType eventType;
+    int delta_time;
+    void *data;
+    void (*callbacks[5])(int delta_time, struct _EventData, void *data);
+    void (*destroyer)(void *data);
+};
+
+struct _MidiTrack
+{
+    size_t cap;
+    size_t event_count;
+    int channel;
+    struct MidiTrackMeta meta;
+    struct _MTrkEvent *events;
+};
+
+void add_midi_event(int track_id, struct _MTrkEvent event);
+\end{verbatim}
+
+This structure provides an efficient and extensible interface for the frontend to generate MIDI events in a standardized format. Through development, we found this approach effective and adaptable.
+
+\subsection{Backend Abstraction}
+
+In addition to MIDI abstraction, the backend handles more complex musical constructs that are not native to the MIDI standard. For example, Octave includes an `Interpolate` function, enabling users to define smooth attribute adjustments across sections. Consider the following syntax:
+
+\begin{verbatim}
+@build_up[volume=10 linear]
+
+    1.. oo'2.. o'7.. o'5.. 
+    2... 3... 5... 6... o'2... o#'4... o'5... oo'2...
+
+@done[volume=100]
+\end{verbatim}
+
+In this example, the volume increases linearly from 10 to 100 over the duration of the section. The backend processes these directives by inserting a sequence of volume change events at each interval of the MIDI frame.
+
+In summary, the Octave backend translates high-level constructs, such as linear volume adjustments, into the appropriate sequence of MIDI events, ensuring that complex musical structures are efficiently encoded in MIDI format. Each track in a MIDI file is essentially a sequence of events arranged in chronological order. The backend can insert specific sequences of events at designated points within a track to achieve dynamic effects, like gradual volume changes or tempo shifts, while preserving the integrity of the event sequence. This structure allows Octave to handle intricate musical transformations and accurately reflect them in the final MIDI output.
+
+
+\section{Evaluator Design}
+The frontend for Octave is built entirely from scratch in C. For parsing, we utilize a recursive descent parser, incorporating the concept of binding power, inspired by the Pratt Parser, to handle operator associativity. This approach follows standard practices commonly used in parser and lexer implementations. However, the evaluation step is somewhat unconventional. Once the Abstract Syntax Tree (AST) is generated through parsing, the challenge is transforming it into MIDI format.
+
+Our evaluator processes the AST by dividing it into two main components: 1) tracks, and 2) modifiers. The tracks represent a straightforward sequence of MIDI events, while the modifiers involve actions that alter the behavior of these events, such as the Interpolate function, which adjusts properties like volume or tempo over time.
+
+To formalize this process, I will illustrate how we transform the syntax into a sequence of events and how we evaluate the corresponding modifiers to achieve the desired musical output.
+
+\subsection{Evaluate Tracks}
+The evaluation of tracks in Octave involves rewriting the code as a canonical term,
+ which construct by event constructor (see \ref{event constructor}) e.g. \texttt{VTO(20)} sets the volume to 20, \texttt{NO(62, 12)} 
+represents a "Note On" event with pitch 62 and a duration of 12 divisions, and \texttt{NOF(62, 12)} signifies 
+a "Note Off" event with the same pitch and duration, and constructor operator, i.e, a space 
+for sequential execution and \& for concurrent execution. This algebraic structure offers a structured 
+representation of musical events, allowing easy conversion into MIDI binary as the canonical form produced 
+resembles our MIDI abstraction.
+
+\subsection{Evaluate Modifiers}
+Currently, the only modifier supported is the \texttt{Interpolator} function, which allows smooth transitions of musical attributes such as volume, across a specified segment of a section. The evaluation of modifiers occurs after the \texttt{Tracks} have been 
+evaluated, resulting in terms composed of event constructors and constructor operators (space and \&), as 
+previously mentioned.
+
+The \texttt{Interpolator} function operates as a transformation function with the following signature:
+
+\begin{center}
+\texttt{Track, (ModifierPos, ModifierPos) -> Track}
+\end{center}
+
+This function takes a track, along with the current modifier's position and the position of the next modifier, 
+and adjusts the track's events based on the specified modifier settings. For example, if the \texttt{Interpolator} 
+is set to transition volume from a low to a high value over time, the function inserts volume change events at 
+intervals within the specified segment. 
+
+
+\section{Octave Syntax}
+
+The syntax of Octave is defined using BNF notation as follows. We assume parentheses are implicit in the syntax, used for grouping and to avoid ambiguity.
+
+\subsection{Grammar in BNF}
+\definecolor{syntax_color}{RGB}{91, 33, 6}
+
+\begin{align*}
+    \langle \text{Pgm} \rangle &::= \langle \text{Decl} \rangle^+ \\
+    \langle \text{Decl} \rangle &::= \langle \text{Ident} \rangle \ \textcolor{syntax_color}{=} \ \langle \text{Expr} \rangle \\
+    \langle \text{Ident} \rangle &::= \textcolor{syntax_color}{[a-z\_][a-z\_\langle \text{Digit} \rangle]*} \\
+    \langle \text{Qual} \rangle &::= \textcolor{syntax_color}{[so\#b]+'} \\
+    \langle \text{Expr} \rangle &::= \langle \text{Ident} \rangle \\
+    &\quad | \ \langle \text{Int} \rangle \\
+    &\quad | \ \langle \text{Expr} \rangle \ \textcolor{syntax_color}{.} \ \langle \text{Expr} \rangle \\
+    &\quad | \ \langle \text{Qual} \rangle \ \langle \text{Expr} \rangle \\
+    &\quad | \ \langle \text{Int} \rangle \ \textcolor{syntax_color}{'} \ \langle \text{Expr} \rangle \\
+    &\quad | \ \textcolor{syntax_color}{[} \langle \text{Expr} \rangle^* \textcolor{syntax_color}{]} \\
+    &\quad | \ \textcolor{syntax_color}{|} \textcolor{syntax_color}{\lbrace} \langle \text{Decl} \rangle, \langle \text{Decl} \rangle^* \textcolor{syntax_color}{\rbrace} \textcolor{syntax_color}{:} \langle \text{Expr} \rangle^* \textcolor{syntax_color}{|} \\
+    &\quad | \ \langle \text{Expr} \rangle \ \textcolor{syntax_color}{\&} \ \langle \text{Expr} \rangle \\
+    \langle \text{Digit} \rangle &::= \textcolor{syntax_color}{[0-9]} \\
+    \langle \text{Int} \rangle &::= \textcolor{syntax_color}{[1-9][0-9]*}
+\end{align*}
+
+\vspace{2mm}
+\noindent\textbf{*} denotes \emph{zero or more} occurrences of an element.\\
+\textbf{+} denotes \emph{one or more} occurrences of an element.
+
+\section{Big-Step Semantics}
+
+We use Big-Step Structural Operational Semantics (SOS) to define how expressions 
+and statements in Octave evaluate. In Big-Step semantics, we describe how a program configuration (such as a statement and a state) directly produces a final result or state. This style of semantics abstracts away intermediate steps, focusing instead on the overall outcome of evaluating a statement or expression.
+
+\subsection{Event Constructors for Octave} \label{event constructor}
+
+In Octave, event constructors represent MIDI-compatible events. These events form the building blocks for \emph{Tracks}, allowing us to create musical sequences with precise control over pitch, duration, volume, tempo, and instrument.
+
+\begin{itemize}
+    \item \textbf{NoteOnEvent}: Represents a key press on a specific pitch with a defined duration.
+    \[
+    \text{NO}(p, d)
+    \]
+    where:
+    \begin{itemize}
+        \item \( p \): Pitch of the note (MIDI pitch number).
+        \item \( d \): Duration of the note in divisions.
+    \end{itemize}
+
+    \item \textbf{NoteOffEvent}: Represents a key release on a specific pitch.
+    \[
+    \text{NOF}(p, d)
+    \]
+    where:
+    \begin{itemize}
+        \item \( p \): Pitch of the note (MIDI pitch number).
+        \item \( d \): Duration of the note in divisions (matches the duration of the corresponding \text{NO} event for the same pitch).
+    \end{itemize}
+
+    \item \textbf{SetTempoEvent}: Changes the current tempo in beats per minute (BPM).
+    \[
+    \text{ST}(bpm)
+    \]
+    where:
+    \begin{itemize}
+        \item \( bpm \): New tempo in beats per minute.
+    \end{itemize}
+
+    \item \textbf{SetInstrumentEvent}: Sets the instrument using a program change number, as per MIDI specifications.
+    \[
+    \text{SI}(pc)
+    \]
+    where:
+    \begin{itemize}
+        \item \( pc \): Program change number for the instrument (refer to the MIDI instrument list for mappings).
+    \end{itemize}
+
+    \item \textbf{SetVolumeEvent}: Sets the volume to an absolute level.
+    \[
+    \text{VTO}(v)
+    \]
+    where:
+    \begin{itemize}
+        \item \( v \): Volume level (an integer representing the MIDI volume, usually from 0 to 127).
+    \end{itemize}
+
+    \item \textbf{SetVolumeRatioEvent}: Adjusts the volume by setting it to a specified ratio of the current volume.
+    \[
+    \text{VR}(r)
+    \]
+    where:
+    \begin{itemize}
+        \item \( r \): Ratio of the current volume (e.g., 0.5 to reduce volume by half, 2.0 to double the volume).
+    \end{itemize}
+\end{itemize}
+
+
+\subsection{Big-Step Semantics Rules}
+
+The semantics is given as a set of inference rules. We denote configurations as 
+pairs \((s, \sigma)\), where \(\sigma\) is the state (mapping variables to values), and \(s\) is the statement or expression.
+
+\begin{itemize}
+    \item \textbf{Integer Evaluation}
+    \[
+    \frac{}{\langle i, \sigma \rangle \Downarrow \langle i \rangle} \quad \text{(Int)}
+    \]
+
+    \item \textbf{Addition of Integers}
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 + a_2, \sigma \rangle \Downarrow \langle i_1 + i_2 \rangle} \quad \text{(Int-Add)}
+    \]
+
+    \item \textbf{Note Constructor}
+    \[
+    \frac{\langle a, \sigma \rangle \Downarrow c : \text{Chord}}{\langle a \ [\ .]^n \rangle \Downarrow \langle \text{NO}(c, n) \rangle} \quad \text{(Note)}
+    \]
+
+    \item \textbf{If-Then-Else (True)}
+    \[
+    \frac{\langle e_1, \sigma \rangle \Downarrow \langle \text{true} \rangle \quad \langle e_2, \sigma \rangle \Downarrow \langle v \rangle}{\langle \text{if } e_1 \text{ then } e_2 \text{ else } e_3, \sigma \rangle \Downarrow \langle v \rangle} \quad \text{(If-Then-Else-True)}
+    \]
+
+    \item \textbf{If-Then-Else (False)}
+    \[
+    \frac{\langle e_1, \sigma \rangle \Downarrow \langle \text{false} \rangle \quad \langle e_3, \sigma \rangle \Downarrow \langle v \rangle}{\langle \text{if } e_1 \text{ then } e_2 \text{ else } e_3, \sigma \rangle \Downarrow \langle v \rangle} \quad \text{(If-Then-Else-False)}
+    \]
+
+    \item \textbf{For-Loop (True)}
+    \[
+    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{true} \quad \langle e_1 \sim e_2 \ \text{loop } e_1 \ \dots \ e_n \ \text{end}, \sigma \rangle \Downarrow \langle \text{CatTrack}(\text{NO}(e_1), \dots, \text{NO}(e_2)) \rangle}{\langle \text{for } e_1 \sim e_2 \ \text{loop } e_1 \ \dots \ e_n \ \text{end}, \sigma \rangle \Downarrow \langle \text{NO}(e_1) \dots \text{NO}(e_2) \rangle} \quad \text{(For-Loop-True)}
+    \]
+
+    \item \textbf{For-Loop (False)}
+    \[
+    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{false}}{\langle \text{for } e_1 \sim e_2 \ \text{loop } e_1 \ \dots \ e_n \ \text{end}, \sigma \rangle \Downarrow \langle \epsilon, \sigma \rangle} \quad \text{(For-Loop-False)}
+    \]
+
+    \item \textbf{Chord Combination}
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle v_1 : \text{Chord} \rangle \quad \langle [a_2 \dots a_n], \sigma \rangle \Downarrow \langle v_2 : \text{Chord} \rangle}{\langle [a_1 \ a_2 \ \dots a_n], \sigma \rangle \Downarrow \langle \text{CatTrack}(v_1, v_2) \rangle} \quad \text{(Chord)}
+    \]
+
+    \item \textbf{Declaration}
+    \[
+    \frac{\langle a, \sigma \rangle \Downarrow v}{\langle x = a, \sigma \rangle \Downarrow \sigma[v/x]} \quad \text{(Declaration)}
+    \]
+
+    \item \textbf{Sequence of Declarations}
+    \[
+    \frac{\langle d, \sigma \rangle \Downarrow \sigma' \quad \langle \text{decls}, \sigma' \rangle \Downarrow \sigma''}{\langle d \ \text{decls}, \sigma \rangle \Downarrow \sigma''} \quad \text{(Declarations)}
+    \]
+
+    \item \textbf{Program Evaluation}
+    \[
+    \frac{\langle \text{decls}, \{\} \rangle \Downarrow \sigma}{\langle \text{decls}, \{\} \rangle \Downarrow \sigma[\text{main}]} \quad \text{(Program)}
+    \]
+
+\end{itemize}
+
+These rules describe the evaluation of statements and expressions in \texttt{YourLanguageName}, showing how expressions reduce to values and statements transform the program state.
+
+\section{Type System of Octave}
+
+A type system is used to ensure that programs are type-safe,
+ meaning they do not perform operations on incompatible types. 
+ In Octave, the type system is responsible for verifying that conditional expressions evaluate to Boolean values and that all variables and expressions conform to expected types.
+
+\subsection{Type Rules}
+
+The typing judgments are written as \(\Gamma \vdash e : T\), meaning that in typing environment \(\Gamma\), expression \(e\) has type \(T\).
+
+\begin{itemize}
+    \item \textbf{Typing Constants and Variables}
+    \[
+    \frac{}{\Gamma \vdash n : \text{Int}} \quad \text{(T-Int)}
+    \]
+    
+    \[
+    \frac{x : T \in \Gamma}{\Gamma \vdash x : T} \quad \text{(T-Var)}
+    \]
+
+    \item \textbf{Typing Expressions}
+    \[
+    \frac{\Gamma \vdash e_1 : \text{Int} \quad \Gamma \vdash e_2 : \text{Int}}{\Gamma \vdash e_1 + e_2 : \text{Int}} \quad \text{(T-Add)}
+    \]
+
+    \item \textbf{Typing Conditionals}
+    \[
+    \frac{\Gamma \vdash e : \text{Bool} \quad \Gamma \vdash s_1 : T \quad \Gamma \vdash s_2 : T}{\Gamma \vdash \text{if } e \text{ then } s_1 \text{ else } s_2 : T} \quad \text{(T-If)}
+    \]
+
+    \item \textbf{Typing Loops}
+    \[
+    \frac{\Gamma \vdash e : \text{Bool} \quad \Gamma \vdash s : \text{Stmt}}{\Gamma \vdash \text{while } e \text{ do } s : \text{Stmt}} \quad \text{(T-While)}
+    \]
+\end{itemize}
+
+This type system ensures that all expressions and statements in Octave are type-correct before execution, ensuring the safety and predictability of program behavior.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+\end{document}
