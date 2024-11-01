@@ -1,7 +1,9 @@
 # Octave: Music Programming Language
 
-
-### [Link to the web editor](https://burnham310.github.io/Octave)
+ 
+### [Web Editor](https://burnham310.github.io/Octave) | [Compiler Manual](./doc/octaveDoc.pdf)
+### 
+### 
 
 This language is designed to make music in a programmable way. In this language, user can write music in a syntax akin to a normal music score, but can also define variable, function, if condition, for loop, which can then be compiled into a midi file. The language is declarative with no state and variable assignment.
 
