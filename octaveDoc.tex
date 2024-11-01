@@ -110,7 +110,7 @@ This structure provides an efficient and extensible interface for the frontend t
 
 \subsection{Backend Abstraction}
 
-In addition to MIDI abstraction, the backend handles more complex musical constructs that are not native to the MIDI standard. For example, Octave includes an `Interpolate` function, enabling users to define smooth attribute adjustments across sections. Consider the following syntax:
+In addition to MIDI abstraction, the backend handles more complex musical constructs that are not native to the MIDI standard. For example, Octave includes the \texttt{Interpolate} function feature, enabling users to define smooth attribute adjustments across sections. Consider the following syntax:
 
 \begin{verbatim}
 @build_up[volume=10 linear]
@@ -129,22 +129,20 @@ In summary, the Octave backend translates high-level constructs, such as linear 
 \section{Evaluator Design}
 The frontend for Octave is built entirely from scratch in C. For parsing, we utilize a recursive descent parser, incorporating the concept of binding power, inspired by the Pratt Parser, to handle operator associativity. This approach follows standard practices commonly used in parser and lexer implementations. However, the evaluation step is somewhat unconventional. Once the Abstract Syntax Tree (AST) is generated through parsing, the challenge is transforming it into MIDI format.
 
-Our evaluator processes the AST by dividing it into two main components: 1) tracks, and 2) modifiers. The tracks represent a straightforward sequence of MIDI events, while the modifiers involve actions that alter the behavior of these events, such as the Interpolate function, which adjusts properties like volume or tempo over time.
+Our evaluator processes the AST by dividing it into two main components: 1) tracks, and 2) modifiers. The tracks represent a sequence of MIDI events construct by constructor operators, while the modifiers involve actions that alter the behavior of these events, such as the Interpolate function, which adjusts properties like volume or tempo over time.
 
-To formalize this process, I will illustrate how we transform the syntax into a sequence of events and how we evaluate the corresponding modifiers to achieve the desired musical output.
+To formalize this process, I will illustrate how we transform the syntax into a sequence of events and how we evaluate the corresponding modifiers to achieve the desired MIDI output.
 
 \subsection{Evaluate Tracks}
-The evaluation of tracks in Octave involves rewriting the code as a canonical term,
- which construct by event constructor (see \ref{event constructor}) e.g. \texttt{VTO(20)} sets the volume to 20, \texttt{NO(62, 12)} 
-represents a "Note On" event with pitch 62 and a duration of 12 divisions, and \texttt{NOF(62, 12)} signifies 
-a "Note Off" event with the same pitch and duration, and constructor operator, i.e, a space 
-for sequential execution and \& for concurrent execution. This algebraic structure offers a structured 
+The evaluation of tracks in Octave involves rewriting the code into a canonical term,
+ which construct by event constructor (see \ref{event constructor}), and constructor operator, i.e, a \texttt{SPACE} 
+for sequential execution. This algebraic structure offers a structured 
 representation of musical events, allowing easy conversion into MIDI binary as the canonical form produced 
 resembles our MIDI abstraction.
 
 \subsection{Evaluate Modifiers}
-Currently, the only modifier supported is the \texttt{Interpolator} function, which allows smooth transitions of musical attributes such as volume, across a specified segment of a section. The evaluation of modifiers occurs after the \texttt{Tracks} have been 
-evaluated, resulting in terms composed of event constructors and constructor operators (space and \&), as 
+Currently, the only modifier supported is the \texttt{Interpolator} function, which allows smooth transitions of musical attributes such as volume across a specified segment of a section. The evaluation of modifiers occurs after the \texttt{Tracks} have been 
+evaluated, resulting in terms composed of event constructors and constructor operators, as 
 previously mentioned.
 
 The \texttt{Interpolator} function operates as a transformation function with the following signature:
@@ -163,7 +161,6 @@ intervals within the specified segment.
 
 The syntax of Octave is defined using BNF notation as follows. We assume parentheses are implicit in the syntax, used for grouping and to avoid ambiguity.
 
-\subsection{Grammar in BNF}
 \definecolor{syntax_color}{RGB}{200, 33, 6}
 
 \newcommand{\nt}[1]{\textcolor{syntax_color}{#1}}
@@ -192,9 +189,6 @@ The syntax of Octave is defined using BNF notation as follows. We assume parenth
     \term{Int} &::= {[1-9][0-9]^*}
 \end{align*}
 
-\vspace{2mm}
-\noindent\textbf{*} denotes \emph{zero or more} occurrences of an element.\\
-\textbf{+} denotes \emph{one or more} occurrences of an element.
 
 \section{Big-Step Semantics}
 
@@ -208,22 +202,22 @@ In Octave, event constructors represent MIDI-compatible events. These events for
 \begin{itemize}
     \item \textbf{NoteOnEvent}: Represents a key press on a specific pitch with a defined duration.
     \[
-    \text{NO}(p, d)
+    \text{NO}(n, d)
     \]
     where:
     \begin{itemize}
-        \item \( p \): Pitch of the note (MIDI pitch number).
-        \item \( d \): Duration of the note in divisions.
+        \item \( n \): Note primitive.
+        \item \( s \): Scale of the note.
     \end{itemize}
 
     \item \textbf{NoteOffEvent}: Represents a key release on a specific pitch.
     \[
-    \text{NOF}(p, d)
+    \text{NOF}(c, s, d)
     \]
     where:
     \begin{itemize}
-        \item \( p \): Pitch of the note (MIDI pitch number).
-        \item \( d \): Duration of the note in divisions (matches the duration of the corresponding \text{NO} event for the same pitch).
+        \item \( n \): Note primitive.
+        \item \( s \): Scale of the note.
     \end{itemize}
 
     \item \textbf{SetTempoEvent}: Changes the current tempo in beats per minute (BPM).
@@ -253,101 +247,157 @@ In Octave, event constructors represent MIDI-compatible events. These events for
         \item \( v \): Volume level (an integer representing the MIDI volume, usually from 0 to 127).
     \end{itemize}
 
-    \item \textbf{SetVolumeRatioEvent}: Adjusts the volume by setting it to a specified ratio of the current volume.
-    \[
-    \text{VR}(r)
-    \]
-    where:
-    \begin{itemize}
-        \item \( r \): Ratio of the current volume (e.g., 0.5 to reduce volume by half, 2.0 to double the volume).
-    \end{itemize}
 \end{itemize}
 
+\subsection{Big-Step Configuration for Octave}
+For the Big-Step semantics of the Octave language, we define configurations using a similar comma-and-angle-bracket notation. In Octave, configurations represent various components of musical expressions, tracks, and states, which are needed for transforming Octave code into MIDI-compatible events. The configurations in Octave include expressions, tracks, and states, with some configurations holding only specific values (e.g., volume or instrument settings) without a full state. Here are the configuration types needed for the Big-Step semantics of Octave:
+
+\begin{itemize}    
+    \item $\langle i \rangle$: holding integers $i$.
+    
+    \item $\langle p \rangle$: holding pitch $p$.
+
+    \item $\langle l \rangle$: holding list $l$. 
+
+    \item $\langle n \rangle$: holding note $n$. 
+
+    \item $\langle e, \sigma \rangle$: grouping an expression $e$ and states $\sigma$. 
+
+    \item $\langle t \rangle$: holding true values $t\ \in \{true, false\}$.
+    
+    \item $\langle s, \sigma \rangle$: grouping statements $s$ and states $\sigma$. 
+        
+    \item $\langle \sigma \rangle$: holding state $\sigma$.
+
+    \item $\langle pgm \rangle$: holding program $pgm$.
+\end{itemize}
+
+\subsection{Big-Step SOS Helper Functions}
+
+The following functions are used in the Big-Step SOS for Octave, each serving to improve readability and enhance the clarity of the overall semantics. These functions encapsulate specific tasks, making the rules more organized and easier to follow. Importantly, the inclusion of these functions does not change the meaning of the Big-Step rules—they are simply syntactic helpers. Without them, the semantics would remain the same, albeit less readable.
+\begin{itemize}
+    \item \textbf{init($\sigma$)}: This function takes a state $\sigma$ as input and returns \texttt{true} if any values in the current state differ from the previous state, and \texttt{false} otherwise. It is useful for ensuring that configurations are applied only when changes in state are detected.
+
+\end{itemize}
 
 \subsection{Big-Step Semantics Rules}
 
-The semantics is given as a set of inference rules. We denote configurations as 
-pairs \((s, \sigma)\), where \(\sigma\) is the state (mapping variables to values), and \(s\) is the statement or expression.
-
-\begin{itemize}
-    \item \textbf{Integer Evaluation}
     \[
-    \frac{}{\langle i, \sigma \rangle \Downarrow \langle i \rangle} \quad \text{(Int)}
+    \langle i, \sigma \rangle \Downarrow \langle i \rangle \quad \text{(Int)}
     \]
 
-    \item \textbf{Addition of Integers}
     \[
-    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 + a_2, \sigma \rangle \Downarrow \langle i_1 + i_2 \rangle} \quad \text{(Int-Add)}
+    \langle p, \sigma \rangle \Downarrow \langle p \rangle \quad \text{(Pitch)}
     \]
 
-    \item \textbf{Note Constructor}
     \[
-    \frac{\langle a, \sigma \rangle \Downarrow c : \text{Chord}}{\langle a \ [\ .]^n \rangle \Downarrow \langle \text{NO}(c, n) \rangle} \quad \text{(Note)}
+    \langle l, \sigma \rangle \Downarrow \langle l \rangle \quad \text{(List)}
     \]
 
-    \item \textbf{If-Then-Else (True)}
+    \[
+    \langle n, \sigma \rangle \Downarrow \langle n \rangle \quad \text{(Note)}
+    \]
+    
+    \[
+    \langle x, \sigma \rangle \Downarrow \langle \sigma{(x)} \rangle \quad \text{(Lookup)}
+    \]
+
+    \[
+    \frac{\langle e_1, \sigma \rangle \Downarrow \langle v_1 \rangle \dots \langle e_n, \sigma \rangle \Downarrow \langle v_n \rangle}{\langle [e_1 \dots \ e_2], \sigma \rangle \Downarrow \langle l(v_1, \dots, v_n) \rangle} \quad \text{(Expr-List)}
+    \]
+
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 + a_2, \sigma \rangle \Downarrow \langle i_1 +_{int} i_2 \rangle} \quad \text{(Int-Add)}
+    \]
+
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 - a_2, \sigma \rangle \Downarrow \langle i_1 -_{int} i_2 \rangle} \quad \text{(Int-Min)}
+    \]
+
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle b_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle b_2 \rangle}{\langle a_1 == a_2, \sigma \rangle \Downarrow \langle a_1 \oplus a_2 \rangle} \quad \text{(Bool-Eq)}
+    \]
+
+    \[
+    \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
+    {\langle e_1 < e_2 , \sigma\rangle \Downarrow \langle i_1 <_{int} i_2 , \sigma\rangle}  {} \quad \text{(LT)}
+    \]
+    
+    \[
+    \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
+    {\langle e_1 > e_2 , \sigma\rangle \Downarrow \langle i_1 >_{int} i_2 , \sigma\rangle}  {} \quad \text{(GT)}
+    \]
+
+    \[
+    \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
+    {\langle e_1 <= e_2 , \sigma\rangle \Downarrow \langle i_1 <=_{int} i_2 , \sigma\rangle}  {} \quad \text{(LEQ)}
+    \]
+    
+    \[
+    \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
+    {\langle e_1 >= e_2 , \sigma\rangle \Downarrow \langle i_1 >=_{int} i_2 , \sigma\rangle}  {} \quad \text{(GEQ)}
+    \]
+
+    \[
+    \frac{\langle e_1 \Downarrow v_1 \rangle \quad \langle e_2 \Downarrow v_2 \rangle}
+    {\langle e_1 \ e_2 , \sigma\rangle \Downarrow \langle i_1 >=_{int} i_2 , \sigma\rangle}  {} \quad \text{(GEQ)}
+    \]
+
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle b_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle b_2 \rangle}{\langle a_1 != a_2, \sigma \rangle \Downarrow \langle \neg (a_1 \oplus a_2) \rangle} \quad \text{(Bool-Neq)}
+    \]
+
+    \[
+    \frac{\langle e, \sigma \rangle \Downarrow \langle l \rangle}{\langle e \ [\ .]^m \rangle \Downarrow \langle n(l, m)  \rangle} \quad \text{(Note-Ctor)}
+    \]
+
     \[
     \frac{\langle e_1, \sigma \rangle \Downarrow \langle \text{true} \rangle \quad \langle e_2, \sigma \rangle \Downarrow \langle v \rangle}{\langle \text{if } e_1 \text{ then } e_2 \text{ else } e_3, \sigma \rangle \Downarrow \langle v \rangle} \quad \text{(If-Then-Else-True)}
     \]
 
-    \item \textbf{If-Then-Else (False)}
     \[
     \frac{\langle e_1, \sigma \rangle \Downarrow \langle \text{false} \rangle \quad \langle e_3, \sigma \rangle \Downarrow \langle v \rangle}{\langle \text{if } e_1 \text{ then } e_2 \text{ else } e_3, \sigma \rangle \Downarrow \langle v \rangle} \quad \text{(If-Then-Else-False)}
     \]
-
-    \item \textbf{For-Loop (True)}
+    
     \[
-    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{true} \quad \langle e_1 \sim e_2 \ \text{loop } e_1 \ \dots \ e_n \ \text{end}, \sigma \rangle \Downarrow \langle \text{CatTrack}(\text{NO}(e_1), \dots, \text{NO}(e_2)) \rangle}{\langle \text{for } e_1 \sim e_2 \ \text{loop } e_1 \ \dots \ e_n \ \text{end}, \sigma \rangle \Downarrow \langle \text{NO}(e_1) \dots \text{NO}(e_2) \rangle} \quad \text{(For-Loop-True)}
+    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{true} \quad \langle e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle v \rangle}{\langle 
+        \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle v \ \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end} \rangle} \quad \text{(For-Loop-True)}
     \]
 
-    \item \textbf{For-Loop (False)}
     \[
-    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{false}}{\langle \text{for } e_1 \sim e_2 \ \text{loop } e_1 \ \dots \ e_n \ \text{end}, \sigma \rangle \Downarrow \langle \epsilon, \sigma \rangle} \quad \text{(For-Loop-False)}
+    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{true} \quad \langle e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle v \rangle}{\langle 
+        \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle \text{skip} \rangle} \quad \text{(For-Loop-False)}
+    \]
+    
+    \[
+    \frac{\sigma'(\text{Volume}) \quad \sigma'(\text{Instrument}) \quad \sigma'(\text{Tempo}) \quad init(\sigma') \Downarrow \langle \text{true} \rangle}{\langle \sigma' \rangle \Downarrow \langle \text{VTO}(\sigma'(\text{Volume}))\ \text{SI}(\sigma'(\text{Instrument}))\ \text{ST}(\sigma'(\text{Tempo})) \rangle} \quad \text{(Cfg-Eval)}
     \]
 
-    \item \textbf{Chord Combination}
     \[
-    \frac{\langle a_1, \sigma \rangle \Downarrow \langle v_1 : \text{Chord} \rangle \quad \langle [a_2 \dots a_n], \sigma \rangle \Downarrow \langle v_2 : \text{Chord} \rangle}{\langle [a_1 \ a_2 \ \dots a_n], \sigma \rangle \Downarrow \langle \text{CatTrack}(v_1, v_2) \rangle} \quad \text{(Chord)}
+    \frac{\langle d_1 \dots d_m, \sigma \rangle \Downarrow \langle \sigma' \rangle \quad \langle e_1 \dots e_n, \sigma' \rangle \Downarrow \langle n_1 \dots n_n , \sigma' \rangle}{\langle |d_1 \dots d_n:d_{n+1} \dots d_m:e_1 \dots e_n|, \sigma\rangle \Downarrow \langle 
+    \text{NO}(n, \sigma'(\text{Scale}))\
+    \text{NOF}(n, \sigma'(\text{Scale}))
+    \rangle} \quad \text{(Section)}
     \]
 
-    \item \textbf{Declaration}
     \[
-    \frac{\langle a, \sigma \rangle \Downarrow v}{\langle x = a, \sigma \rangle \Downarrow \sigma[v/x]} \quad \text{(Declaration)}
+    \frac{\langle a, \sigma \rangle \Downarrow v}{\langle x = a, \sigma \rangle \Downarrow \sigma[v/x]} \quad \text{(Decl)}
     \]
 
-    \item \textbf{Sequence of Declarations}
     \[
-    \frac{\langle d, \sigma \rangle \Downarrow \sigma' \quad \langle \text{decls}, \sigma' \rangle \Downarrow \sigma''}{\langle d \ \text{decls}, \sigma \rangle \Downarrow \sigma''} \quad \text{(Declarations)}
+    \frac{\langle d_1, \sigma \rangle \Downarrow \sigma' \dots \langle d_n, \sigma' \rangle \Downarrow \sigma''}{\langle d_1 \dots d_2, \sigma \rangle \Downarrow \sigma''} \quad \text{(Pgm)}
     \]
-
-    \item \textbf{Program Evaluation}
-    \[
-    \frac{\langle \text{decls}, \{\} \rangle \Downarrow \sigma}{\langle \text{decls}, \{\} \rangle \Downarrow \sigma[\text{main}]} \quad \text{(Program)}
-    \]
-
-\end{itemize}
-
-These rules describe the evaluation of statements and expressions in \texttt{YourLanguageName}, showing how expressions reduce to values and statements transform the program state.
+    
 
 \section{Type System of Octave}
 
-A type system is used to ensure that programs are type-safe,
- meaning they do not perform operations on incompatible types. 
- In Octave, the type system is responsible for verifying that conditional expressions evaluate to Boolean values and that all variables and expressions conform to expected types.
+A type system is used to ensure that programs are type-safe, meaning they do not perform operations on incompatible types. In Octave, type checking plays a critical role in validating expressions, configurations, and track operations before execution. When a type check fails, Octave will immediately throw an error with a comprehensive error message, detailing the nature of the type incompatibility and the exact location in the code where the error occurred. This approach enhances the safety and robustness of the language, preventing invalid operations from being evaluated and ensuring clear feedback for the user.
 
 \subsection{Type Rules}
 
 The typing judgments are written as \(\Gamma \vdash e : T\), meaning that in typing environment \(\Gamma\), expression \(e\) has type \(T\).
 
 \begin{itemize}
-    \item \textbf{Typing Constants and Variables}
-    \[
-    \frac{}{\Gamma \vdash n : \text{Int}} \quad \text{(T-Int)}
-    \]
-    
-    \[
-    \frac{x : T \in \Gamma}{\Gamma \vdash x : T} \quad \text{(T-Var)}
-    \]
 
     \item \textbf{Typing Expressions}
     \[
@@ -359,28 +409,7 @@ The typing judgments are written as \(\Gamma \vdash e : T\), meaning that in typ
     \frac{\Gamma \vdash e : \text{Bool} \quad \Gamma \vdash s_1 : T \quad \Gamma \vdash s_2 : T}{\Gamma \vdash \text{if } e \text{ then } s_1 \text{ else } s_2 : T} \quad \text{(T-If)}
     \]
 
-    \item \textbf{Typing Loops}
-    \[
-    \frac{\Gamma \vdash e : \text{Bool} \quad \Gamma \vdash s : \text{Stmt}}{\Gamma \vdash \text{while } e \text{ do } s : \text{Stmt}} \quad \text{(T-While)}
-    \]
 \end{itemize}
 
-This type system ensures that all expressions and statements in Octave are type-correct before execution, ensuring the safety and predictability of program behavior.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  
-
+[TODO]
 \end{document}
