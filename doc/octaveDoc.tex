@@ -129,19 +129,19 @@ In summary, the Octave backend translates high-level constructs, such as linear 
 \section{Evaluator Design}
 The frontend for Octave is built entirely from scratch in C. For parsing, we utilize a recursive descent parser, incorporating the concept of binding power, inspired by the Pratt Parser, to handle operator associativity. This approach follows standard practices commonly used in parser and lexer implementations. However, the evaluation step is somewhat unconventional. Once the Abstract Syntax Tree (AST) is generated through parsing, the challenge is transforming it into MIDI format.
 
-Our evaluator processes the AST by dividing it into two main components: 1) tracks, and 2) modifiers. The tracks represent a sequence of MIDI events construct by constructor operators, while the modifiers involve actions that alter the behavior of these events, such as the Interpolate function, which adjusts properties like volume or tempo over time.
+Our evaluator processes the AST by dividing it into two main components: 1) \texttt{TRACK}, and 2) \texttt{MODIFIER}. The \texttt{TRACK} represent a sequence of MIDI events, while the \texttt{MODIFIER} involve actions that alter the \texttt{TRACK}, such as the Interpolate function, which adjusts properties like volume or tempo over time.
 
 To formalize this process, I will illustrate how we transform the syntax into a sequence of events and how we evaluate the corresponding modifiers to achieve the desired MIDI output.
 
 \subsection{Evaluate Tracks}
-The evaluation of tracks in Octave involves rewriting the code into a canonical term,
- which construct by event constructor (see \ref{event constructor}), and constructor operator, i.e, a \texttt{SPACE} 
-for sequential execution. This algebraic structure offers a structured 
+The evaluation of \texttt{TRACK}  in Octave involves rewriting the code into a canonical term,
+ which construct by event constructors (see \ref{event constructor}), and one constructor operator, i.e, a \texttt{SPACE} 
+for event concat. This algebraic structure offers a structured 
 representation of musical events, allowing easy conversion into MIDI binary as the canonical form produced 
 resembles our MIDI abstraction.
 
 \subsection{Evaluate Modifiers}
-Currently, the only modifier supported is the \texttt{Interpolator} function, which allows smooth transitions of musical attributes such as volume across a specified segment of a section. The evaluation of modifiers occurs after the \texttt{Tracks} have been 
+Currently, the only modifier supported is the \texttt{Interpolator} function, which allows smooth transitions of musical attributes such as volume across a specified segment of a section. The evaluation of modifiers occurs after the \texttt{TRACK} have been 
 evaluated, resulting in terms composed of event constructors and constructor operators, as 
 previously mentioned.
 
@@ -193,11 +193,11 @@ The syntax of Octave is defined using BNF notation as follows. We assume parenth
 \section{Big-Step Semantics}
 
 We use Big-Step Structural Operational Semantics (SOS) to define how expressions 
-and statements in Octave evaluate. In Big-Step semantics, we describe how a program configuration (such as a statement and a state) directly produces a final result or state. This style of semantics abstracts away intermediate steps, focusing instead on the overall outcome of evaluating a statement or expression.
+and statements in Octave evaluate. In Big-Step semantics, we describe how a program configuration (such as a statement and a state) directly produces a final result or state. 
 
 \subsection{Event Constructors for Octave} \label{event constructor}
 
-In Octave, event constructors represent MIDI-compatible events. These events form the building blocks for \emph{Tracks}, allowing us to create musical sequences with precise control over pitch, duration, volume, tempo, and instrument.
+In Octave, event constructors represent MIDI-compatible events. These events form the building blocks for \texttt{TRACK}, allowing us to create musical sequences with precise control over pitch, duration, volume, tempo, and instrument.
 
 \begin{itemize}
     \item \textbf{NoteOnEvent}: Represents a key press on a specific pitch with a defined duration.
