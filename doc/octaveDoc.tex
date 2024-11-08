@@ -257,8 +257,6 @@ For the Big-Step semantics of the Octave language, we define configurations usin
     
     \item $\langle p \rangle$: holding pitch $p$.
 
-    \item $\langle l \rangle$: holding list $l$. 
-
     \item $\langle n \rangle$: holding note $n$. 
 
     \item $\langle e, \sigma \rangle$: grouping an expression $e$ and states $\sigma$. 
@@ -291,10 +289,6 @@ The following functions are used in the Big-Step SOS for Octave, each serving to
     \]
 
     \[
-    \langle l, \sigma \rangle \Downarrow \langle l \rangle \quad \text{(List)}
-    \]
-
-    \[
     \langle n, \sigma \rangle \Downarrow \langle n \rangle \quad \text{(Note)}
     \]
     
@@ -320,27 +314,22 @@ The following functions are used in the Big-Step SOS for Octave, each serving to
 
     \[
     \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
-    {\langle e_1 < e_2 , \sigma\rangle \Downarrow \langle i_1 <_{int} i_2 , \sigma\rangle}  {} \quad \text{(LT)}
+    {\langle e_1 < e_2 , \sigma\rangle \Downarrow \langle i_1 <_{int} i_2 , \sigma\rangle}  {} \quad \text{(Bool-Lt)}
     \]
     
     \[
     \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
-    {\langle e_1 > e_2 , \sigma\rangle \Downarrow \langle i_1 >_{int} i_2 , \sigma\rangle}  {} \quad \text{(GT)}
+    {\langle e_1 > e_2 , \sigma\rangle \Downarrow \langle i_1 >_{int} i_2 , \sigma\rangle}  {} \quad \text{(Bool-Gt)}
     \]
 
     \[
     \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
-    {\langle e_1 <= e_2 , \sigma\rangle \Downarrow \langle i_1 <=_{int} i_2 , \sigma\rangle}  {} \quad \text{(LEQ)}
+    {\langle e_1 <= e_2 , \sigma\rangle \Downarrow \langle i_1 <=_{int} i_2 , \sigma\rangle}  {} \quad \text{(Bool-Leq)}
     \]
     
     \[
     \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
-    {\langle e_1 >= e_2 , \sigma\rangle \Downarrow \langle i_1 >=_{int} i_2 , \sigma\rangle}  {} \quad \text{(GEQ)}
-    \]
-
-    \[
-    \frac{\langle e_1 \Downarrow v_1 \rangle \quad \langle e_2 \Downarrow v_2 \rangle}
-    {\langle e_1 \ e_2 , \sigma\rangle \Downarrow \langle i_1 >=_{int} i_2 , \sigma\rangle}  {} \quad \text{(GEQ)}
+    {\langle e_1 >= e_2 , \sigma\rangle \Downarrow \langle i_1 >=_{int} i_2 , \sigma\rangle}  {} \quad \text{(Bool-Geq)}
     \]
 
     \[
@@ -348,7 +337,7 @@ The following functions are used in the Big-Step SOS for Octave, each serving to
     \]
 
     \[
-    \frac{\langle e, \sigma \rangle \Downarrow \langle l \rangle}{\langle e \ [\ .]^m \rangle \Downarrow \langle n(l, m)  \rangle} \quad \text{(Note-Ctor)}
+    \frac{\langle e, \sigma \rangle \Downarrow \langle l \rangle}{\langle e [.]^m \rangle \Downarrow \langle n(l, m)  \rangle} \quad \text{(Note-Ctor)}
     \]
 
     \[
@@ -360,13 +349,14 @@ The following functions are used in the Big-Step SOS for Octave, each serving to
     \]
     
     \[
-    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{true} \quad \langle e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle v \rangle}{\langle 
-        \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle v \ \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end} \rangle} \quad \text{(For-Loop-True)}
+    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{true} \quad \langle e, \sigma \rangle \Downarrow \langle v \rangle \quad \langle \text{for}\ e_1+1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow l
+    }{\langle 
+        \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle [v]+\!\!\!+ \ l \rangle} \quad \text{(For-Loop-True)}
     \]
 
     \[
-    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{true} \quad \langle e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle v \rangle}{\langle 
-        \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle \text{skip} \rangle} \quad \text{(For-Loop-False)}
+    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{false}}{\langle 
+        \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow [] } \quad \text{(For-Loop-False)}
     \]
     
     \[
@@ -391,25 +381,182 @@ The following functions are used in the Big-Step SOS for Octave, each serving to
 
 \section{Type System of Octave}
 
-A type system is used to ensure that programs are type-safe, meaning they do not perform operations on incompatible types. In Octave, type checking plays a critical role in validating expressions, configurations, and track operations before execution. When a type check fails, Octave will immediately throw an error with a comprehensive error message, detailing the nature of the type incompatibility and the exact location in the code where the error occurred. This approach enhances the safety and robustness of the language, preventing invalid operations from being evaluated and ensuring clear feedback for the user.
+A type system is used to ensure that programs are type-safe, 
+meaning they do not perform operations on incompatible types.
+ In Octave, type checking plays a critical role in validating expressions, 
+ configurations, and track operations before execution. When a type check fails, 
+ Octave will immediately throw an error with a comprehensive error message, 
+ detailing the nature of the type incompatibility and the exact location in the code where the
+  error occurred. 
 
 \subsection{Type Rules}
 
 The typing judgments are written as \(\Gamma \vdash e : T\), meaning that in typing environment \(\Gamma\), expression \(e\) has type \(T\).
 
 \begin{itemize}
-
-    \item \textbf{Typing Expressions}
+    \item \textbf{Integer Literals}
     \[
-    \frac{\Gamma \vdash e_1 : \text{Int} \quad \Gamma \vdash e_2 : \text{Int}}{\Gamma \vdash e_1 + e_2 : \text{Int}} \quad \text{(T-Add)}
+    \frac{}{\Gamma \vdash i : \texttt{Int}} \quad \text{(T-Int)}
     \]
-
-    \item \textbf{Typing Conditionals}
+    
+    \item \textbf{Boolean Literals}
     \[
-    \frac{\Gamma \vdash e : \text{Bool} \quad \Gamma \vdash s_1 : T \quad \Gamma \vdash s_2 : T}{\Gamma \vdash \text{if } e \text{ then } s_1 \text{ else } s_2 : T} \quad \text{(T-If)}
+    \frac{}{\Gamma \vdash \text{true} : \texttt{Bool}} \quad \text{(T-BoolTrue)}
     \]
+    \[
+    \frac{}{\Gamma \vdash \text{false} : \texttt{Bool}} \quad \text{(T-BoolFalse)}
+    \]
+    
+    \item \textbf{Variable Typing}
+    \[
+    \frac{x : \tau \in \Gamma}{\Gamma \vdash x : \tau} \quad \text{(T-Var)}
+    \]
+    
+    \item \textbf{Arithmetic Operations}
+    \[
+    \frac{\Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int}}{\Gamma \vdash e_1 + e_2 : \texttt{Int}} \quad \text{(T-Add)}
+    \]
+    \[
+    \frac{\Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int}}{\Gamma \vdash e_1 - e_2 : \texttt{Int}} \quad \text{(T-Sub)}
+    \]
+    \[
+    \frac{\Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int}}{\Gamma \vdash e_1 * e_2 : \texttt{Int}} \quad \text{(T-Mul)}
+    \]
+    
+    \item \textbf{Comparison Operations}
+    \[
+    \frac{\Gamma \vdash e_1 : \tau \quad \Gamma \vdash e_2 : \tau}{\Gamma \vdash e_1 == e_2 : \texttt{Bool}} \quad \text{(T-Eq)}
+    \]
+    \[
+    \frac{\Gamma \vdash e_1 : \tau \quad \Gamma \vdash e_2 : \tau}{\Gamma \vdash e_1 \ne e_2 : \texttt{Bool}} \quad \text{(T-Neq)}
+    \]
+    \[
+    \frac{\Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int}}{\Gamma \vdash e_1 < e_2 : \texttt{Bool}} \quad \text{(T-Lt)}
+    \]
+    \[
+    \frac{\Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int}}{\Gamma \vdash e_1 \leq e_2 : \texttt{Bool}} \quad \text{(T-Leq)}
+    \]
+    \[
+    \frac{\Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int}}{\Gamma \vdash e_1 > e_2 : \texttt{Bool}} \quad \text{(T-Gt)}
+    \]
+    \[
+    \frac{\Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int}}{\Gamma \vdash e_1 \geq e_2 : \texttt{Bool}} \quad \text{(T-Geq)}
+    \]
+    
+    \item \textbf{List Construction}
+    \[
+    \frac{
+        \Gamma \vdash e_1 : \tau \quad \Gamma \vdash e_2 : \tau \quad \dots \quad \Gamma \vdash e_n : \tau
+    }{
+        \Gamma \vdash [e_1, e_2, \dots, e_n] : \texttt{List}[\tau]
+    } \quad \text{(T-List)}
+    \]
+    
+    \item \textbf{If-Then-Else Expressions}
+    \[
+    \frac{
+        \Gamma \vdash e : \texttt{Bool} \quad \Gamma \vdash e_1 : T \quad \Gamma \vdash e_2 : T
+    }{
+        \Gamma \vdash \text{if } e \text{ then } e_1 \text{ else } e_2 \text{ end} : T
+    } \quad \text{(T-If)}
+    \]
+    
+    \item \textbf{For Loops}
+    \[
+    \frac{
+        \Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int} \quad \Gamma \vdash e : T
+    }{
+        \Gamma \vdash \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end} : \texttt{List}[T]
+    } \quad \text{(T-For)}
+    \]
+    
+    \item \textbf{Note Constructor}
+    \[
+    \frac{
+        \Gamma \vdash e : \texttt{Pitch}
+    }{
+        \Gamma \vdash e [.]^m : \texttt{Pitch}
+    } \quad \text{(T-NoteCtor)}
+    \]
+    
+    \item \textbf{Event Constructors}
+    \begin{itemize}
+        \item \textbf{NoteOnEvent}
+        \[
+        \frac{
+            \Gamma \vdash n : \texttt{Note} \quad \Gamma \vdash d : \texttt{Int}
+        }{
+            \Gamma \vdash \text{NO}(n, d) : \texttt{Event}
+        } \quad \text{(T-NoteOn)}
+        \]
+    
+        \item \textbf{NoteOffEvent}
+        \[
+        \frac{
+            \Gamma \vdash n : \texttt{Note} \quad \Gamma \vdash d : \texttt{Int}
+        }{
+            \Gamma \vdash \text{NOF}(n, d) : \texttt{Event}
+        } \quad \text{(T-NoteOff)}
+        \]
+    
+        \item \textbf{SetTempoEvent}
+        \[
+        \frac{
+            \Gamma \vdash bpm : \texttt{Int}
+        }{
+            \Gamma \vdash \text{ST}(bpm) : \texttt{Event}
+        } \quad \text{(T-SetTempo)}
+        \]
+    
+        \item \textbf{SetInstrumentEvent}
+        \[
+        \frac{
+            \Gamma \vdash pc : \texttt{Int}
+        }{
+            \Gamma \vdash \text{SI}(pc) : \texttt{Event}
+        } \quad \text{(T-SetInstr)}
+        \]
+    
+        \item \textbf{SetVolumeEvent}
+        \[
+        \frac{
+            \Gamma \vdash v : \texttt{Int}
+        }{
+            \Gamma \vdash \text{VTO}(v) : \texttt{Event}
+        } \quad \text{(T-SetVolume)}
+        \]
+    \end{itemize}
+    
+    \item \textbf{Track Construction}
+    \[
+    \frac{
+        \Gamma \vdash e_1 : \texttt{Event} \quad \Gamma \vdash e_2 : \texttt{Event} \quad \dots \quad \Gamma \vdash e_n : \texttt{Event}
+    }{
+        \Gamma \vdash [e_1, e_2, \dots, e_n] : \texttt{Track}
+    } \quad \text{(T-Track)}
+    \]
+    
+    \item \textbf{Variable Declarations}
+    \[
+    \frac{
+        \Gamma \vdash e : T
+    }{
+        \Gamma[x \mapsto T] \vdash x = e : T
+    } \quad \text{(T-Decl)}
+    \]
+    \emph{Note:} The typing context \(\Gamma\) is extended with \(x : T\).
+    
+    \item \textbf{Program Typing}
+    \[
+    \frac{
+        \Gamma_0 \vdash d_1 : \Gamma_1 \quad \Gamma_1 \vdash d_2 : \Gamma_2 \quad \dots \quad \Gamma_{n-1} \vdash d_n : \Gamma_n
+    }{
+        \Gamma_0 \vdash d_1 \ d_2 \ \dots \ d_n : \Gamma_n
+    } \quad \text{(T-Program)}
+    \]
+    \emph{Note:} \(\Gamma_0\) is the initial typing context.
+    
 
 \end{itemize}
 
-[TODO]
 \end{document}
