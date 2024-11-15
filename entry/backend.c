@@ -19,19 +19,19 @@ int main()
     for (int i = 0; i < sizeof(notes); ++i)
     {
         MidiNote note = {
-            .length = EIGHTH_NOTE,
+            .length = NLF(EIGHTH_NOTE),
             .pitch = notes[i] + 60,
             .velocity = DEFAULT_VELOCITY,
         };
 
         MidiNote note2 = {
-            .length = EIGHTH_NOTE,
+            .length = NLF(EIGHTH_NOTE),
             .pitch = notes[i] + 75,
             .velocity = DEFAULT_VELOCITY,
         };
 
         MidiNote note3 = {
-            .length = EIGHTH_NOTE,
+            .length = NLF(EIGHTH_NOTE),
             .pitch = notes[i] + 50,
             .velocity = DEFAULT_VELOCITY,
         };
@@ -43,13 +43,13 @@ int main()
     }
 
     MidiNote note = {
-        .length = EIGHTH_NOTE,
+        .length = NLF(EIGHTH_NOTE),
         .pitch = 43,
         .velocity = DEFAULT_VELOCITY,
     };
 
     add_midi_event(TRACK2, SetInstrumentEvent(12));
-    add_midi_event(TRACK2, PauseNoteEvent(QUARTER_NOTE));
+    add_midi_event(TRACK2, PauseNoteEvent(NLF(QUARTER_NOTE)));
     add_midi_note(TRACK2, NOTE(&note));
 
     add_iFunc(TRACK1, _SetVolumeEvent, 80, 0, sizeof(notes), iFunc_linear);
