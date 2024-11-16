@@ -463,9 +463,9 @@ Scale eval_scale(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 
 AbsPitch abspitch_from_scale(Scale *scale, size_t degree)
 {
-    eprintf("tonic %i\n", scale->tonic);
-    eprintf("degree %zu\n", degree);
-    eprintf("octave %i\n", scale->octave);
+    // eprintf("tonic %i\n", scale->tonic);
+    // eprintf("degree %zu\n", degree);
+    // eprintf("octave %i\n", scale->octave);
     assert(degree <= DIATONIC && degree >= 1 && "degree out of bound");
     size_t base = scale->tonic + scale->octave * 12;
     // degree is 1-based
