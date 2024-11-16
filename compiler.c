@@ -262,44 +262,39 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		ValData lhs_v = eval_expr(ctx, lhs, sec_idx);
 		ValData rhs_v = eval_expr(ctx, rhs, sec_idx);
 		TokenType op = expr->data.infix.op.type;
-		if (op == '&')
+		switch (op)
 		{
-		    // lhs_v = val_coerce(ctx, &lhs_v, ctx->types.ptr[lhs], TY_CHORUS);
-		    // rhs_v = val_coerce(ctx, &rhs_v, ctx->types.ptr[rhs], TY_CHORUS);
-		    // size_t lhs_len = lhs_v.chorus.len;
-		    // size_t rhs_len = rhs_v.chorus.len;
-		    // size_t res_len = lhs_len + rhs_len;
-		    // res = (ValData){.chorus = (SliceOf(Track)){.ptr = calloc(sizeof(Track), res_len), .len = res_len}};
-		    // memcpy(res.chorus.ptr, lhs_v.chorus.ptr, lhs_len * sizeof(Track));
-		    // memcpy(res.chorus.ptr + lhs_len, rhs_v.chorus.ptr, rhs_len * sizeof(Track));
-		    // return res;
-		    assert(false && "unimplemented");
-		}
-		else if (op == '\'')
+
+		case '\'':
 		{
 		    int shift = lhs_v.i;
 		    // lhs_v = coerce(ctx, &v1, ctx->types.ptr[idx], TY_INT);
 		    Type rhs_t = ctx->types.ptr[rhs];
 		    return shift_pitch(rhs_t, rhs_v, shift);
 		}
-		else if (op == '+')
-		{
-		    return (ValData){.i = lhs_v.i + rhs_v.i};
+		case '+':
+			return (ValData){.i = lhs_v.i + rhs_v.i};
+		case '-':
+			return (ValData){.i = lhs_v.i - rhs_v.i};
+		case '*':
+			return (ValData){.i = lhs_v.i * rhs_v.i};
+		case '>':
+			return (ValData){.i = lhs_v.i > rhs_v.i};
+		case '<':
+			return (ValData){.i = lhs_v.i < rhs_v.i};
+		case TK_EQ:
+			return (ValData){.i = lhs_v.i == rhs_v.i};
+		case TK_NEQ:
+			return (ValData){.i = lhs_v.i != rhs_v.i};
+		case TK_LEQ:
+			return (ValData){.i = lhs_v.i <= rhs_v.i};
+		case TK_GEQ:
+			return (ValData){.i = lhs_v.i >= rhs_v.i};
+
+		default:
+			assert(false && "unknown infix op");
+			break;
 		}
-		else if (op == '-')
-		{
-		    return (ValData){.i = lhs_v.i - rhs_v.i};
-		}
-		else if (op == '*')
-		{
-		    return (ValData){.i = lhs_v.i * rhs_v.i};
-		}
-		else if (op == TK_EQ)
-		{
-		    return (ValData){.i = lhs_v.i == rhs_v.i};
-		}
-		assert(false && "unknown infix op");
-	    }
 	case EXPR_PREFIX:
 	{
 	    assert(expr->data.prefix.op.type == '$');
@@ -333,7 +328,7 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 	    {
 		ExprIdx cond_expr = expr->data.if_then_else.cond_expr;
 		ExprIdx then_expr = expr->data.if_then_else.then_expr;
-		ExprIdx else_expr = expr->data.if_then_else.else_expr;	
+		ExprIdx else_expr = expr->data.if_then_else.else_expr;
 		bool cond = eval_expr(ctx, cond_expr, sec_idx).i;
 		ExprIdx branch = cond ? then_expr : else_expr;
 		return eval_expr(ctx, branch, sec_idx);
@@ -375,7 +370,6 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 	    assert(false && "unknown expr tag\n");
     }
 }
-
 // SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx) {
 //
 //     eval_chord_recur(ctx, idx, scale, sec_idx);

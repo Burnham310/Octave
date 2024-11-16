@@ -13,6 +13,28 @@ typedef enum
     QUARTER_NOTE,
     EIGHTH_NOTE,
     SIXTEENTH_NOTE,
+} MidiNoteLengthFix;
+
+#define NLF(length) \
+    (MidiNoteLength) { .type = NL_Fixed, .value = length }
+
+#define NLI(length) \
+    (MidiNoteLength) { .type = NL_Int, .value = length }
+
+union MidiNoteLength
+{
+    MidiNoteLengthFix fix_length;
+    int int_length;
+};
+
+typedef struct
+{
+    union MidiNoteLength value;
+    enum type
+    {
+        NL_Fixed,
+        NL_Int
+    } type;
 } MidiNoteLength;
 
 typedef struct

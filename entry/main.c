@@ -121,15 +121,14 @@ extern int main(const int argc, char **argv)
 	    if (dots == 0) continue;
             if (pitches.len == 0)
             {
-                add_midi_event(ti, PauseNoteEvent(dots));
+                add_midi_event(ti, PauseNoteEvent(NLF(dots)));
                 continue;
             }
 
             MidiNote midi_notes[pitches.len];
             for (size_t mi = 0; mi < pitches.len; ++mi)
             {
-	    
-                midi_notes[mi].length = dots;
+                midi_notes[mi].length = NLF(dots);
                 midi_notes[mi].pitch = resolve_pitch(&track->config.scale, pitches.ptr[mi]);
                 midi_notes[mi].velocity = DEFAULT_VELOCITY;
             }

@@ -62,6 +62,26 @@ static void write_var_len(unsigned int value)
     }
 }
 
+static int note_length_f(MidiNoteLength *nl)
+{
+    int note_length_f = 400;
+
+    switch (nl->type)
+    {
+    case NL_Fixed:
+        for (int i = 0; i < nl->value.fix_length; i++)
+            note_length_f /= 2;
+        break;
+
+    case NL_Int:
+        // TODO
+        for (int i = 0; i < nl->value.fix_length; i++)
+            note_length_f /= 2;
+        break;
+    }
+    return note_length_f;
+}
+
 EVENT_CALLBACK(NoteOnEvent)
 {
     MidiNote *note = (MidiNote *)data;
@@ -110,15 +130,13 @@ EVENT_DECLARE(NoteOffEvent, MidiNote *note, int force_immed)
     MidiNote *note_copy = (MidiNote *)malloc(sizeof(MidiNote));
     *note_copy = *note;
 
-    int note_length_f = 400;
-    for (size_t i = 0; i < note->length; i++)
-        note_length_f /= 2;
+    int note_length = note_length_f(&note->length);
 
     struct _MTrkEvent event =
         {
             .eventType = _NoteOffEvent,
             .callbacks = USE_CALLBACK(NoteOffEvent),
-            .delta_time = force_immed ? 0 : midi_config.devision * NoteLenRatio(note_length_f),
+            .delta_time = force_immed ? 0 : midi_config.devision * NoteLenRatio(note_length),
             .data = note_copy,
             .destroyer = free,
         };
@@ -269,12 +287,10 @@ EVENT_CALLBACK(PauseNoteEvent)
 EVENT_DECLARE(PauseNoteEvent, MidiNoteLength length)
 {
 
-    int note_length_f = 400;
-    for (unsigned int i = 0; i < length; i++)
-        note_length_f /= 2;
+    int note_length = note_length_f(&length);
 
     int *note_length_f_data = malloc(sizeof(int));
-    *note_length_f_data = note_length_f;
+    *note_length_f_data = note_length;
 
     struct _MTrkEvent event =
         {

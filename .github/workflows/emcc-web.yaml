@@ -8,10 +8,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Setup EMSDK
+      - name: Setup emsdk
         uses: mymindstorm/setup-emsdk@v14
 
-      - name: Verify EMSDK
+      - name: Verify
         run: emcc -v
 
       - name: Checkout Repository

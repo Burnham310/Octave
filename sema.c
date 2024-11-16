@@ -427,7 +427,7 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		ExprIdx then_expr = expr->data.if_then_else.then_expr;
 		ExprIdx else_expr = expr->data.if_then_else.else_expr;
 		Type cond_t = sema_analy_expr(ctx, cond_expr, sec_idx);
-		Type then_t = sema_analy_expr(ctx, then_expr, sec_idx);			
+		Type then_t = sema_analy_expr(ctx, then_expr, sec_idx);
 		Type else_t = sema_analy_expr(ctx, else_expr, sec_idx);
 
 		Type bool_ty = intern_simple_ty(TY_BOOL);
