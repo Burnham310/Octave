@@ -177,12 +177,11 @@ The syntax of Octave is defined using BNF notation as follows. We assume parenth
     &\quad | \ \term{Qual} \ \term{Expr} \\
     &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
     &\quad | \ \nt{[} \term{Expr}^* \nt{]} \\
-    &\quad | \ \nt{|} \nt{\lbrace} \term{Decl}^*, \term{Decl}^* \nt{\rbrace} \nt{:} \term{Expr}^* \nt{|} \\
+    &\quad | \ \nt{|} \text{List\{} \term{Decl}^*, \text{\}} \term{Decl}^* \nt{\rbrace} \nt{:} \term{Expr}^* \nt{|} \\
     &\quad | \ \term{Expr} \ \nt{\&} \ \term{Expr} \\
     &\quad | \ \term{Expr} \ \nt{+} \ \term{Expr} \\
     &\quad | \ \term{Expr} \ \nt{-} \ \term{Expr} \\
     &\quad | \ \term{Expr} \ \nt{*} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
     &\quad | \ \ntext{\text{if}}\  \term{Expr} \ \ntext{then}\ \term{Expr} \ \ntext{else}\ \term{Expr} \ \ntext{end} \\
     &\quad | \ \textcolor{syntax_color}{\text{for}}\  \term{Expr} \ \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ \term{Expr}^* \ \ntext{end} \\
    \term{Digit} &::= {[0-9]} \\

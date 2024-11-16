@@ -69,13 +69,13 @@ static int note_length_f(MidiNoteLength *nl)
     switch (nl->type)
     {
     case NL_Fixed:
-        for (int i = 0; i < nl->value.fix_length; i++)
+        for (size_t i = 0; i < nl->value.fix_length; i++)
             note_length_f /= 2;
         break;
 
     case NL_Int:
         // TODO
-        for (int i = 0; i < nl->value.fix_length; i++)
+        for (size_t i = 0; i < nl->value.fix_length; i++)
             note_length_f /= 2;
         break;
     }
