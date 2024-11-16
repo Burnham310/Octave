@@ -465,7 +465,7 @@ Token lexer_next(Lexer *self)
 	skip_comment(self);
 
 	Token tk;
-	for (int i = 0; i < fns_len; i++)
+	for (size_t i = 0; i < fns_len; i++)
 	{
 		tk = fns[i](self);
 		if (tk.type != 0)

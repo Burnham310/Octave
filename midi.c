@@ -111,7 +111,7 @@ EVENT_DECLARE(NoteOffEvent, MidiNote *note, int force_immed)
     *note_copy = *note;
 
     int note_length_f = 400;
-    for (int i = 0; i < note->length; i++)
+    for (size_t i = 0; i < note->length; i++)
         note_length_f /= 2;
 
     struct _MTrkEvent event =
@@ -127,7 +127,8 @@ EVENT_DECLARE(NoteOffEvent, MidiNote *note, int force_immed)
 
 GLOBAL_CALLBACK(SetTempoEvent)
 {
-
+    (void)(event_data);
+    (void)(delta_time);
     int tempo_sec = *(int *)data;
 
     write_var_len(0);
@@ -161,6 +162,7 @@ GLOBAL_DECLARE(SetTempoEvent, int bpm)
 
 EVENT_CALLBACK(SetInstrumentEvent)
 {
+    (void)(delta_time);
     write_var_len(0);
 
     int pc = *(int *)data;
@@ -189,6 +191,7 @@ EVENT_DECLARE(SetInstrumentEvent, int pc)
 
 EVENT_CALLBACK(SetVolumeEvent)
 {
+    (void)(delta_time);
     write_var_len(0);
 
     int volume = *(int *)data;
@@ -220,6 +223,7 @@ EVENT_DECLARE(SetVolumeEvent, int volume)
 
 EVENT_CALLBACK(SetVolumeRatioEvent)
 {
+    (void)(delta_time);
     write_var_len(0);
 
     float ratio = *(float *)data;
@@ -257,6 +261,7 @@ EVENT_DECLARE(SetVolumeRatioEvent, float ratio)
 
 EVENT_CALLBACK(PauseNoteEvent)
 {
+    (void)(delta_time);
     int note_length_f = *(int *)data;
     get_midi_tr_meta(event_data.track_id)->delta_time_dely_buf += midi_config.devision * NoteLenRatio(note_length_f);
 }
@@ -265,7 +270,7 @@ EVENT_DECLARE(PauseNoteEvent, MidiNoteLength length)
 {
 
     int note_length_f = 400;
-    for (int i = 0; i < length; i++)
+    for (unsigned int i = 0; i < length; i++)
         note_length_f /= 2;
 
     int *note_length_f_data = malloc(sizeof(int));

@@ -7,7 +7,7 @@ ENTRY_DIR = entry
 
 CC = clang
 INCLUDES = -Iinclude
-CFLAGS += -g -Wno-switch
+CFLAGS += -g -Wall -Wextra -Wno-switch -Wno-missing-braces
 
 all: main
 $(OBJ_DIR):

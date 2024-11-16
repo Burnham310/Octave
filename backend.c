@@ -52,13 +52,13 @@ void _add_midi_note(int track_id, MidiNote *note, size_t note_n)
         hmputs(iFuncMap, target);
 
 add_note_start:
-    for (int i = 0; i < note_n; ++i)
+    for (size_t i = 0; i < note_n; ++i)
     {
         add_midi_event(track_id, NoteOnEvent(note + i));
     }
 
     // add note off
-    for (int i = 0; i < note_n; ++i)
+    for (size_t i = 0; i < note_n; ++i)
     {
         add_midi_event(track_id, NoteOffEvent(note + i, i != 0));
     }
@@ -97,6 +97,8 @@ float iFunc_linear(int start, int end, int idx, int n)
 
 float iFunc_zoom(int start, int end, int idx, int n)
 {
+    (void)(start);
+    (void)(end);
     float t = (float)idx / n;
 
     if (t >= 0.8)

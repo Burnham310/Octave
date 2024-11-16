@@ -55,7 +55,7 @@ typedef enum
     EXPR_IDENT = 1,
     EXPR_NUM,
     EXPR_NOTE,
-    EXPR_CHORD,
+    EXPR_LIST,
     EXPR_SCALE,
     // EXPR_PREFIX,
     EXPR_INFIX,

@@ -47,25 +47,42 @@ static const int BASE_MODE[DIATONIC] = {0, 2, 4, 5, 7, 9, 11};
 // TY_DEGREE refers to relative position in a scale, 1 2 3 4 5 6 7, along with a shift
 // TY_INT is implicitly coerced to TY_DEGREE
 #define TYPE_LISTX \
-    X(TY_ERR) \
     X(TY_VOID) \
     X(TY_INT) \
     X(TY_DEGREE) \
     X(TY_PITCH) \
     X(TY_ABSPITCH) \
-    X(TY_CHORD) \
+    X(TY_LIST) \
     X(TY_NOTE) \
     X(TY_SCALE) \
     X(TY_MODE) \
     X(TY_SEC) \
-    X(TY_CHORUS) \
-    X(TY_FOR) \
+    X(TY_ANY) \
     X(TY_BOOL)
 #define X(x) x,
+typedef struct { int i; } Type;
 typedef enum {
     TYPE_LISTX
-} Type;
+} TypeKind;
 #undef X
+typedef struct {
+    TypeKind ty;
+    Type more;
+} TypeFull;
+
+typedef struct {
+    TypeFull key;
+    int value; // dummy
+} TypeInternEntry;
+typedef TypeInternEntry* TypeIntern;
+
+
+extern TypeIntern ty_pool;
+#define simple_ty(ty_kind) ((TypeFull) {.ty=ty_kind, .more={.i=0}})
+#define intern_ty(ty) (hmput(ty_pool, ty, 0), (Type) {.i = hmgeti(ty_pool, ty)})
+#define intern_simple_ty(ty_kind) intern_ty(simple_ty(ty_kind))
+#define lookup_ty(ty_i) (ty_pool[ty_i.i].key)
+
 
 // Each type corresponds to one thing in ValData
 // INT -> int i
@@ -106,17 +123,18 @@ typedef struct {
     SliceOf(Label) labels;
 } Track;
 make_slice(Track);
-typedef union {
+typedef union ValData ValData;
+make_arr(ValData);
+make_slice(ValData);
+union ValData {
     int i; 
-    SliceOf(Pitch) chord;
+    SliceOf(ValData) list;    
     Note note;
     Scale scale;
     Track sec;
-    SliceOf(Track) chorus;
     Degree deg;
     Pitch pitch;
-    SliceOf(Note) notes;
-} ValData;
+};
 typedef struct {
     ValData data;
     Type ty;

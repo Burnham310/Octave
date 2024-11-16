@@ -16,7 +16,7 @@ LabelIdx parse_label(Lexer *lexer, Gen *gen, size_t note_size);
 FormalIdx parse_formal(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr(Lexer *lexer, Gen *gen);
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp);
-ExprIdx parse_chord(Lexer *lexer, Gen *gen);
+ExprIdx parse_list(Lexer *lexer, Gen *gen);
 ExprIdx parse_scale(Lexer *lexer, Gen *gen);
 ExprIdx parse_prefix(Lexer *lexer, Gen *gen);
 ExprIdx parse_if(Lexer *lexer, Gen *gen);
@@ -46,7 +46,7 @@ void expr_debug(Pgm *pgm, SymbolTable sym_table, ExprIdx idx)
         expr_debug(pgm, sym_table, expr.data.note.expr);
         printf(".%zu", expr.data.note.dots);
         break;
-    case EXPR_CHORD:
+    case EXPR_LIST:
         printf("[ ");
         for (size_t i = 0; i < expr.data.chord_notes.len; ++i)
         {
@@ -58,6 +58,9 @@ void expr_debug(Pgm *pgm, SymbolTable sym_table, ExprIdx idx)
     case EXPR_SEC:
         printf("Sec");
     case EXPR_SCALE:
+    case EXPR_IF:
+    case EXPR_FOR:
+    case EXPR_VOID:
     // case EXPR_PREFIX:
     case EXPR_INFIX:
         assert(false && "unimplemented");
@@ -141,7 +144,6 @@ SliceOf(AstIdx) parse_formals(Lexer *lexer, Gen *gen)
     {
         return res;
     }
-    size_t prev_off = gen->formals.items[formal].off;
     da_append(formals, formal);
     while (true)
     {
@@ -156,7 +158,6 @@ SliceOf(AstIdx) parse_formals(Lexer *lexer, Gen *gen)
             report(lexer, comma.off, "Expect formal after ','");
             THROW_EXCEPT();
         }
-        prev_off = gen->formals.items[formal].off;
         da_append(formals, formal);
     }
 
@@ -189,7 +190,6 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
     ArrOf(AstIdx) notes = {0};
     ArrOf(AstIdx) labels = {0};
     ExprIdx note;
-    AstIdx res;
     sec.off = colon2.off;
     while ((note = parse_expr(lexer, gen)) >= PR_NULL)
     {
@@ -213,14 +213,14 @@ SecIdx parse_section(Lexer *lexer, Gen *gen)
 
     assert_next_before(lexer, bar2, '|', colon2); // TODO: more accurate loc
     gen->inside_sec = false;
-out:
+// out:
     da_move(notes, sec.note_exprs);
     da_move(labels, sec.labels);
     da_append(gen->secs, sec);
     return gen->secs.size - 1;
-err_out:
-    da_free(notes);
-    return res;
+// err_out:
+//     da_free(notes);
+//     return res;
 }
 FormalIdx parse_formal(Lexer *lexer, Gen *gen)
 {
@@ -239,7 +239,7 @@ FormalIdx parse_formal(Lexer *lexer, Gen *gen)
     return gen->formals.size - 1;
 }
 
-ExprIdx parse_chord(Lexer *lexer, Gen *gen)
+ExprIdx parse_list(Lexer *lexer, Gen *gen)
 {
     try_next(lexer, lbrac, '[');
     Expr expr;
@@ -250,7 +250,7 @@ ExprIdx parse_chord(Lexer *lexer, Gen *gen)
         da_append(sub_exprs, sub_expr);
     }
     assert_next_before(lexer, rbrac, ']', lbrac) // TODO: more accurate loc
-        expr.tag = EXPR_CHORD;
+        expr.tag = EXPR_LIST;
     expr.off = rbrac.off;
     da_move(sub_exprs, expr.data.chord_notes);
     da_append(gen->exprs, expr);
@@ -420,7 +420,7 @@ BP infix_bp(Token tk)
 ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp)
 {
     // the order of this matter; atomic expr must be tried last.
-    static const ParseFn prefix_parsers[] = {parse_prefix, parse_if, parse_for, parse_scale, parse_chord, parse_section_expr, parse_atomic_expr};
+    static const ParseFn prefix_parsers[] = {parse_prefix, parse_if, parse_for, parse_scale, parse_list, parse_section_expr, parse_atomic_expr};
     static const size_t prefix_parsers_len = sizeof(prefix_parsers) / sizeof(prefix_parsers[0]);
     ExprIdx lhs;
     for (size_t i = 0; i < prefix_parsers_len; ++i)
@@ -459,7 +459,7 @@ ExprIdx parse_expr_climb(Lexer *lexer, Gen *gen, int min_bp)
             lexer_next(lexer);
             ExprIdx rhs = parse_expr_climb(lexer, gen, rbp);
             Expr expr = {.tag = EXPR_INFIX, .off = op.off};
-            expr.data.infix.lhs = lhs;
+	    expr.data.infix.lhs = lhs;
             expr.data.infix.rhs = rhs;
             expr.data.infix.op = op;
             da_append(gen->exprs, expr);
@@ -533,7 +533,6 @@ Pgm parse_ast(Lexer *lexer)
     //  da_append(gen.formals, (Formal){});
     //  da_append(gen.exprs, (Expr){});
     //  da_append(gen.labels, (Label){});
-    bool find_main = false;
     while ((toplevel = parse_formal(lexer, &gen)) != PR_NULL)
     {
         da_append(gen.toplevel, toplevel);
@@ -546,15 +545,15 @@ Pgm parse_ast(Lexer *lexer)
     da_move(gen.labels, pgm.labels);
 
     return pgm.success = true, pgm;
-err_out:
-    da_free(gen.toplevel);
-    da_free(gen.secs);
-    da_free(gen.formals);
-    da_free(gen.exprs);
-    da_free(gen.labels);
-    // free gen
-    pgm.success = false;
-    return pgm;
+// err_out:
+//     da_free(gen.toplevel);
+//     da_free(gen.secs);
+//     da_free(gen.formals);
+//     da_free(gen.exprs);
+//     da_free(gen.labels);
+//     // free gen
+//     pgm.success = false;
+//     return pgm;
 }
 void ast_get_expr(Pgm *pgm, AstIdx i);
 void ast_get_decl(Pgm *pgm, AstIdx i);
