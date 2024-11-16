@@ -361,22 +361,32 @@ ExprIdx parse_for(Lexer *lexer, Gen *gen) {
 }
 ExprIdx parse_prefix(Lexer *lexer, Gen *gen)
 {
-    try_next(lexer, qual, TK_QUAL);
-    int lbp = prefix_bp(qual);
+    Token prefix = lexer_peek(lexer);
+    int lbp = prefix_bp(prefix);
+    if (lbp < 0) return PR_NULL;
+    lexer_next(lexer);
     ExprIdx sub_expr = parse_expr_climb(lexer, gen, lbp);
     if (sub_expr == PR_NULL)
     {
-        report(lexer, qual.off, "Expect expression after qualifiers");
+        report(lexer, prefix.off, "Expect expression after prefix operator");
         THROW_EXCEPT();
     }
-    ssize_t shift =
-        -12 * qual.data.qualifier.suboctave + 12 * qual.data.qualifier.octave - qual.data.qualifier.flats + qual.data.qualifier.sharps;
-    Expr lhs = {.off = qual.off, .tag = EXPR_NUM, .data.num = shift};
-    da_append(gen->exprs, lhs);
-    ExprIdx lhs_idx = gen->exprs.size - 1;
-    Expr expr = {.off = qual.off, .tag = EXPR_INFIX, .data.infix = {.op = '\'', .lhs = lhs_idx, .rhs = sub_expr}};
+    Expr expr;
+    if (prefix.type == TK_QUAL) {
+	Token qual = prefix;
+	ssize_t shift =
+	    -12 * qual.data.qualifier.suboctave + 12 * qual.data.qualifier.octave - qual.data.qualifier.flats + qual.data.qualifier.sharps;
+	Expr lhs = {.off = qual.off, .tag = EXPR_NUM, .data.num = shift};
+	da_append(gen->exprs, lhs);
+	ExprIdx lhs_idx = gen->exprs.size - 1;
+	expr = (Expr) {.off = qual.off, .tag = EXPR_INFIX, .data.infix = {.op = '\'', .lhs = lhs_idx, .rhs = sub_expr}};
+    } else {
+
+	expr = (Expr){.off = prefix.off, .tag = EXPR_PREFIX, .data.prefix = {.expr = sub_expr, .op = prefix}};
+    }
     da_append(gen->exprs, expr);
     return gen->exprs.size - 1;
+
 }
 int prefix_bp(Token tk)
 {
@@ -384,6 +394,8 @@ int prefix_bp(Token tk)
     {
     case TK_QUAL:
         return 20;
+    case '$':
+	return 10;
     default:
         return -1;
     }

@@ -94,6 +94,8 @@ const char *tk_str(TokenType ty)
 		return "'";
 	case '~':
 		return "~";
+	case '$':
+		return "$";
 	default:
 		return "TK_UNKNOWN";
 	}
@@ -230,6 +232,7 @@ Token match_single(Lexer *self)
 	case ')':
 	case '\'':
 	case '~':
+	case '$':
 		tk.type = (unsigned char)c;
 		return tk;
 	default:

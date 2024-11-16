@@ -53,6 +53,7 @@ static const int BASE_MODE[DIATONIC] = {0, 2, 4, 5, 7, 9, 11};
     X(TY_PITCH) \
     X(TY_ABSPITCH) \
     X(TY_LIST) \
+    X(TY_SPREAD) \
     X(TY_NOTE) \
     X(TY_SCALE) \
     X(TY_MODE) \

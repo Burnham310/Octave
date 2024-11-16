@@ -57,7 +57,7 @@ typedef enum
     EXPR_NOTE,
     EXPR_LIST,
     EXPR_SCALE,
-    // EXPR_PREFIX,
+    EXPR_PREFIX,
     EXPR_INFIX,
     EXPR_SEC,
     EXPR_BOOL,

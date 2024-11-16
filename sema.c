@@ -118,7 +118,7 @@ bool sema_analy_pgm(Context *ctx)
     Type main_type = ctx->pgm_env[main_i].value.ty;
     Type sec = intern_simple_ty(TY_SEC);
     Type chorus = intern_ty(((TypeFull) {.ty = TY_LIST, .more = sec}));
-    // eprintf("main %s %i %i\n", type_to_str(lookup_ty(main_type).more), main_);
+    eprintf("main %s\n", type_to_str(lookup_ty(main_type).more));
     if (main_type.i != sec.i && main_type.i != chorus.i) {
 	report(ctx->lexer, 0, "main must be either section or a list of section, got %s", type_to_str(main_type));
 	return false;
@@ -217,6 +217,15 @@ Type ty_coerce(Context *ctx, SecIdx sec_idx, Type from, Type to, size_t off)
 	Type sub_ty = ty_coerce(ctx, sec_idx, from_full.more, to_full.more, off);	
 	TypeFull list_ty = {.ty = TY_LIST, .more = sub_ty };
 	return intern_ty(list_ty);
+    }
+    if (from_full.ty == TY_SPREAD && to_full.ty == TY_SPREAD) {
+	Type sub_ty = ty_coerce(ctx, sec_idx, from_full.more, to_full.more, off);	
+	TypeFull list_ty = {.ty = TY_SPREAD, .more = sub_ty };
+	return intern_ty(list_ty);
+    }
+    if (from_full.ty == TY_SPREAD) {
+	Type sub_ty = ty_coerce(ctx, sec_idx, from_full.more, to, off);
+	return sub_ty;	
     }
     if ((from_full.ty == TY_INT || from_full.ty == TY_DEGREE || from_full.ty == TY_ABSPITCH) && to_full.ty == TY_PITCH)
     {
@@ -356,7 +365,7 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 	    {
 		size_t len = expr->data.chord_notes.len;
 		Type sub_t = intern_simple_ty(TY_ANY);
-		for (size_t i = 1; i < len; ++i)
+		for (size_t i = 0; i < len; ++i)
 		{
 		    Type rest_t = sema_analy_expr(ctx, expr->data.chord_notes.ptr[i], sec_idx);
 		    if (sub_t.i == ty_coerce(ctx, sec_idx, rest_t, sub_t, expr->off).i) {
@@ -368,7 +377,6 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 			THROW_EXCEPT();
 		    }
 		}
-		eprintf("sub_t %s\n", type_to_str(sub_t));
 		TypeFull list = {.ty = TY_LIST, .more = sub_t.i};
 		return intern_ty(list);
 	    }
@@ -401,6 +409,18 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 	    sub_t = sema_analy_expr(ctx, expr->data.infix.lhs, sec_idx);
 	    sub_t2 = sema_analy_expr(ctx, expr->data.infix.rhs, sec_idx);
 	    return sema_analy_infix(ctx, idx, sec_idx, expr->data.infix.op, sub_t, sub_t2);
+	case EXPR_PREFIX:
+	{
+	    assert(expr->data.prefix.op.type == '$');
+	    sub_t = sema_analy_expr(ctx, expr->data.prefix.expr, sec_idx);
+	    TypeFull sub_full = lookup_ty(sub_t);    
+	    if (sub_full.ty != TY_LIST) {
+		report(ctx->lexer, expr->off, "Can not spread non-list type: %s", type_to_str(sub_t));
+		THROW_EXCEPT();
+	    }
+	    sub_full.ty = TY_SPREAD;
+	    return intern_ty(sub_full);
+	}
 	case EXPR_IF:
 	    {	
 		ExprIdx cond_expr = expr->data.if_then_else.cond_expr;
@@ -433,17 +453,20 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		Type upper_ty = sema_analy_expr(ctx, upper_expr, sec_idx);
 		assert_type(lower_ty, int_ty, ast_get(ctx->pgm, exprs, lower_expr).off);
 		assert_type(upper_ty, int_ty, ast_get(ctx->pgm, exprs, upper_expr).off);
-		Type sub_t = sema_analy_expr(ctx, body.ptr[0], sec_idx);		
-		for (size_t i = 1; i < body.len; ++i)
+		sub_t = intern_simple_ty(TY_ANY);
+		for (size_t i = 0; i < body.len; ++i)
 		{
 		    Type rest_t = sema_analy_expr(ctx, body.ptr[i], sec_idx);
-		    if (sub_t.i != ty_coerce(ctx, sec_idx, rest_t, sub_t, expr->off).i) {
-			report(ctx->lexer, expr->off, "Type mistmatched in list, 1st is %s, %zuth is %s", type_to_str(sub_t), i, type_to_str(rest_t));
+		    if (sub_t.i == ty_coerce(ctx, sec_idx, rest_t, sub_t, expr->off).i) {
+			// does nothing	
+		    } else if (rest_t.i == ty_coerce(ctx, sec_idx, sub_t, rest_t, expr->off).i) {
+			sub_t = rest_t;
+		    } else {
+			report(ctx->lexer, expr->off, "Type mistmatched in for, previously inferred as %s, %zuth is %s", type_to_str(sub_t), i, type_to_str(rest_t));
 			THROW_EXCEPT();
 		    }
-
 		}
-		TypeFull list = {.ty = TY_LIST, .more = sub_t.i};
+		TypeFull list = {.ty = TY_SPREAD, .more = sub_t.i};
 		return intern_ty(list);
 	    }
 	default:
