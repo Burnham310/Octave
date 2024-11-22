@@ -1,6 +1,7 @@
 #include "sema.h"
 
 #include "ds.h"
+#include "lexer.h"
 #include "utils.h"
 #include "assert.h"
 #include "utils.h"
@@ -262,8 +263,8 @@ Type sema_analy_infix(Context *ctx, ExprIdx idx, SecIdx sec_idx, Token op, Type 
 {
     (void)(idx);
     Type int_ty = intern_simple_ty(TY_INT);
-
-    if (op.type == '&')
+    switch (op.type) {
+    case '&':
     {
 	// Type sec_ty = intern_simple_ty(TY_SEC);	
 	// TypeFull chorus_ty_full = {.ty = TY_LIST, .more = sec_ty.i };
@@ -273,7 +274,7 @@ Type sema_analy_infix(Context *ctx, ExprIdx idx, SecIdx sec_idx, Token op, Type 
 	// return chorus_ty;
 	assert(false && "obslete");
     }
-    else if (op.type == '\'')
+    case '\'':
     {
 	assert_type(lhs_t, int_ty, op.off);
 
@@ -291,29 +292,25 @@ Type sema_analy_infix(Context *ctx, ExprIdx idx, SecIdx sec_idx, Token op, Type 
 	report(ctx->lexer, op.off, "Invalid rhs for qualifier operation");
 	THROW_EXCEPT();
     }
-    else if (op.type == '+')
+    case '+':
+    case '-':
+    case '*':
     {
 	assert_type(lhs_t, int_ty, op.off);
 	assert_type(rhs_t, int_ty, op.off);
 	return int_ty;
     }
-    else if (op.type == '-')
-    {
-	assert_type(lhs_t, int_ty, op.off);
-	assert_type(rhs_t, int_ty, op.off);
-	return int_ty;
-    }
-    else if (op.type == '*')
-    {
-	assert_type(lhs_t, int_ty, op.off);
-	assert_type(rhs_t, int_ty, op.off);
-	return int_ty;
-    }
-    else if (op.type == TK_EQ)
+    case TK_EQ:
+    case TK_NEQ:
+    case TK_LEQ:
+    case TK_GEQ:
+    case '<':
+    case '>':
     {
 	assert_type(lhs_t, int_ty, op.off);
 	assert_type(rhs_t, int_ty, op.off);
 	return intern_simple_ty(TY_BOOL);
+    }
     }
     assert(false && "unreachable");
 }

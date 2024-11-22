@@ -10,180 +10,180 @@ size_t eval_chord_recur(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx)
 
 SliceOf(Track) eval_pgm(Context *ctx)
 {
-	for (ssize_t fi = 0; fi < (ssize_t)ast_len(ctx->pgm, toplevel); fi++)
-	{
-		eval_formal(ctx, ast_get(ctx->pgm, toplevel, fi), -1);
-	}
-	Val main = hmget(ctx->pgm_env, ctx->builtin_syms.main);
-	TypeFull main_ty = lookup_ty(main.ty);
-	SliceOf(Track) tracks = {0};
-	Type sec_ty = intern_simple_ty(TY_SEC);
-	if (main.ty.i == sec_ty.i)
-	{
-	    tracks = (SliceOf(Track)) {.ptr = calloc(1, sizeof(Track)), .len = 1};
-	    tracks.ptr[0] = main.data.sec;
-	    return tracks;
-	}
-	else if (main_ty.ty == TY_LIST && main_ty.more.i == sec_ty.i)
-	{
-	    size_t len = main.data.list.len;
-	    tracks = (SliceOf(Track)) {.ptr = calloc(len, sizeof(Track)), .len = len};
-	    for (size_t i = 0; i < len; ++i) {
-		tracks.ptr[i] = main.data.list.ptr[i].sec;
-	    }
-	}
+    for (ssize_t fi = 0; fi < (ssize_t)ast_len(ctx->pgm, toplevel); fi++)
+    {
+	eval_formal(ctx, ast_get(ctx->pgm, toplevel, fi), -1);
+    }
+    Val main = hmget(ctx->pgm_env, ctx->builtin_syms.main);
+    TypeFull main_ty = lookup_ty(main.ty);
+    SliceOf(Track) tracks = {0};
+    Type sec_ty = intern_simple_ty(TY_SEC);
+    if (main.ty.i == sec_ty.i)
+    {
+	tracks = (SliceOf(Track)) {.ptr = calloc(1, sizeof(Track)), .len = 1};
+	tracks.ptr[0] = main.data.sec;
 	return tracks;
+    }
+    else if (main_ty.ty == TY_LIST && main_ty.more.i == sec_ty.i)
+    {
+	size_t len = main.data.list.len;
+	tracks = (SliceOf(Track)) {.ptr = calloc(len, sizeof(Track)), .len = len};
+	for (size_t i = 0; i < len; ++i) {
+	    tracks.ptr[i] = main.data.list.ptr[i].sec;
+	}
+    }
+    return tracks;
 }
 void eval_formal(Context *ctx, FormalIdx idx, SecIdx sec_idx)
 {
-	Formal *formal = &ast_get(ctx->pgm, formals, idx);
-	ValEnv *env = get_curr_env(ctx, sec_idx);
-	ValData v = eval_expr(ctx, formal->expr, sec_idx);
-	hmgetp(*env, formal->ident)->value.data = v;
+    Formal *formal = &ast_get(ctx->pgm, formals, idx);
+    ValEnv *env = get_curr_env(ctx, sec_idx);
+    ValData v = eval_expr(ctx, formal->expr, sec_idx);
+    hmgetp(*env, formal->ident)->value.data = v;
 }
 
 static const SecConfig default_config = {.bpm = 120, .scale = (Scale){.mode = MODE_MAJ, .tonic = PTCH_C, .octave = 5}, .instr = 2};
 Track eval_section(Context *ctx, SecIdx idx)
 {
 
-	Sec *sec = &ast_get(ctx->pgm, secs, idx);
-	for (ssize_t fi = 0; fi < (ssize_t)ast_len(sec, vars); ++fi)
-	{
-		eval_formal(ctx, ast_get(sec, vars, fi), idx);
-	}
-	for (ssize_t fi = 0; fi < (ssize_t)ast_len(sec, config); ++fi)
-	{
-		eval_formal(ctx, ast_get(sec, config, fi), idx);
-	}
-	Track track = {.labels = (SliceOf(Label)){.ptr = calloc(sizeof(Label), sec->labels.len), .len = sec->labels.len}};
-	for (size_t ti = 0; ti < sec->labels.len; ++ti)
-	{
-		track.labels.ptr[ti] = ast_get(ctx->pgm, labels, sec->labels.ptr[ti]);
-	}
-	ptrdiff_t env_i;
-	ValEnv *env = &ctx->sec_envs.ptr[idx];
-	env_i = hmgeti(*env, ctx->builtin_syms.bpm);
-	if (env_i < 0)
-		hmput(*env, ctx->builtin_syms.bpm, (Val){.data.i = default_config.bpm});
-	env_i = hmgeti(*env, ctx->builtin_syms.instrument);
-	if (env_i < 0)
-		hmput(*env, ctx->builtin_syms.instrument, (Val){.data.i = default_config.instr});
-	env_i = hmgeti(*env, ctx->builtin_syms.scale);
-	if (env_i < 0)
-		hmput(*env, ctx->builtin_syms.scale, (Val){.data.scale = default_config.scale});
-	track.notes = (ArrOf(Note)) {0};
-	for (ssize_t ni = 0; ni < (ssize_t)ast_len(sec, note_exprs); ++ni)
-	{
-		ExprIdx expr = ast_get(sec, note_exprs, ni);
-		ValData note = eval_expr(ctx, expr, idx);
-		Type ty = ctx->types.ptr[expr];
-	
-		// note = va(ctx, &note, ty, 0);
+    Sec *sec = &ast_get(ctx->pgm, secs, idx);
+    for (ssize_t fi = 0; fi < (ssize_t)ast_len(sec, vars); ++fi)
+    {
+	eval_formal(ctx, ast_get(sec, vars, fi), idx);
+    }
+    for (ssize_t fi = 0; fi < (ssize_t)ast_len(sec, config); ++fi)
+    {
+	eval_formal(ctx, ast_get(sec, config, fi), idx);
+    }
+    Track track = {.labels = (SliceOf(Label)){.ptr = calloc(sizeof(Label), sec->labels.len), .len = sec->labels.len}};
+    for (size_t ti = 0; ti < sec->labels.len; ++ti)
+    {
+	track.labels.ptr[ti] = ast_get(ctx->pgm, labels, sec->labels.ptr[ti]);
+    }
+    ptrdiff_t env_i;
+    ValEnv *env = &ctx->sec_envs.ptr[idx];
+    env_i = hmgeti(*env, ctx->builtin_syms.bpm);
+    if (env_i < 0)
+	hmput(*env, ctx->builtin_syms.bpm, (Val){.data.i = default_config.bpm});
+    env_i = hmgeti(*env, ctx->builtin_syms.instrument);
+    if (env_i < 0)
+	hmput(*env, ctx->builtin_syms.instrument, (Val){.data.i = default_config.instr});
+    env_i = hmgeti(*env, ctx->builtin_syms.scale);
+    if (env_i < 0)
+	hmput(*env, ctx->builtin_syms.scale, (Val){.data.scale = default_config.scale});
+    track.notes = (ArrOf(Note)) {0};
+    for (ssize_t ni = 0; ni < (ssize_t)ast_len(sec, note_exprs); ++ni)
+    {
+	ExprIdx expr = ast_get(sec, note_exprs, ni);
+	ValData note = eval_expr(ctx, expr, idx);
+	Type ty = ctx->types.ptr[expr];
 
-		TypeFull body_full = lookup_ty(ty);
-		if (body_full.ty == TY_SPREAD) {
-		    // da_append_slice(track.notes, note.list);
-		    size_t len = note.list.len;
-		    for (size_t i = 0; i < len; ++i) {
-			da_append(track.notes, note.list.ptr[i].note);
-		    }
-		} else {
-		    da_append(track.notes, note.note);
-		}
+	// note = va(ctx, &note, ty, 0);
 
+	TypeFull body_full = lookup_ty(ty);
+	if (body_full.ty == TY_SPREAD) {
+	    // da_append_slice(track.notes, note.list);
+	    size_t len = note.list.len;
+	    for (size_t i = 0; i < len; ++i) {
+		da_append(track.notes, note.list.ptr[i].note);
+	    }
+	} else {
+	    da_append(track.notes, note.note);
 	}
-	track.config.bpm = hmget(*env, ctx->builtin_syms.bpm).data.i;
-	track.config.instr = hmget(*env, ctx->builtin_syms.instrument).data.i;
-	track.config.scale = hmget(*env, ctx->builtin_syms.scale).data.scale;
-	return track;
+
+    }
+    track.config.bpm = hmget(*env, ctx->builtin_syms.bpm).data.i;
+    track.config.instr = hmget(*env, ctx->builtin_syms.instrument).data.i;
+    track.config.scale = hmget(*env, ctx->builtin_syms.scale).data.scale;
+    return track;
 }
 // The type checking is already done so this function should always succeed
 // TODO bound checks for int to degree
 ValData val_coerce(Context *ctx, ValData *from, Type from_ty, Type to)
 {
-	// eprintf("from %s, to %s\n", type_to_str(from_ty), type_to_str(to));
-	(void)(ctx);
-	if (from_ty.i == to.i)
-		return *from;
-	ValData res;
-	TypeFull to_full = lookup_ty(to);
-	TypeFull from_full = lookup_ty(from_ty);
-	// TypeFull from_full = lookup_ty(from_ty);
-	Type int_ty = intern_simple_ty(TY_INT);
-	Type pitch_ty = intern_simple_ty(TY_PITCH);
-	Type abspitch_ty = intern_simple_ty(TY_ABSPITCH);
-	Type degree_ty = intern_simple_ty(TY_DEGREE);
-	if (to_full.ty == TY_LIST && from_full.ty == TY_LIST) {
-	    size_t len = from->list.len;
-	    res.list = (SliceOf(ValData)) {.len = len, .ptr = calloc(len, sizeof(ValData))};
-	    for (size_t i = 0; i < len; ++i) {
-		res.list.ptr[i] = val_coerce(ctx, &from->list.ptr[i], from_full.more, to_full.more);
-	    }
-	    return res;
+    // eprintf("from %s, to %s\n", type_to_str(from_ty), type_to_str(to));
+    (void)(ctx);
+    if (from_ty.i == to.i)
+	return *from;
+    ValData res;
+    TypeFull to_full = lookup_ty(to);
+    TypeFull from_full = lookup_ty(from_ty);
+    // TypeFull from_full = lookup_ty(from_ty);
+    Type int_ty = intern_simple_ty(TY_INT);
+    Type pitch_ty = intern_simple_ty(TY_PITCH);
+    Type abspitch_ty = intern_simple_ty(TY_ABSPITCH);
+    Type degree_ty = intern_simple_ty(TY_DEGREE);
+    if (to_full.ty == TY_LIST && from_full.ty == TY_LIST) {
+	size_t len = from->list.len;
+	res.list = (SliceOf(ValData)) {.len = len, .ptr = calloc(len, sizeof(ValData))};
+	for (size_t i = 0; i < len; ++i) {
+	    res.list.ptr[i] = val_coerce(ctx, &from->list.ptr[i], from_full.more, to_full.more);
 	}
-	if (from_full.ty == TY_SPREAD) {
-	    size_t len = from->list.len;
-	    res.list = (SliceOf(ValData)) {.len = len, .ptr = calloc(len, sizeof(ValData))};
-	    for (size_t i = 0; i < len; ++i) {
-		res.list.ptr[i] = val_coerce(ctx, &from->list.ptr[i], from_full.more, to);
-	    }
-	    return res;
-	}
-	if (to_full.ty == TY_LIST && to_full.more.i == pitch_ty.i)
-	{
-
-		res.list = (SliceOf(ValData)){.ptr = calloc(sizeof(ValData), 1), .len = 1};
-		if (from_ty.i == int_ty.i)
-		{
-			res.list.ptr[0].pitch.is_abs = false;
-			res.list.ptr[0].pitch.data.deg = (Degree){.shift = 0, .degree = from->i};
-		}
-		else if (from_ty.i == degree_ty.i)
-		{
-			res.list.ptr[0].pitch.is_abs = false;
-			res.list.ptr[0].pitch.data.deg = from->deg;
-		}
-		else if (from_ty.i == abspitch_ty.i)
-		{
-			res.list.ptr[0].pitch.is_abs = true;
-			res.list.ptr[0].pitch.data.abs = from->i;
-		}
-		else if (from_ty.i == pitch_ty.i)
-		{
-			res.list.ptr[0].pitch = from->pitch;
-		} else {
-		    assert(false && "unreachable");
-		}
-		return res;
-	}
-	else if (to.i == intern_simple_ty(TY_PITCH).i)
-	{
-		if (from_ty.i == int_ty.i)
-		{
-			res.pitch.is_abs = false;
-			res.pitch.data.deg = (Degree){.degree = from->i, .shift = 0};
-		}
-		else if (from_ty.i == degree_ty.i)
-		{
-			res.pitch.is_abs = false;
-			res.pitch.data.deg = from->deg;
-		}
-		else if (from_ty.i == abspitch_ty.i)
-		{
-			res.pitch.is_abs = true;
-			res.pitch.data.abs = from->i;
-		} else {
-		    assert(false && "unreachable");
-		}
-		return res;
-	}
-	else if (to.i == degree_ty.i) {
-	    res.deg.degree = from->i;
-	    res.deg.shift = 0;
-	    return res;
-	}
-	res = *from;
 	return res;
+    }
+    if (from_full.ty == TY_SPREAD) {
+	size_t len = from->list.len;
+	res.list = (SliceOf(ValData)) {.len = len, .ptr = calloc(len, sizeof(ValData))};
+	for (size_t i = 0; i < len; ++i) {
+	    res.list.ptr[i] = val_coerce(ctx, &from->list.ptr[i], from_full.more, to);
+	}
+	return res;
+    }
+    if (to_full.ty == TY_LIST && to_full.more.i == pitch_ty.i)
+    {
+
+	res.list = (SliceOf(ValData)){.ptr = calloc(sizeof(ValData), 1), .len = 1};
+	if (from_ty.i == int_ty.i)
+	{
+	    res.list.ptr[0].pitch.is_abs = false;
+	    res.list.ptr[0].pitch.data.deg = (Degree){.shift = 0, .degree = from->i};
+	}
+	else if (from_ty.i == degree_ty.i)
+	{
+	    res.list.ptr[0].pitch.is_abs = false;
+	    res.list.ptr[0].pitch.data.deg = from->deg;
+	}
+	else if (from_ty.i == abspitch_ty.i)
+	{
+	    res.list.ptr[0].pitch.is_abs = true;
+	    res.list.ptr[0].pitch.data.abs = from->i;
+	}
+	else if (from_ty.i == pitch_ty.i)
+	{
+	    res.list.ptr[0].pitch = from->pitch;
+	} else {
+	    assert(false && "unreachable");
+	}
+	return res;
+    }
+    else if (to.i == intern_simple_ty(TY_PITCH).i)
+    {
+	if (from_ty.i == int_ty.i)
+	{
+	    res.pitch.is_abs = false;
+	    res.pitch.data.deg = (Degree){.degree = from->i, .shift = 0};
+	}
+	else if (from_ty.i == degree_ty.i)
+	{
+	    res.pitch.is_abs = false;
+	    res.pitch.data.deg = from->deg;
+	}
+	else if (from_ty.i == abspitch_ty.i)
+	{
+	    res.pitch.is_abs = true;
+	    res.pitch.data.abs = from->i;
+	} else {
+	    assert(false && "unreachable");
+	}
+	return res;
+    }
+    else if (to.i == degree_ty.i) {
+	res.deg.degree = from->i;
+	res.deg.shift = 0;
+	return res;
+    }
+    res = *from;
+    return res;
 }
 ValData shift_pitch(Type ty, ValData val, int shift) {
     // lhs_v = coerce(ctx, &v1, ctx->types.ptr[idx], TY_INT);
@@ -204,7 +204,7 @@ ValData shift_pitch(Type ty, ValData val, int shift) {
     } else if (rhs_full.ty == TY_LIST) {
 	size_t len = val.list.len;
 	for (size_t i = 0; i < len; ++i) {
-	   val.list.ptr[i] = shift_pitch(rhs_full.more, val.list.ptr[i], shift);
+	    val.list.ptr[i] = shift_pitch(rhs_full.more, val.list.ptr[i], shift);
 	}
     }
     return val;
@@ -218,7 +218,7 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 
     TypeFull chord_ty_full = {.ty = TY_LIST, .more = intern_simple_ty(TY_PITCH).i };
     Type chord_ty = intern_ty(chord_ty_full);
-	switch (expr->tag)
+    switch (expr->tag)
     {
 	case EXPR_NUM:
 	    return (ValData){.i = expr->data.num};
@@ -265,109 +265,111 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 		switch (op)
 		{
 
-		case '\'':
-		{
-		    int shift = lhs_v.i;
-		    // lhs_v = coerce(ctx, &v1, ctx->types.ptr[idx], TY_INT);
-		    Type rhs_t = ctx->types.ptr[rhs];
-		    return shift_pitch(rhs_t, rhs_v, shift);
-		}
-		case '+':
+		    case '\'':
+			{
+			    int shift = lhs_v.i;
+			    // lhs_v = coerce(ctx, &v1, ctx->types.ptr[idx], TY_INT);
+			    Type rhs_t = ctx->types.ptr[rhs];
+			    return shift_pitch(rhs_t, rhs_v, shift);
+			}
+		    case '+':
 			return (ValData){.i = lhs_v.i + rhs_v.i};
-		case '-':
+		    case '-':
 			return (ValData){.i = lhs_v.i - rhs_v.i};
-		case '*':
+		    case '*':
 			return (ValData){.i = lhs_v.i * rhs_v.i};
-		case '>':
+		    case '>':
 			return (ValData){.i = lhs_v.i > rhs_v.i};
-		case '<':
+		    case '<':
 			return (ValData){.i = lhs_v.i < rhs_v.i};
-		case TK_EQ:
+		    case TK_EQ:
 			return (ValData){.i = lhs_v.i == rhs_v.i};
-		case TK_NEQ:
+		    case TK_NEQ:
 			return (ValData){.i = lhs_v.i != rhs_v.i};
-		case TK_LEQ:
+		    case TK_LEQ:
 			return (ValData){.i = lhs_v.i <= rhs_v.i};
-		case TK_GEQ:
+		    case TK_GEQ:
 			return (ValData){.i = lhs_v.i >= rhs_v.i};
 
-		default:
+		    default:
 			assert(false && "unknown infix op");
 			break;
 		}
-	case EXPR_PREFIX:
-	{
-	    assert(expr->data.prefix.op.type == '$');
-	    res =  eval_expr(ctx, expr->data.prefix.expr, sec_idx);  
-	    return res;
-	}
-	case EXPR_LIST:
-	    {
-		static ArrOf(ValData) list_tmp = {0};
-		TypeFull ty_full = lookup_ty(type);
-		Type sub_t = {.i = ty_full.more.i};
-		for (size_t i = 0; i < expr->data.chord_notes.len; ++i)
+		case EXPR_PREFIX:
 		{
-		    ExprIdx sub_expr = expr->data.chord_notes.ptr[i];
-		    ValData sub_v = eval_expr(ctx, sub_expr, sec_idx);
-		    Type sub_el_t = ctx->types.ptr[sub_expr];
-		    TypeFull sub_el_full = lookup_ty(sub_el_t);
-		    sub_v = val_coerce(ctx, &sub_v, sub_el_t, sub_t);
-		    if (sub_el_full.ty == TY_SPREAD) {
-			da_append_slice(list_tmp, sub_v.list);
-		    } else {
-			da_append(list_tmp, sub_v);
-		    }
-		    // free(sub_v.chord.ptr);
-		    // printf("res.chord %zu\n", pitches_tmp.size);
+		    assert(expr->data.prefix.op.type == '$');
+		    res =  eval_expr(ctx, expr->data.prefix.expr, sec_idx);  
+		    return res;
 		}
-		da_move(list_tmp, res.list);
-		return res;
-	    }
-	case EXPR_IF:
-	    {
-		ExprIdx cond_expr = expr->data.if_then_else.cond_expr;
-		ExprIdx then_expr = expr->data.if_then_else.then_expr;
-		ExprIdx else_expr = expr->data.if_then_else.else_expr;
-		bool cond = eval_expr(ctx, cond_expr, sec_idx).i;
-		ExprIdx branch = cond ? then_expr : else_expr;
-		return eval_expr(ctx, branch, sec_idx);
-	    }
-	case EXPR_FOR:
-	    {
-		ExprIdx lower_expr = expr->data.for_expr.lower_bound;	  	  
-		ExprIdx upper_expr = expr->data.for_expr.upper_bound;
-		SliceOf(AstIdx) body = expr->data.for_expr.body;
-
-		ValData lower_v = eval_expr(ctx, lower_expr, sec_idx);
-		ValData upper_v = eval_expr(ctx, upper_expr, sec_idx);
-		ssize_t start = lower_v.i;
-		ssize_t end = upper_v.i + expr->data.for_expr.is_leq;
-		assert(start <= end);
-		// TODO more efficient array since it is homogenous
-		ArrOf(ValData) val_arr = {0};
-		Type sub_t = {.i = lookup_ty(type).more.i};
-		for (ssize_t loop = start; loop < end; ++loop)
-		    for (size_t i = 0; i < body.len; ++i) {
-			ExprIdx body_expr = body.ptr[i];
-			Type body_t = ctx->types.ptr[body_expr];
-			ValData body_v = eval_expr(ctx, body_expr, sec_idx);
-			body_v = val_coerce(ctx, &body_v, body_t, sub_t);
-
-			TypeFull body_full = lookup_ty(body_t);
-			if (body_full.ty == TY_SPREAD) {
-			    da_append_slice(val_arr, body_v.list);
+		case EXPR_LIST:
+		{
+		    static ArrOf(ValData) list_tmp = {0};
+		    TypeFull ty_full = lookup_ty(type);
+		    Type sub_t = {.i = ty_full.more.i};
+		    for (size_t i = 0; i < expr->data.chord_notes.len; ++i)
+		    {
+			ExprIdx sub_expr = expr->data.chord_notes.ptr[i];
+			ValData sub_v = eval_expr(ctx, sub_expr, sec_idx);
+			Type sub_el_t = ctx->types.ptr[sub_expr];
+			TypeFull sub_el_full = lookup_ty(sub_el_t);
+			sub_v = val_coerce(ctx, &sub_v, sub_el_t, sub_t);
+			if (sub_el_full.ty == TY_SPREAD) {
+			    da_append_slice(list_tmp, sub_v.list);
 			} else {
-			    da_append(val_arr, body_v);
+			    da_append(list_tmp, sub_v);
 			}
+			// free(sub_v.chord.ptr);
+			// printf("res.chord %zu\n", pitches_tmp.size);
 		    }
-		da_move(val_arr, res.list);
-		return res;
+		    da_move(list_tmp, res.list);
+		    return res;
+		}
+		case EXPR_IF:
+		{
+		    ExprIdx cond_expr = expr->data.if_then_else.cond_expr;
+		    ExprIdx then_expr = expr->data.if_then_else.then_expr;
+		    ExprIdx else_expr = expr->data.if_then_else.else_expr;
+		    bool cond = eval_expr(ctx, cond_expr, sec_idx).i;
+		    ExprIdx branch = cond ? then_expr : else_expr;
+		    return eval_expr(ctx, branch, sec_idx);
+		}
+		case EXPR_FOR:
+		{
+		    ExprIdx lower_expr = expr->data.for_expr.lower_bound;	  	  
+		    ExprIdx upper_expr = expr->data.for_expr.upper_bound;
+		    SliceOf(AstIdx) body = expr->data.for_expr.body;
+
+		    ValData lower_v = eval_expr(ctx, lower_expr, sec_idx);
+		    ValData upper_v = eval_expr(ctx, upper_expr, sec_idx);
+		    ssize_t start = lower_v.i;
+		    ssize_t end = upper_v.i + expr->data.for_expr.is_leq;
+		    assert(start <= end);
+		    // TODO more efficient array since it is homogenous
+		    ArrOf(ValData) val_arr = {0};
+		    Type sub_t = {.i = lookup_ty(type).more.i};
+		    for (ssize_t loop = start; loop < end; ++loop)
+			for (size_t i = 0; i < body.len; ++i) {
+			    ExprIdx body_expr = body.ptr[i];
+			    Type body_t = ctx->types.ptr[body_expr];
+			    ValData body_v = eval_expr(ctx, body_expr, sec_idx);
+			    body_v = val_coerce(ctx, &body_v, body_t, sub_t);
+
+			    TypeFull body_full = lookup_ty(body_t);
+			    if (body_full.ty == TY_SPREAD) {
+				da_append_slice(val_arr, body_v.list);
+			    } else {
+				da_append(val_arr, body_v);
+			    }
+			}
+		    da_move(val_arr, res.list);
+		    return res;
+		}
+		// case EXPR_PREFIX:
+		default:
+		eprintf("EXPR %i\n", expr->tag);
+		assert(false && "unknown expr tag\n");
+
 	    }
-	    // case EXPR_PREFIX:
-	default:
-	    eprintf("EXPR %i\n", expr->tag);
-	    assert(false && "unknown expr tag\n");
     }
 }
 // SliceOf(Pitch) eval_chord(Context *ctx, ExprIdx idx, Scale *scale, SecIdx sec_idx) {
@@ -449,35 +451,35 @@ ValData eval_expr(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 // }
 Scale eval_scale(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 {
-	assert(ctx->types.ptr[idx].i == intern_simple_ty(TY_SCALE).i);
-	Scale scale = {0};
-	Expr *expr = &ast_get(ctx->pgm, exprs, idx);
-	scale.tonic = eval_expr(ctx, expr->data.scale.tonic, sec_idx).i;
-	// TODO check for bounds
-	scale.octave = eval_expr(ctx, expr->data.scale.octave, sec_idx).i;
-	scale.mode = eval_expr(ctx, expr->data.scale.mode, sec_idx).i;
-	return scale;
+    assert(ctx->types.ptr[idx].i == intern_simple_ty(TY_SCALE).i);
+    Scale scale = {0};
+    Expr *expr = &ast_get(ctx->pgm, exprs, idx);
+    scale.tonic = eval_expr(ctx, expr->data.scale.tonic, sec_idx).i;
+    // TODO check for bounds
+    scale.octave = eval_expr(ctx, expr->data.scale.octave, sec_idx).i;
+    scale.mode = eval_expr(ctx, expr->data.scale.mode, sec_idx).i;
+    return scale;
 }
 
 AbsPitch abspitch_from_scale(Scale *scale, size_t degree)
 {
-	eprintf("tonic %i\n", scale->tonic);
-	eprintf("degree %zu\n", degree);
-	eprintf("octave %i\n", scale->octave);
-	assert(degree <= DIATONIC && degree >= 1 && "degree out of bound");
-	size_t base = scale->tonic + scale->octave * 12;
-	// degree is 1-based
-	size_t degree_shift = degree + scale->mode - 1;
-	// Step is how much we should walk from the tonic
-	size_t step = degree_shift < DIATONIC
-					  ? BASE_MODE[degree_shift] - BASE_MODE[scale->mode]
-					  : 12 + BASE_MODE[degree_shift % DIATONIC] - BASE_MODE[scale->mode];
-	return base + step;
+    // eprintf("tonic %i\n", scale->tonic);
+    // eprintf("degree %zu\n", degree);
+    // eprintf("octave %i\n", scale->octave);
+    assert(degree <= DIATONIC && degree >= 1 && "degree out of bound");
+    size_t base = scale->tonic + scale->octave * 12;
+    // degree is 1-based
+    size_t degree_shift = degree + scale->mode - 1;
+    // Step is how much we should walk from the tonic
+    size_t step = degree_shift < DIATONIC
+	? BASE_MODE[degree_shift] - BASE_MODE[scale->mode]
+	: 12 + BASE_MODE[degree_shift % DIATONIC] - BASE_MODE[scale->mode];
+    return base + step;
 }
 
 AbsPitch resolve_pitch(Scale *scale, Pitch pitch)
 {
-	if (pitch.is_abs)
-		return pitch.data.abs;
-	return abspitch_from_scale(scale, pitch.data.deg.degree) + pitch.data.deg.shift;
+    if (pitch.is_abs)
+	return pitch.data.abs;
+    return abspitch_from_scale(scale, pitch.data.deg.degree) + pitch.data.deg.shift;
 }
