@@ -171,36 +171,20 @@ The syntax of Octave is defined using BNF notation as follows. We assume parenth
     \langle \text{Decl} \rangle &::= \term{Ident} \ \ntext{=} \ \langle \text{Expr} \rangle \\
     \term{Ident} &::= [a-z\_][a-z\_\term{Digit} \rangle]* \\
     \term{Qual} &::= [so\#b]^+\textcolor{syntax_color}{'} \\
-<<<<<<< HEAD
-        \term{Expr} &::= \langle \text{Ident} \rangle \\
-        &\quad | \ \langle \text{Int} \rangle \\
-        &\quad | \ \term{Expr} \ \textcolor{syntax_color}{.}^+ \\
-        &\quad | \ \term{Qual} \ \term{Expr} \\
-        &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
-        &\quad | \ \nt{[} \term{Expr}^* \nt{]} \\
-        &\quad | \ \nt{|} \text{List}\lbrace \term{Decl}\ \nt{,}\rbrace\nt{:} \text{List}\lbrace \term{Decl}\ \nt{,}\rbrace \nt{:} \term{Expr}^* \nt{|} \\
-        &\quad | \ \term{Expr} \ \nt{\&} \ \term{Expr} \\
-        &\quad | \ \term{Expr} \ \nt{+} \ \term{Expr} \\
-        &\quad | \ \term{Expr} \ \nt{-} \ \term{Expr} \\
-        &\quad | \ \term{Expr} \ \nt{*} \ \term{Expr} \\
-        &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
-        &\quad | \ \ntext{\text{if}}\  \term{Expr} \ \ntext{then}\ \term{Expr} \ \ntext{else}\ \term{Expr} \ \ntext{end} \\
-        &\quad | \ \textcolor{syntax_color}{\text{for}}\  \term{Expr} \ \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ \term{Expr}^* \ \ntext{end} \\    
-=======
     \term{Expr} &::= \langle \text{Ident} \rangle \\
     &\quad | \ \langle \text{Int} \rangle \\
     &\quad | \ \term{Expr} \ \textcolor{syntax_color}{.}^+ \\
     &\quad | \ \term{Qual} \ \term{Expr} \\
     &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
     &\quad | \ \nt{[} \term{Expr}^* \nt{]} \\
-    &\quad | \ \nt{|} \text{List\{} \term{Decl}^*, \text{\}} \term{Decl}^* \nt{\rbrace} \nt{:} \term{Expr}^* \nt{|} \\
+    &\quad | \ \nt{|} \text{List}\lbrace \term{Decl}\ \nt{,}\rbrace\nt{:} \text{List}\lbrace \term{Decl}\ \nt{,}\rbrace \nt{:} \term{Expr}^* \nt{|} \\
     &\quad | \ \term{Expr} \ \nt{\&} \ \term{Expr} \\
     &\quad | \ \term{Expr} \ \nt{+} \ \term{Expr} \\
     &\quad | \ \term{Expr} \ \nt{-} \ \term{Expr} \\
     &\quad | \ \term{Expr} \ \nt{*} \ \term{Expr} \\
+    &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
     &\quad | \ \ntext{\text{if}}\  \term{Expr} \ \ntext{then}\ \term{Expr} \ \ntext{else}\ \term{Expr} \ \ntext{end} \\
-    &\quad | \ \textcolor{syntax_color}{\text{for}}\  \term{Expr} \ \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ \term{Expr}^* \ \ntext{end} \\
->>>>>>> 482924d017d872d124821774bcb765a762218eaa
+    &\quad | \ \textcolor{syntax_color}{\text{for}}\  \term{Expr} \ \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ \term{Expr}^* \ \ntext{end} \\    
    \term{Digit} &::= {[0-9]} \\
     \term{Int} &::= {[1-9][0-9]^*}
 \end{align*}
