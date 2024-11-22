@@ -171,20 +171,20 @@ The syntax of Octave is defined using BNF notation as follows. We assume parenth
     \langle \text{Decl} \rangle &::= \term{Ident} \ \ntext{=} \ \langle \text{Expr} \rangle \\
     \term{Ident} &::= [a-z\_][a-z\_\term{Digit} \rangle]* \\
     \term{Qual} &::= [so\#b]^+\textcolor{syntax_color}{'} \\
-    \term{Expr} &::= \langle \text{Ident} \rangle \\
-    &\quad | \ \langle \text{Int} \rangle \\
-    &\quad | \ \term{Expr} \ \textcolor{syntax_color}{.}^+ \\
-    &\quad | \ \term{Qual} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
-    &\quad | \ \nt{[} \term{Expr}^* \nt{]} \\
-    &\quad | \ \nt{|} \nt{\lbrace} \term{Decl}^*, \term{Decl}^* \nt{\rbrace} \nt{:} \term{Expr}^* \nt{|} \\
-    &\quad | \ \term{Expr} \ \nt{\&} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{+} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{-} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{*} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
-    &\quad | \ \ntext{\text{if}}\  \term{Expr} \ \ntext{then}\ \term{Expr} \ \ntext{else}\ \term{Expr} \ \ntext{end} \\
-    &\quad | \ \textcolor{syntax_color}{\text{for}}\  \term{Expr} \ \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ \term{Expr}^* \ \ntext{end} \\
+        \term{Expr} &::= \langle \text{Ident} \rangle \\
+        &\quad | \ \langle \text{Int} \rangle \\
+        &\quad | \ \term{Expr} \ \textcolor{syntax_color}{.}^+ \\
+        &\quad | \ \term{Qual} \ \term{Expr} \\
+        &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
+        &\quad | \ \nt{[} \term{Expr}^* \nt{]} \\
+        &\quad | \ \nt{|} \text{List}\lbrace \term{Decl}\ \nt{,}\rbrace\nt{:} \text{List}\lbrace \term{Decl}\ \nt{,}\rbrace \nt{:} \term{Expr}^* \nt{|} \\
+        &\quad | \ \term{Expr} \ \nt{\&} \ \term{Expr} \\
+        &\quad | \ \term{Expr} \ \nt{+} \ \term{Expr} \\
+        &\quad | \ \term{Expr} \ \nt{-} \ \term{Expr} \\
+        &\quad | \ \term{Expr} \ \nt{*} \ \term{Expr} \\
+        &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
+        &\quad | \ \ntext{\text{if}}\  \term{Expr} \ \ntext{then}\ \term{Expr} \ \ntext{else}\ \term{Expr} \ \ntext{end} \\
+        &\quad | \ \textcolor{syntax_color}{\text{for}}\  \term{Expr} \ \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ \term{Expr}^* \ \ntext{end} \\    
    \term{Digit} &::= {[0-9]} \\
     \term{Int} &::= {[1-9][0-9]^*}
 \end{align*}
@@ -268,6 +268,7 @@ For the Big-Step semantics of the Octave language, we define configurations usin
     \item $\langle \sigma \rangle$: holding state $\sigma$.
 
     \item $\langle pgm \rangle$: holding program $pgm$.
+    
 \end{itemize}
 
 \subsection{Big-Step SOS Helper Functions}
@@ -275,11 +276,26 @@ For the Big-Step semantics of the Octave language, we define configurations usin
 The following functions are used in the Big-Step SOS for Octave, each serving to improve readability and enhance the clarity of the overall semantics. These functions encapsulate specific tasks, making the rules more organized and easier to follow. Importantly, the inclusion of these functions does not change the meaning of the Big-Step rules—they are simply syntactic helpers. Without them, the semantics would remain the same, albeit less readable.
 \begin{itemize}
     \item \textbf{init($\sigma$)}: This function takes a state $\sigma$ as input and returns \texttt{true} if any values in the current state differ from the previous state, and \texttt{false} otherwise. It is useful for ensuring that configurations are applied only when changes in state are detected.
-
 \end{itemize}
 
 \subsection{Big-Step Semantics Rules}
+    \[
+        \frac{
+            \begin{array}{c}
+            \end{array}
+        }{
+            \langle \text{for } e_l \sim< e_u \ \text{loop } e_1 \dots e_n \ \text{end}, \sigma \rangle \Downarrow 
+            \langle \text{for } e_l \sim< e_u \ \text{loop } [e_1 \dots e_n] \ \text{end}, \sigma \rangle
+        }
+        \quad \text{(For-Loop-Desugar)}
+    \]
 
+    \[
+        \frac{}
+            {\langle |d_1 \dots d_n:d_{n+1} \dots d_m:e_1 \dots e_n|, \sigma\rangle \Downarrow \langle |d_1 \dots d_n:d_{n+1} \dots d_m:[e_1 \dots e_n]|, \sigma\rangle} \quad \text{(Section-Desugar)}
+        \]
+    
+    
     \[
     \langle i, \sigma \rangle \Downarrow \langle i \rangle \quad \text{(Int)}
     \]
@@ -297,7 +313,7 @@ The following functions are used in the Big-Step SOS for Octave, each serving to
     \]
 
     \[
-    \frac{\langle e_1, \sigma \rangle \Downarrow \langle v_1 \rangle \dots \langle e_n, \sigma \rangle \Downarrow \langle v_n \rangle}{\langle [e_1 \dots \ e_2], \sigma \rangle \Downarrow \langle l(v_1, \dots, v_n) \rangle} \quad \text{(Expr-List)}
+    \frac{\langle e_1, \sigma \rangle \Downarrow \langle v_1 \rangle \dots \langle e_n, \sigma \rangle \Downarrow \langle v_n \rangle}{\langle [e_1 \dots \ e_2], \sigma \rangle \Downarrow \langle l(v_1 \dots v_n) \rangle} \quad \text{(Expr-List)}
     \]
 
     \[
@@ -309,7 +325,7 @@ The following functions are used in the Big-Step SOS for Octave, each serving to
     \]
 
     \[
-    \frac{\langle a_1, \sigma \rangle \Downarrow \langle b_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle b_2 \rangle}{\langle a_1 == a_2, \sigma \rangle \Downarrow \langle a_1 \oplus a_2 \rangle} \quad \text{(Bool-Eq)}
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle b_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle b_2 \rangle}{\langle a_1 == a_2, \sigma \rangle \Downarrow \langle a_1 =_{int} a_2 \rangle} \quad \text{(Bool-Eq)}
     \]
 
     \[
@@ -333,7 +349,7 @@ The following functions are used in the Big-Step SOS for Octave, each serving to
     \]
 
     \[
-    \frac{\langle a_1, \sigma \rangle \Downarrow \langle b_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle b_2 \rangle}{\langle a_1 != a_2, \sigma \rangle \Downarrow \langle \neg (a_1 \oplus a_2) \rangle} \quad \text{(Bool-Neq)}
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle b_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle b_2 \rangle}{\langle a_1 != a_2, \sigma \rangle \Downarrow \langle a_1 \neq_{int} a_2 \rangle} \quad \text{(Bool-Neq)}
     \]
 
     \[
@@ -347,16 +363,52 @@ The following functions are used in the Big-Step SOS for Octave, each serving to
     \[
     \frac{\langle e_1, \sigma \rangle \Downarrow \langle \text{false} \rangle \quad \langle e_3, \sigma \rangle \Downarrow \langle v \rangle}{\langle \text{if } e_1 \text{ then } e_2 \text{ else } e_3, \sigma \rangle \Downarrow \langle v \rangle} \quad \text{(If-Then-Else-False)}
     \]
+
+    \[
+    \frac
+    {
+        \langle e_1, \sigma \rangle \Downarrow 
+        \langle , \sigma \rangle 
+        \dots \langle e_n, \sigma \rangle \Downarrow \langle v_n \sigma \rangle \\    
+    }
+    {\langle [e_1 \dots e_n] , \sigma  \rangle \Downarrow \langle [v_1
+    v_i=\left\{
+        \begin{aligned}
+            &v_{s1} \dots v_{sn}  &\text{if} \ \Gamma[v_i] = Spread(v_{s1} \dots v_{sn})  \\
+            &v_i &\text{otherwise} 
+        \end{aligned} 
+    \right.
+    \dots v_n] ,\sigma \rangle}
+    \quad \text{(List-Eval)}
+    \]
+    
     
     \[
-    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{true} \quad \langle e, \sigma \rangle \Downarrow \langle v \rangle \quad \langle \text{for}\ e_1+1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow l
-    }{\langle 
-        \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle [v]+\!\!\!+ \ l \rangle} \quad \text{(For-Loop-True)}
+    \frac
+    {\langle e, \sigma \rangle  \Downarrow \langle  l ,\sigma \rangle} 
+    {\langle \$e,\sigma \rangle \Downarrow \langle Spread(l),\sigma \rangle}
+    \quad \text{(List-Unzip)}
     \]
+    
+    
+    \[
+        \frac{
+            \begin{array}{c}
+                \langle e_l < e_u, \sigma \rangle \Downarrow \text{true} \\
+                \langle e, \sigma \rangle \Downarrow \langle l_1, \sigma \rangle \\
+                \langle \text{for}\ e_l+1 \sim< e_u \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow l_2
+            \end{array}
+        }{
+            \langle \text{for } e_l \sim< e_u \ \text{loop } e_1 \dots e_n \ \text{end}, \sigma \rangle \Downarrow 
+            \langle \$[\$l_1, \$l_2] \rangle
+        }
+        \quad \text{(For-Loop-True)}
+    \]
+
 
     \[
     \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{false}}{\langle 
-        \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow [] } \quad \text{(For-Loop-False)}
+        \text{for } e_1 \sim< e_2 \ \text{loop } e_1 \dots e_n \ \text{end}, \sigma \rangle \Downarrow \$[] } \quad \text{(For-Loop-False)}
     \]
     
     \[
@@ -446,9 +498,9 @@ The typing judgments are written as \(\Gamma \vdash e : T\), meaning that in typ
     \item \textbf{List Construction}
     \[
     \frac{
-        \Gamma \vdash e_1 : \tau \quad \Gamma \vdash e_2 : \tau \quad \dots \quad \Gamma \vdash e_n : \tau
+        \Gamma \vdash e_1 : T \dots e_i : T\ | \ Spread(T) \quad \Gamma \vdash e_n : T\ | \ Spread(T)
     }{
-        \Gamma \vdash [e_1, e_2, \dots, e_n] : \texttt{List}[\tau]
+        \Gamma \vdash [e_1 \dots e_n] : \texttt{List}[T]
     } \quad \text{(T-List)}
     \]
     
@@ -464,9 +516,9 @@ The typing judgments are written as \(\Gamma \vdash e : T\), meaning that in typ
     \item \textbf{For Loops}
     \[
     \frac{
-        \Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int} \quad \Gamma \vdash e : T
+        \Gamma \vdash e_1 : \texttt{Int} \quad \Gamma \vdash e_2 : \texttt{Int} \quad \Gamma \vdash e : \texttt{List}[T] 
     }{
-        \Gamma \vdash \text{for } e_1 \sim< e_2 \ \text{loop } e \ \text{end} : \texttt{List}[T]
+        \Gamma \vdash \text{for } e_1 \sim< e_2 \ \text{loop } e_1\dots e_n \ \text{end} : \texttt{Spread}[T]
     } \quad \text{(T-For)}
     \]
     
@@ -532,7 +584,7 @@ The typing judgments are written as \(\Gamma \vdash e : T\), meaning that in typ
     \frac{
         \Gamma \vdash e_1 : \texttt{Event} \quad \Gamma \vdash e_2 : \texttt{Event} \quad \dots \quad \Gamma \vdash e_n : \texttt{Event}
     }{
-        \Gamma \vdash [e_1, e_2, \dots, e_n] : \texttt{Track}
+        \Gamma \vdash [e_1, e_2 \dots e_n] : \texttt{Track}
     } \quad \text{(T-Track)}
     \]
     
