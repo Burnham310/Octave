@@ -166,271 +166,59 @@ The syntax of Octave is defined using BNF notation as follows. We assume parenth
 \newcommand{\nt}[1]{\textcolor{syntax_color}{#1}}
 \newcommand{\ntext}[1]{\textcolor{syntax_color}{\text{#1}}}
 \newcommand{\term}[1]{\langle \text{#1} \rangle}
+\newcommand{\desc}[1]{&[\text{#1}]}
 \begin{align*}
     \term{Pgm} &::= \langle \text{Decl} \rangle^* \\
     \langle \text{Decl} \rangle &::= \term{Ident} \ \ntext{=} \ \langle \text{Expr} \rangle \\
     \term{Ident} &::= [a-z\_][a-z\_\term{Digit} \rangle]* \\
     \term{Qual} &::= [so\#b]^+\textcolor{syntax_color}{'} \\
-    \term{Expr} &::= \langle \text{Ident} \rangle \\
-    &\quad | \ \langle \text{Int} \rangle \\
-    &\quad | \ \term{Expr} \ \textcolor{syntax_color}{.}^+ \\
-    &\quad | \ \term{Qual} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
-    &\quad | \ \nt{[} \term{Expr}^* \nt{]} \\
-    &\quad | \ \nt{|} \text{List}\lbrace \term{Decl}\ \nt{,}\rbrace\nt{:} \text{List}\lbrace \term{Decl}\ \nt{,}\rbrace \nt{:} \term{Expr}^* \nt{|} \\
-    &\quad | \ \term{Expr} \ \nt{\&} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{+} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{-} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{*} \ \term{Expr} \\
-    &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \\
-    &\quad | \ \ntext{\text{if}}\  \term{Expr} \ \ntext{then}\ \term{Expr} \ \ntext{else}\ \term{Expr} \ \ntext{end} \\
-    &\quad | \ \textcolor{syntax_color}{\text{for}}\  \term{Expr} \ \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ \term{Expr}^* \ \ntext{end} \\    
-   \term{Digit} &::= {[0-9]} \\
-    \term{Int} &::= {[1-9][0-9]^*}
+        \term{Expr} &::= \langle \text{Ident} \rangle \\
+        &\quad | \ \term{\text{Int}} \\
+        &\quad | \ \term{Expr} \ \textcolor{syntax_color}{.}^+ \desc{Note} \\ 
+        &\quad | \ \term{Qual} \ \term{Expr} \desc{Qualified Expression}\\
+        &\quad | \ \term{Expr} \ \nt{'} \ \term{Expr} \desc{Qualified Expression}\\
+        &\quad | \ \nt{[} \term{Expr}^* \nt{]} \desc{List}\\
+        &\quad | \ \nt{|} \text{List}\lbrace \term{Decl}\ 
+        \nt{,}\rbrace\nt{:} \text{List}\lbrace \term{Decl}\ 
+        \nt{,}\rbrace \nt{:} \term{Expr}^* \nt{|} \desc{Section}\\
+        &\quad | \ \term{Expr} \ \nt{\&} \ \term{Expr} \desc{Chorus}\\
+        &\quad | \ \term{Expr} \ \nt{+} \ \term{Expr} \desc{Addition}\\
+        &\quad | \ \term{Expr} \ \nt{-} \ \term{Expr} \desc{Subtraction}\\
+        &\quad | \ \term{Expr} \ \nt{*} \ \term{Expr} \desc{Multiplication}\\
+        &\quad | \ \ntext{\text{if}}\  \term{Expr} \ 
+        \ntext{then}\ \term{Expr} \ 
+        \ntext{else}\ \term{Expr} \ \ntext{end} \desc{If-then-else}\\
+        &\quad | \ \textcolor{syntax_color}{\text{for}}\  
+        \term{Expr} \ 
+        \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ 
+        \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ 
+        \term{Expr}^* \ \ntext{end} \desc{for-loop}\\    
+    \term{Digit} &::= {[0-9]} \\
+    \term{Int} &::= {[1-9][0-9]^*} \\
 \end{align*}
-
-
-\section{Big-Step Semantics}
-
-We use Big-Step Structural Operational Semantics (SOS) to define how expressions 
-and statements in Octave evaluate. In Big-Step semantics, we describe how a program configuration (such as a statement and a state) directly produces a final result or state. 
-
-\subsection{Event Constructors for Octave} \label{event constructor}
-
-In Octave, event constructors represent MIDI-compatible events. These events form the building blocks for \texttt{TRACK}, allowing us to create musical sequences with precise control over pitch, duration, volume, tempo, and instrument.
-
-\begin{itemize}
-    \item \textbf{NoteOnEvent}: Represents a key press on a specific pitch with a defined duration.
-    \[
-    \text{NO}(n, d)
-    \]
-    where:
-    \begin{itemize}
-        \item \( n \): Note primitive.
-        \item \( s \): Scale of the note.
-    \end{itemize}
-
-    \item \textbf{NoteOffEvent}: Represents a key release on a specific pitch.
-    \[
-    \text{NOF}(c, s, d)
-    \]
-    where:
-    \begin{itemize}
-        \item \( n \): Note primitive.
-        \item \( s \): Scale of the note.
-    \end{itemize}
-
-    \item \textbf{SetTempoEvent}: Changes the current tempo in beats per minute (BPM).
-    \[
-    \text{ST}(bpm)
-    \]
-    where:
-    \begin{itemize}
-        \item \( bpm \): New tempo in beats per minute.
-    \end{itemize}
-
-    \item \textbf{SetInstrumentEvent}: Sets the instrument using a program change number, as per MIDI specifications.
-    \[
-    \text{SI}(pc)
-    \]
-    where:
-    \begin{itemize}
-        \item \( pc \): Program change number for the instrument (refer to the MIDI instrument list for mappings).
-    \end{itemize}
-
-    \item \textbf{SetVolumeEvent}: Sets the volume to an absolute level.
-    \[
-    \text{VTO}(v)
-    \]
-    where:
-    \begin{itemize}
-        \item \( v \): Volume level (an integer representing the MIDI volume, usually from 0 to 127).
-    \end{itemize}
-
-\end{itemize}
-
-\subsection{Big-Step Configuration for Octave}
-For the Big-Step semantics of the Octave language, we define configurations using a similar comma-and-angle-bracket notation. In Octave, configurations represent various components of musical expressions, tracks, and states, which are needed for transforming Octave code into MIDI-compatible events. The configurations in Octave include expressions, tracks, and states, with some configurations holding only specific values (e.g., volume or instrument settings) without a full state. Here are the configuration types needed for the Big-Step semantics of Octave:
-
-\begin{itemize}    
-    \item $\langle i \rangle$: holding integers $i$.
-    
-    \item $\langle p \rangle$: holding pitch $p$.
-
-    \item $\langle n \rangle$: holding note $n$. 
-
-    \item $\langle e, \sigma \rangle$: grouping an expression $e$ and states $\sigma$. 
-
-    \item $\langle t \rangle$: holding true values $t\ \in \{true, false\}$.
-    
-    \item $\langle s, \sigma \rangle$: grouping statements $s$ and states $\sigma$. 
-        
-    \item $\langle \sigma \rangle$: holding state $\sigma$.
-
-    \item $\langle pgm \rangle$: holding program $pgm$.
-    
-\end{itemize}
-
-\subsection{Big-Step SOS Helper Functions}
-
-The following functions are used in the Big-Step SOS for Octave, each serving to improve readability and enhance the clarity of the overall semantics. These functions encapsulate specific tasks, making the rules more organized and easier to follow. Importantly, the inclusion of these functions does not change the meaning of the Big-Step rules—they are simply syntactic helpers. Without them, the semantics would remain the same, albeit less readable.
-\begin{itemize}
-    \item \textbf{init($\sigma$)}: This function takes a state $\sigma$ as input and returns \texttt{true} if any values in the current state differ from the previous state, and \texttt{false} otherwise. It is useful for ensuring that configurations are applied only when changes in state are detected.
-\end{itemize}
-
-\subsection{Big-Step Semantics Rules}
-    \[
-        \frac{
-            \begin{array}{c}
-            \end{array}
-        }{
-            \langle \text{for } e_l \sim< e_u \ \text{loop } e_1 \dots e_n \ \text{end}, \sigma \rangle \Downarrow 
-            \langle \text{for } e_l \sim< e_u \ \text{loop } [e_1 \dots e_n] \ \text{end}, \sigma \rangle
-        }
-        \quad \text{(For-Loop-Desugar)}
-    \]
-
-    \[
-        \frac{}
-            {\langle |d_1 \dots d_n:d_{n+1} \dots d_m:e_1 \dots e_n|, \sigma\rangle \Downarrow \langle |d_1 \dots d_n:d_{n+1} \dots d_m:[e_1 \dots e_n]|, \sigma\rangle} \quad \text{(Section-Desugar)}
-        \]
-    
-    
-    \[
-    \langle i, \sigma \rangle \Downarrow \langle i \rangle \quad \text{(Int)}
-    \]
-
-    \[
-    \langle p, \sigma \rangle \Downarrow \langle p \rangle \quad \text{(Pitch)}
-    \]
-
-    \[
-    \langle n, \sigma \rangle \Downarrow \langle n \rangle \quad \text{(Note)}
-    \]
-    
-    \[
-    \langle x, \sigma \rangle \Downarrow \langle \sigma{(x)} \rangle \quad \text{(Lookup)}
-    \]
-
-    \[
-    \frac{\langle e_1, \sigma \rangle \Downarrow \langle v_1 \rangle \dots \langle e_n, \sigma \rangle \Downarrow \langle v_n \rangle}{\langle [e_1 \dots \ e_2], \sigma \rangle \Downarrow \langle l(v_1 \dots v_n) \rangle} \quad \text{(Expr-List)}
-    \]
-
-    \[
-    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 + a_2, \sigma \rangle \Downarrow \langle i_1 +_{int} i_2 \rangle} \quad \text{(Int-Add)}
-    \]
-
-    \[
-    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 - a_2, \sigma \rangle \Downarrow \langle i_1 -_{int} i_2 \rangle} \quad \text{(Int-Min)}
-    \]
-
-    \[
-    \frac{\langle a_1, \sigma \rangle \Downarrow \langle b_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle b_2 \rangle}{\langle a_1 == a_2, \sigma \rangle \Downarrow \langle a_1 =_{int} a_2 \rangle} \quad \text{(Bool-Eq)}
-    \]
-
-    \[
-    \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
-    {\langle e_1 < e_2 , \sigma\rangle \Downarrow \langle i_1 <_{int} i_2 , \sigma\rangle}  {} \quad \text{(Bool-Lt)}
-    \]
-    
-    \[
-    \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
-    {\langle e_1 > e_2 , \sigma\rangle \Downarrow \langle i_1 >_{int} i_2 , \sigma\rangle}  {} \quad \text{(Bool-Gt)}
-    \]
-
-    \[
-    \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
-    {\langle e_1 <= e_2 , \sigma\rangle \Downarrow \langle i_1 <=_{int} i_2 , \sigma\rangle}  {} \quad \text{(Bool-Leq)}
-    \]
-    
-    \[
-    \frac{\langle e_1 \Downarrow i_1 \rangle \quad \langle e_2 \Downarrow i_2 \rangle}
-    {\langle e_1 >= e_2 , \sigma\rangle \Downarrow \langle i_1 >=_{int} i_2 , \sigma\rangle}  {} \quad \text{(Bool-Geq)}
-    \]
-
-    \[
-    \frac{\langle a_1, \sigma \rangle \Downarrow \langle b_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle b_2 \rangle}{\langle a_1 != a_2, \sigma \rangle \Downarrow \langle a_1 \neq_{int} a_2 \rangle} \quad \text{(Bool-Neq)}
-    \]
-
-    \[
-    \frac{\langle e, \sigma \rangle \Downarrow \langle l \rangle}{\langle e [.]^m \rangle \Downarrow \langle n(l, m)  \rangle} \quad \text{(Note-Ctor)}
-    \]
-
-    \[
-    \frac{\langle e_1, \sigma \rangle \Downarrow \langle \text{true} \rangle \quad \langle e_2, \sigma \rangle \Downarrow \langle v \rangle}{\langle \text{if } e_1 \text{ then } e_2 \text{ else } e_3, \sigma \rangle \Downarrow \langle v \rangle} \quad \text{(If-Then-Else-True)}
-    \]
-
-    \[
-    \frac{\langle e_1, \sigma \rangle \Downarrow \langle \text{false} \rangle \quad \langle e_3, \sigma \rangle \Downarrow \langle v \rangle}{\langle \text{if } e_1 \text{ then } e_2 \text{ else } e_3, \sigma \rangle \Downarrow \langle v \rangle} \quad \text{(If-Then-Else-False)}
-    \]
-
-    \[
-    \frac
-    {
-        \langle e_1, \sigma \rangle \Downarrow 
-        \langle , \sigma \rangle 
-        \dots \langle e_n, \sigma \rangle \Downarrow \langle v_n \sigma \rangle \\    
-    }
-    {\langle [e_1 \dots e_n] , \sigma  \rangle \Downarrow \langle [v_1
-    v_i=\left\{
-        \begin{aligned}
-            &v_{s1} \dots v_{sn}  &\text{if} \ \Gamma[v_i] = Spread(v_{s1} \dots v_{sn})  \\
-            &v_i &\text{otherwise} 
-        \end{aligned} 
-    \right.
-    \dots v_n] ,\sigma \rangle}
-    \quad \text{(List-Eval)}
-    \]
-    
-    
-    \[
-    \frac
-    {\langle e, \sigma \rangle  \Downarrow \langle  l ,\sigma \rangle} 
-    {\langle \$e,\sigma \rangle \Downarrow \langle Spread(l),\sigma \rangle}
-    \quad \text{(List-Unzip)}
-    \]
-    
-    
-    \[
-        \frac{
-            \begin{array}{c}
-                \langle e_l < e_u, \sigma \rangle \Downarrow \text{true} \\
-                \langle e, \sigma \rangle \Downarrow \langle l_1, \sigma \rangle \\
-                \langle \text{for}\ e_l+1 \sim< e_u \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow l_2
-            \end{array}
-        }{
-            \langle \text{for } e_l \sim< e_u \ \text{loop } e_1 \dots e_n \ \text{end}, \sigma \rangle \Downarrow 
-            \langle \$[\$l_1, \$l_2] \rangle
-        }
-        \quad \text{(For-Loop-True)}
-    \]
-
-
-    \[
-    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{false}}{\langle 
-        \text{for } e_1 \sim< e_2 \ \text{loop } e_1 \dots e_n \ \text{end}, \sigma \rangle \Downarrow \$[] } \quad \text{(For-Loop-False)}
-    \]
-    
-    \[
-    \frac{\sigma'(\text{Volume}) \quad \sigma'(\text{Instrument}) \quad \sigma'(\text{Tempo}) \quad init(\sigma') \Downarrow \langle \text{true} \rangle}{\langle \sigma' \rangle \Downarrow \langle \text{VTO}(\sigma'(\text{Volume}))\ \text{SI}(\sigma'(\text{Instrument}))\ \text{ST}(\sigma'(\text{Tempo})) \rangle} \quad \text{(Cfg-Eval)}
-    \]
-
-    \[
-    \frac{\langle d_1 \dots d_m, \sigma \rangle \Downarrow \langle \sigma' \rangle \quad \langle e_1 \dots e_n, \sigma' \rangle \Downarrow \langle n_1 \dots n_n , \sigma' \rangle}{\langle |d_1 \dots d_n:d_{n+1} \dots d_m:e_1 \dots e_n|, \sigma\rangle \Downarrow \langle 
-    \text{NO}(n, \sigma'(\text{Scale}))\
-    \text{NOF}(n, \sigma'(\text{Scale}))
-    \rangle} \quad \text{(Section)}
-    \]
-
-    \[
-    \frac{\langle a, \sigma \rangle \Downarrow v}{\langle x = a, \sigma \rangle \Downarrow \sigma[v/x]} \quad \text{(Decl)}
-    \]
-
-    \[
-    \frac{\langle d_1, \sigma \rangle \Downarrow \sigma' \dots \langle d_n, \sigma' \rangle \Downarrow \sigma''}{\langle d_1 \dots d_2, \sigma \rangle \Downarrow \sigma''} \quad \text{(Pgm)}
-    \]
-    
-
+List\{\_ ,\} denotes a comma seperated list of items
+\subsection{Syntatic Sugar}
+\begin{align*}
+    &\textcolor{syntax_color}{\text{for}}\  
+        \term{Expr} \ 
+        \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ 
+        \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ 
+        \term{Expr}^* \ \ntext{end} \\
+    &\text{desugars into} \\
+    &\textcolor{syntax_color}{\text{for}}\  
+    \term{Expr} \ 
+    \textcolor{syntax_color}{\sim}{(\nt{<}|\nt{<=})}\ 
+    \term{Expr} \ \textcolor{syntax_color}{\text{loop}}\ 
+    \nt{[}\term{Expr}^*\nt{]} \ \ntext{end} \\
+    &\\
+    &\nt{|} \text{List}\lbrace \term{Decl}\ 
+    \nt{,}\rbrace\nt{:} \text{List}\lbrace \term{Decl}\ 
+    \nt{,}\rbrace \nt{:} \term{Expr}^* \nt{|}\\
+    &\text{desugars into} \\
+    &\nt{|} \text{List}\lbrace \term{Decl}\ 
+    \nt{,}\rbrace\nt{:} \text{List}\lbrace \term{Decl}\ 
+    \nt{,}\rbrace \nt{:} \nt{[}\term{Expr}^*\nt{]} \nt{|}\\
+\end{align*}
 \section{Type System of Octave}
 
 A type system is used to ensure that programs are type-safe, 
@@ -610,5 +398,240 @@ The typing judgments are written as \(\Gamma \vdash e : T\), meaning that in typ
     
 
 \end{itemize}
+\section{Big-Step Semantics}
+
+We use Big-Step Structural Operational Semantics (SOS) to define how expressions 
+and statements in Octave evaluate. In Big-Step semantics, we describe how a program configuration (such as a statement and a state) directly produces a final result or state. 
+
+\subsection{Event Constructors for Octave} \label{event constructor}
+
+In Octave, event constructors represent MIDI-compatible events. These events form the building blocks for \texttt{TRACK}, allowing us to create musical sequences with precise control over pitch, duration, volume, tempo, and instrument.
+
+\begin{itemize}
+    \item \textbf{NoteOnEvent}: Represents a key press on a specific pitch with a defined duration.
+    \[
+    \text{NO}(n, d)
+    \]
+    where:
+    \begin{itemize}
+        \item \( n \): Note primitive.
+        \item \( s \): Scale of the note.
+    \end{itemize}
+
+    \item \textbf{NoteOffEvent}: Represents a key release on a specific pitch.
+    \[
+    \text{NOF}(c, s, d)
+    \]
+    where:
+    \begin{itemize}
+        \item \( n \): Note primitive.
+        \item \( s \): Scale of the note.
+    \end{itemize}
+
+    \item \textbf{SetTempoEvent}: Changes the current tempo in beats per minute (BPM).
+    \[
+    \text{ST}(bpm)
+    \]
+    where:
+    \begin{itemize}
+        \item \( bpm \): New tempo in beats per minute.
+    \end{itemize}
+
+    \item \textbf{SetInstrumentEvent}: Sets the instrument using a program change number, as per MIDI specifications.
+    \[
+    \text{SI}(pc)
+    \]
+    where:
+    \begin{itemize}
+        \item \( pc \): Program change number for the instrument (refer to the MIDI instrument list for mappings).
+    \end{itemize}
+
+    \item \textbf{SetVolumeEvent}: Sets the volume to an absolute level.
+    \[
+    \text{VTO}(v)
+    \]
+    where:
+    \begin{itemize}
+        \item \( v \): Volume level (an integer representing the MIDI volume, usually from 0 to 127).
+    \end{itemize}
+
+\end{itemize}
+
+\subsection{Big-Step Configuration for Octave}
+For the Big-Step semantics of the Octave language, we define configurations using a similar comma-and-angle-bracket notation. In Octave, configurations represent various components of musical expressions, tracks, and states, which are needed for transforming Octave code into MIDI-compatible events. The configurations in Octave include expressions, tracks, and states, with some configurations holding only specific values (e.g., volume or instrument settings) without a full state. Here are the configuration types needed for the Big-Step semantics of Octave:
+
+\begin{itemize}    
+    \item $\langle i \rangle$: holding integers $i$.
+    
+    \item $\langle p \rangle$: holding pitch $p$.
+
+    \item $\langle n \rangle$: holding note $n$. 
+
+    \item $\langle e, \sigma \rangle$: grouping an expression $e$ and states $\sigma$. 
+
+    \item $\langle t \rangle$: holding true values $t\ \in \{true, false\}$.
+    
+    \item $\langle s, \sigma \rangle$: grouping declarations $s$ and states $\sigma$. 
+        
+    \item $\langle \sigma \rangle$: holding state $\sigma$.
+
+    \item $\langle pgm \rangle$: holding program $pgm$.
+\end{itemize}
+\subsection{Primitive Values}
+The values in the operational semantics are often denoted by the symbol $v$. The value in our language includes:
+\begin{itemize}
+    \item Interger $i$
+    \item Boolean $b$
+    \item Pitch $p$, which stores the relative degree to a scale (Integer), and a shift of semitones (Integer).
+    The function $Pitch(degree, shift)$ takes in two integers, and returns a semantic Pitch.
+    \item Note $n$, The function $Note(chord, dots)$ takes in a list of pitches and an integer,
+    and returns a semantic Note.
+    \item List $l$, a homogeneous list of values. 
+    The function $List(v_1\dots v_n)$ takes in values, and return a semantic List
+    \item Spread $l$, a homogeneous list of values. 
+    The function $Spread(l)$ takes in a list, and return a semantic Spread
+\end{itemize}
+\subsection{State}
+The state is denoted by the symbol $\sigma$. It is a map from Identifer (often denoted by $x$) to Value. 
+It has two functions associated to it.
+\begin{itemize}
+    \item lookup: $\sigma[x]$ returns the value given the identifier $x$
+    \item update: $\sigma[v/x]$ update the value to $v$ for the identifier $x$
+\end{itemize}
+\subsection{Big-Step Semantics Rules}
+The left hand side of the $\Downarrow$ is a configuration $\langle e,\sigma\rangle$, holding an expression $e$ and the state $\sigma$. The right hand side of $\Downarrow$ is the value $\langle v \rangle$ evaluated.
+    \[
+    \langle i, \sigma \rangle \Downarrow \langle i \rangle \quad \text{(Int)}
+    \]
+
+    \[
+    \langle p, \sigma \rangle \Downarrow \langle p \rangle \quad \text{(Pitch)}
+    \]
+
+    \[
+    \langle n, \sigma \rangle \Downarrow \langle n \rangle \quad \text{(Note)}
+    \]
+    
+    \[
+    \langle x, \sigma \rangle \Downarrow \langle \sigma{(x)} \rangle \quad \text{(Lookup)}
+    \]
+
+    \[
+    \frac{\langle e_1, \sigma \rangle \Downarrow \langle v_1 \rangle \dots \langle e_n, \sigma \rangle \Downarrow \langle v_n \rangle}{\langle [e_1 \dots \ e_2], \sigma \rangle \Downarrow \langle l(v_1 \dots v_n) \rangle} \quad \text{(Expr-List)}
+    \]
+
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 + a_2, \sigma \rangle \Downarrow \langle i_1 +_{int} i_2 \rangle} \quad \text{(Int-Add)}
+    \]
+
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 - a_2, \sigma \rangle \Downarrow \langle i_1 -_{int} i_2 \rangle} \quad \text{(Int-Min)}
+    \]
+
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 == a_2, \sigma \rangle \Downarrow \langle a_1 =_{int} a_2 \rangle} \quad \text{(Bool-Eq)}
+    \]
+
+
+    \[
+    \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 < a_2, \sigma \rangle \Downarrow \langle a_1 <_{int} a_2 \rangle} \quad \text{(Bool-Lt)}
+    \]
+
+    \[
+        \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 > a_2, \sigma \rangle \Downarrow \langle a_1 >_{int} a_2 \rangle} \quad \text{(Bool-Gt)}
+    \]
+
+    \[
+        \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 <= a_2, \sigma \rangle \Downarrow \langle a_1 \leq_{int} a_2 \rangle} \quad \text{(Bool-Le)}
+    \]
+    \[
+        \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 >= a_2, \sigma \rangle \Downarrow \langle a_1 \geq_{int} a_2 \rangle} \quad \text{(Bool-Ge)}
+    \]
+    \[
+        \frac{\langle a_1, \sigma \rangle \Downarrow \langle i_1 \rangle \quad \langle a_2, \sigma \rangle \Downarrow \langle i_2 \rangle}{\langle a_1 != a_2, \sigma \rangle \Downarrow \langle a_1 \neq_{int} a_2 \rangle} \quad \text{(Bool-Neq)}
+    \]
+    
+
+    \[
+    \frac{\langle e, \sigma \rangle \Downarrow \langle l \rangle}{\langle e [.]^m \rangle \Downarrow \langle n(l, m)  \rangle} \quad \text{(Note)}
+    \]
+
+    \[
+    \frac{\langle e_1, \sigma \rangle \Downarrow \langle \text{true} \rangle \quad \langle e_2, \sigma \rangle \Downarrow \langle v \rangle}{\langle \text{if } e_1 \text{ then } e_2 \text{ else } e_3, \sigma \rangle \Downarrow \langle v \rangle} \quad \text{(If-Then-Else-True)}
+    \]
+
+    \[
+    \frac{\langle e_1, \sigma \rangle \Downarrow \langle \text{false} \rangle \quad \langle e_3, \sigma \rangle \Downarrow \langle v \rangle}{\langle \text{if } e_1 \text{ then } e_2 \text{ else } e_3, \sigma \rangle \Downarrow \langle v \rangle} \quad \text{(If-Then-Else-False)}
+    \]
+
+    \[
+    \frac
+    {
+        \langle e_1, \sigma \rangle \Downarrow 
+        \langle , \sigma \rangle 
+        \dots \langle e_n, \sigma \rangle \Downarrow \langle v_n \sigma \rangle \\    
+    }
+    {\langle [e_1 \dots e_n] , \sigma  \rangle \Downarrow \langle [v_1
+    \ (\left\{
+        \begin{aligned}
+            &v_{k1} \dots v_{km}  &\text{if} \ \sigma[v_k] = Spread(v_{k1} \dots v_{sm})  \\
+            &v_k &\text{otherwise} 
+        \end{aligned} 
+    \right.)
+    \dots v_n] ,\sigma \rangle}
+    \quad \text{(List-Eval)}
+    \]
+    
+    
+    \[
+    \frac
+    {\langle e, \sigma \rangle  \Downarrow \langle l:List ,\sigma \rangle} 
+    {\langle \$e,\sigma \rangle \Downarrow \langle Spread(l),\sigma \rangle}
+    \quad \text{(List-Unzip)}
+    \]
+    
+    
+    \[
+        \frac{
+            \begin{array}{c}
+                \langle e_l < e_u, \sigma \rangle \Downarrow \text{true} \\
+                \langle e, \sigma \rangle \Downarrow \langle l_1, \sigma \rangle \\
+                \langle e,\sigma\rangle \Downarrow \langle l_1\rangle \ \langle \text{for}\ e_l+1 \sim< e_u \ \text{loop } e \ \text{end}, \sigma \rangle \Downarrow \langle l_2 \rangle
+            \end{array}
+        }{
+            \langle \text{for } e_l \sim< e_u \ \text{loop } e\ \text{end}, \sigma \rangle \Downarrow 
+            \langle \$[\$l_1, \$l_2] \rangle
+        }
+        \quad \text{(For-Loop-True)}
+    \]
+
+
+    \[
+    \frac{\langle e_1 < e_2, \sigma \rangle \Downarrow \text{false}}{\langle 
+        \text{for } e_1 \sim< e_2 \ \text{loop } e_1 \dots e_n \ \text{end}, \sigma \rangle \Downarrow \$[] } \quad \text{(For-Loop-False)}
+    \]
+    
+    \[
+    \frac{\sigma'(\text{Volume}) \quad \sigma'(\text{Instrument}) \quad \sigma'(\text{Tempo}) \quad init(\sigma') \Downarrow \langle \text{true} \rangle}{\langle \sigma' \rangle \Downarrow \langle \text{VTO}(\sigma'(\text{Volume}))\ \text{SI}(\sigma'(\text{Instrument}))\ \text{ST}(\sigma'(\text{Tempo})) \rangle} \quad \text{(Cfg-Eval)}
+    \]
+
+    \[
+    \frac{\langle d_1 \dots d_m, \sigma \rangle \Downarrow \langle \sigma' \rangle \quad \langle e_1 \dots e_n, \sigma' \rangle \Downarrow \langle n_1 \dots n_n , \sigma' \rangle}{\langle |d_1 \dots d_n:d_{n+1} \dots d_m:e_1 \dots e_n|, \sigma\rangle \Downarrow \langle 
+    \text{NO}(n, \sigma'(\text{Scale}))\
+    \text{NOF}(n, \sigma'(\text{Scale}))
+    \rangle} \quad \text{(Section)}
+    \]
+    \\
+    Here, the left hand side of $\Downarrow$ is a declaration, and right hand side is the state.
+    \[
+    \frac{\langle a, \sigma \rangle \Downarrow v}{\langle x = a, \sigma \rangle \Downarrow \sigma[v/x]} \quad \text{(Decl)}
+    \]
+    Here, the left hand side of $\Downarrow$ is a list of declarations, and right hand side is the evaluated section "main".
+    \[
+    \frac{\langle d_1, \sigma \rangle \Downarrow \sigma' \dots \langle d_n, \sigma' \rangle \Downarrow \sigma''}{\langle d_1 \dots d_2, \sigma \rangle \Downarrow \sigma''["main"]} \quad \text{(Pgm)}
+    \]
+    
+
+
 
 \end{document}
