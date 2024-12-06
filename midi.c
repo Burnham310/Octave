@@ -64,7 +64,7 @@ static void write_var_len(unsigned int value)
 
 static int note_length_f(MidiNoteLength *nl)
 {
-    int note_length_f = 400;
+    int note_length_f = 400; // Base note length
 
     switch (nl->type)
     {
@@ -74,11 +74,10 @@ static int note_length_f(MidiNoteLength *nl)
         break;
 
     case NL_Int:
-        // TODO
-        for (size_t i = 0; i < nl->value.fix_length; i++)
-            note_length_f /= 2;
-        break;
+        midi_assert(nl->value.int_length > 0 && nl->value.int_length <= 100, midi_eprintf("NL_Int value must be between 1 and 100"));
+        note_length_f = (note_length_f * nl->value.int_length) / 100;
     }
+
     return note_length_f;
 }
 

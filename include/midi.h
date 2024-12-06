@@ -21,6 +21,9 @@ typedef enum
 #define NLI(length) \
     (MidiNoteLength) { .type = NL_Int, .value = length }
 
+#define NL(length) \
+    (MidiNoteLength) { .type = length >= 100 ? NL_Int : NL_Fixed, .value = length >= 100 ? length - 100 : length }
+
 union MidiNoteLength
 {
     MidiNoteLengthFix fix_length;

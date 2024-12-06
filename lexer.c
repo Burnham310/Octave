@@ -98,6 +98,8 @@ const char *tk_str(TokenType ty)
 		return "$";
 	case '@':
 		return "@";
+	case '!':
+		return "!";
 	default:
 		return "TK_UNKNOWN";
 	}
@@ -348,6 +350,26 @@ Token match_num(Lexer *self)
 // 	RETURN_TK(exp_token_type);
 // }
 
+Token match_dsur(Lexer *self)
+{
+	Token tk;
+	char c = peek_char(self);
+	if (c != '!')
+	{
+		RETURN_TK(TK_NULL);
+	}
+	next_char(self);
+
+	Token d_surgar = match_num(self);
+
+	assert(d_surgar.type != TK_NULL);
+
+	tk.type = TK_DOTS;
+	tk.data.integer = d_surgar.data.integer + 100;
+	tk.off = self->off;
+	return tk;
+}
+
 Token match_ident(Lexer *self)
 {
 	Token tk = {.off = self->off};
@@ -460,6 +482,7 @@ Token match_eq(Lexer *self)
 }
 typedef Token (*match_fn)(Lexer *);
 match_fn fns[] = {
+	match_dsur,
 	match_dots,
 	match_eq,
 	match_qualifier,

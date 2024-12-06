@@ -85,13 +85,13 @@ extern int main(const int argc, char **argv)
     for (size_t ti = 0; ti < tracks.len; ++ti)
     {
         Track *track = &tracks.ptr[ti];
-	
+
         // printf("instr %i\n", track->config.instr);
         add_midi_event(ti, SetInstrumentEvent(track->config.instr));
         add_midi_event(GLOBAL, SetTempoEvent(track->config.bpm));
 
         size_t label_c = 0;
-	eprintf("note size %zu\n", track->notes.size);
+        eprintf("note size %zu\n", track->notes.size);
         for (size_t ni = 0; ni < track->notes.size; ++ni)
         {
             if (label_c < track->labels.len && track->labels.ptr[label_c].note_pos == ni)
@@ -118,17 +118,18 @@ extern int main(const int argc, char **argv)
             Note note = track->notes.items[ni];
             SliceOf(Pitch) pitches = note.chord;
             size_t dots = note.dots;
-	    if (dots == 0) continue;
+            if (dots == 0)
+                continue;
             if (pitches.len == 0)
             {
-                add_midi_event(ti, PauseNoteEvent(NLF(dots)));
+                add_midi_event(ti, PauseNoteEvent(NL(dots)));
                 continue;
             }
 
             MidiNote midi_notes[pitches.len];
             for (size_t mi = 0; mi < pitches.len; ++mi)
             {
-                midi_notes[mi].length = NLF(dots);
+                midi_notes[mi].length = NL(dots);
                 midi_notes[mi].pitch = resolve_pitch(&track->config.scale, pitches.ptr[mi]);
                 midi_notes[mi].velocity = DEFAULT_VELOCITY;
             }
