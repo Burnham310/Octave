@@ -1,7 +1,7 @@
 # Octave Reimaged
 Reference: 
   - [MIDI Specification](https://www.freqsound.com/SIRA/MIDI%20Specification.pdf)
-Currently, the languag is able to produce **static** midi files. This is not particular interesting. What I want is the ability to interpret a `oct` file and generate sounds n real time. This makes the following possible:
+Currently, the languag is able to produce **static** midi files. This is not particular interesting. What I want is the ability to interpret an `Octave` program and generate sounds in real time. This makes the following possible:
   - Infinite sequence of sounds that could change according the environment.
   - Being embedded inside another program (e.g. a game), and passing values back and forth
 
@@ -19,14 +19,14 @@ Format 1 is composed of **1 or more** tracks that will be played simultaneously.
 
 Suppose the backend is rewritten to generate format 0, we still need to pipe the output to a MIDI synthesizer in order to generate actual sound (currently using [timidity](https://sourceforge.net/projects/timidity/)). This creates extra hustle if we want to embed Octave in a game. We could create our own MIDI backend, as well as other backends to directly generate WAV.
 ## Interpreter
-Currently, an Octave program is evaulated by doing simple AST interpreting. This is suboptimial if want to generate MIDI in **real time**. Here is few options:
+Currently, an Octave program is evaulated by doing simple AST interpreting. This is suboptimial if want to generate MIDI in **real time**. Here are a few options:
   - Transpile it into another language, for example `C`. This has a lot of overhead, but is probably the easiest and fastest. It also makes it easy to implement intrinsics in C. This will not allow us to port our compiler to WebAssembly.
   - Our own bytecode and VM, probably stack-based.
   - A JIT compiler, maybe together with CIR.
 ### Garbage Collector
 Array is a pretty fundamental structure in Octave, and even a simple example contains a lot of dynamically growing array. Our currently implementation does NOt keep track of unused array at all, and does not free anything.
 ### Evaulation
-Here is a simple example with guitar and bass.
+Here is a simple example with two instruments.
 ```
 guitar = | :scale=/D 3 MAJ/, bpm=140, instrument=27: 
     1... oo'2... o'7... o'5...
@@ -40,7 +40,7 @@ bass = | :scale=/D 2 MAJ/, bpm=140, instrument=34:
 |
 main = [guitar bass]
 ```
-To evaluate this progrom, we starts from `main` (even though it is defined the last). `main` consists two concurrent section, which needs to be evaulated `concurrently`:
+To evaluate this progrom, we starts from `main` (even though it is defined the last). `main` consists two concurrent section, which needs to be evaulated "concurrently":
 - We evaluate the first note of `bass` and `guitar`. The resulted the MIDI events are sent.
 - We evaluate the second note of `bass` and `guitar`. The notes from `guitar` shall come first. The note from `bass` is halted.
 - We evaluate the third note from ONLY `guitar`. The note from `guitar` and `bass` now should be sent together.
@@ -49,4 +49,4 @@ To evaluate this progrom, we starts from `main` (even though it is defined the l
 ### Ast Internals
 
 Currently, the ast nodes are all allocated within a dynamic array. We could instead use a arena allocator (segmented array), where each resize does NOT realloc the original buffer, but instead allocate another buffer of the same size, creating a linked list of buffers.
-This makes pointer stable, so we can directly uses pointer instead of array indexes.
+This makes pointer stable, so we can directly uses pointer instead of array indexes. 
