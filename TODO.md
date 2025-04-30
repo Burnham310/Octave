@@ -25,8 +25,26 @@ Currently, an Octave program is evaulated by doing simple AST interpreting. This
   - A JIT compiler, maybe together with CIR.
 ### Garbage Collector
 Array is a pretty fundamental structure in Octave, and even a simple example contains a lot of dynamically growing array. Our currently implementation does NOt keep track of unused array at all, and does not free anything.
-## Language Feature
-Currently, the langauge
+### Evaulation
+Here is a simple example with guitar and bass.
+```
+guitar = | :scale=/D 3 MAJ/, bpm=140, instrument=27: 
+    1... oo'2... o'7... o'5...
+| // Guitar END
+
+
+// Bass section configuration
+
+bass = | :scale=/D 2 MAJ/, bpm=140, instrument=34:  
+    1.. 3..
+|
+main = [guitar bass]
+```
+To evaluate this progrom, we starts from `main` (even though it is defined the last). `main` consists two concurrent section, which needs to be evaulated `concurrently`:
+- We evaluate the first note of `bass` and `guitar`. The resulted the MIDI events are sent.
+- We evaluate the second note of `bass` and `guitar`. The notes from `guitar` shall come first. The note from `bass` is halted.
+- We evaluate the third note from ONLY `guitar`. The note from `guitar` and `bass` now should be sent together.
+- ...
 ## Other
 ### Ast Internals
 
