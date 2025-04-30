@@ -1,6 +1,7 @@
 # Octave Reimaged
-Reference: 
+#### Reference: 
   - [MIDI Specification](https://www.freqsound.com/SIRA/MIDI%20Specification.pdf)
+  - [Synthesis](https://hernandis.me/2019/10/20/haskell-infinite-structures.html)
 
 
 Currently, the languag is able to produce **static** midi files. This is not particular interesting. What I want is the ability to interpret an `Octave` program and generate sounds in real time. This makes the following possible:
@@ -47,6 +48,8 @@ To evaluate this progrom, we starts from `main` (even though it is defined the l
 - We evaluate the second note of `bass` and `guitar`. The notes from `guitar` shall come first. The note from `bass` is halted.
 - We evaluate the third note from ONLY `guitar`. The note from `guitar` and `bass` now should be sent together.
 - ...
+#### Lazy Evaluation?
+The aforementioned semantics look like [non-strict evaulation](https://wiki.haskell.org/Lazy_evaluation). The idea of [infinite data structure](https://hernandis.me/2019/10/20/haskell-infinite-structures.html) seems to be a good fit for the purpose of Octave. The downside being, it requires complete rework of the interpreter, and induces a lot of overhead, even with optimization.
 ## Other
 ### Ast Internals
 
