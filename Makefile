@@ -5,7 +5,7 @@ OBJ = $(patsubst %.c, $(OBJ_DIR)/%.o, $(SRC))
 OUT_DIR = bin
 ENTRY_DIR = entry
 
-CC = clang
+CC = cc
 INCLUDES = -Iinclude
 CFLAGS += -g -Wall -Wextra -Wno-switch -Wno-missing-braces
 
