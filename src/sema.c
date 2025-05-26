@@ -110,8 +110,7 @@ bool sema_analy_pgm(Context *ctx)
 	    return false;
     }
     ssize_t main_i = hmgeti(ctx->pgm_env, ctx->builtin_syms.main);
-    if (main_i  < 0)
-    {
+    if (main_i < 0) {
 	report(ctx->lexer, 0, "section main is undefiend");
 	return false;
     }

@@ -84,27 +84,21 @@ extern TypeIntern ty_pool;
 #define intern_simple_ty(ty_kind) intern_ty(simple_ty(ty_kind))
 #define lookup_ty(ty_i) (ty_pool[ty_i.i].key)
 
-/*
- * Here is relationship between Int, AbsPitch, Pitch, Degree, and Note
- * Note 	:= ([]Pitch, Int)
- * Pitch 	:= AbsPitch | Degree 
- * AbsPitch 	:= Int
- * Degree	:= (Int, Int)
- * 
- * Each type corresponds to one thing in ValData
- * INT -> int i
- * ABS_PITCH -> int i
- * PITCH -> Pitch pitch
- * DEGREE -> Degree deg
- * NOTE -> Note
- * SCALE -> Scale
- * MODE -> Mode
- * SEC -> Track sec
- * CHORUS -> SliceOf(SecIdx) chorus
- * FOR -> SliceOf(Note) notes
- * BOOL -> int i
- * Here the interal data structure represening `Value` in our language
- */
+
+// Each type corresponds to one thing in ValData
+// INT -> int i
+// ABS_PITCH -> int i
+// PITCH -> Pitch pitch
+// DEGREE -> Degree deg
+// CHORD -> SliceOf(Pitch)
+// NOTE -> Note
+// SCALE -> Scale
+// MODE -> Mode
+// SEC -> Track sec
+// CHORUS -> SliceOf(SecIdx) chorus
+// FOR -> SliceOf(Note) notes
+// BOOL -> int i
+// Here the interal data structure represening `Value` in our language
 const char *type_to_str(Type ty);
 typedef struct {
     u8 degree;
