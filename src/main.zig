@@ -126,7 +126,7 @@ pub fn main() !void  {
         std.io.getStdOut() else try cwd.createFileZ(opts.output_path, .{});
     defer output_f.close();
 
-    std.log.info("lexing {s} {s} into {s}", .{@tagName(opts.compile_stage), opts.input_paths[0], opts.output_path});
+    std.log.info("Invoking {s} {s} into {s}", .{@tagName(opts.compile_stage), opts.input_paths[0], opts.output_path});
 
     // ----- Lexing -----
     const buf = try input_f.readToEndAlloc(alloc, 1024 * 1024);

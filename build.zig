@@ -7,6 +7,7 @@ fn run_compiler_on_dir(
     b: *Build,
     compiler: *Step.Compile,
     dir_path: []const u8,
+    prefix_filter: ?[]const u8,
     step_opt_name: []const u8,
     step_opt_desc: []const u8,
     addtional_flags: []const []const u8) *Step {
@@ -17,6 +18,9 @@ fn run_compiler_on_dir(
     var test_dir_it = test_dir.iterate();
     while (test_dir_it.next() catch unreachable) |file| {
         if (file.kind != .file) continue;
+        if (prefix_filter) |prefix| {
+            if (!std.mem.startsWith(u8, file.name, prefix)) continue;
+        }
         const file_path = test_path.joinString(b.allocator, file.name) catch unreachable;
         const run_step = Step.Run.create(b, "");
         run_step.producer = compiler;
@@ -54,17 +58,16 @@ pub fn build(b: *Build) void {
             "-g", "-Wall", "-Wextra", "-Wno-switch", "-Wno-missing-braces",
         }
     });
-    // octave_compiler.addCSourceFile(.{
-    //     .file = b.path("entry/main.c"),
-    // });
     octave_compiler.addIncludePath(b.path("src"));
     octave_compiler.linkLibC();
     b.installArtifact(octave_compiler);
 
-    _ = run_compiler_on_dir(b, octave_compiler, "test", "run-examples", "Run the examples, only does Semantic Anaylsis",
+    const prefix_filter = b.option([]const u8, "prefix-filter", "filter out tests/examples to run with the provided prefix");
+
+    _ = run_compiler_on_dir(b, octave_compiler, "test", prefix_filter, "run-examples", "Run the examples, only does Semantic Anaylsis",
         &.{ "-o", "-", "--stage", "Sema" });
 
-    _ = run_compiler_on_dir(b, octave_compiler, "test/lexer", "run-lexer-tests", "Run the lexer tests",
+    _ = run_compiler_on_dir(b, octave_compiler, "test/lexer", prefix_filter, "run-lexer-tests", "Run the lexer tests",
         &.{ "-o", "-", "--stage", "Lexing" });
 
     
