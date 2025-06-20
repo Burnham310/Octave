@@ -118,7 +118,6 @@ bool sema_analy_pgm(Context *ctx)
     Type main_type = ctx->pgm_env[main_i].value.ty;
     Type sec = intern_simple_ty(TY_SEC);
     Type chorus = intern_ty(((TypeFull) {.ty = TY_LIST, .more = sec}));
-    eprintf("main %s\n", type_to_str(lookup_ty(main_type).more));
     if (main_type.i != sec.i && main_type.i != chorus.i) {
 	report(ctx->lexer, 0, "main must be either section or a list of section, got %s", type_to_str(main_type));
 	return false;
@@ -401,7 +400,6 @@ Type sema_analy_expr_impl(Context *ctx, ExprIdx idx, SecIdx sec_idx)
 	case EXPR_SEC:
 	    return sema_analy_sec(ctx, expr->data.sec);
 	case EXPR_INFIX:
-	    // eprintf("sub_t %i\n", ast_get(ctx->pgm, exprs, expr->data.infix.lhs).tag);
 	    sub_t = sema_analy_expr(ctx, expr->data.infix.lhs, sec_idx);
 	    sub_t2 = sema_analy_expr(ctx, expr->data.infix.rhs, sec_idx);
 	    return sema_analy_infix(ctx, idx, sec_idx, expr->data.infix.op, sub_t, sub_t2);

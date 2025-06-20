@@ -65,7 +65,7 @@ pub fn build(b: *Build) void {
     const prefix_filter = b.option([]const u8, "prefix-filter", "filter out tests/examples to run with the provided prefix");
 
     _ = run_compiler_on_dir(b, octave_compiler, "test", prefix_filter, "run-examples", "Run the examples, only does Semantic Anaylsis",
-        &.{ "-o", "-", "--stage", "Sema" });
+        &.{ "-o", "-", "--stage", "Compiling" });
 
     _ = run_compiler_on_dir(b, octave_compiler, "test/lexer", prefix_filter, "run-lexer-tests", "Run the lexer tests",
         &.{ "-o", "-", "--stage", "Lexing" });
