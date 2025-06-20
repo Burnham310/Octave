@@ -1,7 +1,34 @@
 const std = @import("std");
 
+const Build = std.Build;
+const Step = Build.Step;
 
-pub fn build(b: *std.Build) void {
+fn run_compiler_on_dir(
+    b: *Build,
+    compiler: *Step.Compile,
+    dir_path: []const u8,
+    step_opt_name: []const u8,
+    step_opt_desc: []const u8,
+    addtional_flags: []const []const u8) *Step {
+
+    const run_examples_step = b.step(step_opt_name, step_opt_desc); 
+    const test_path = b.path(dir_path).getPath3(b, null);
+    const test_dir = test_path.openDir(".", .{.iterate = true}) catch unreachable;
+    var test_dir_it = test_dir.iterate();
+    while (test_dir_it.next() catch unreachable) |file| {
+        if (file.kind != .file) continue;
+        const file_path = test_path.joinString(b.allocator, file.name) catch unreachable;
+        const run_step = Step.Run.create(b, "");
+        run_step.producer = compiler;
+        run_step.addArtifactArg(compiler);
+        run_step.addArg(file_path);
+        run_step.addArgs(addtional_flags);
+        run_examples_step.dependOn(&run_step.step);
+    }
+    return run_examples_step;
+}
+
+pub fn build(b: *Build) void {
     const target = b.resolveTargetQuery(.{});
     const opt = b.standardOptimizeOption(.{});
 
@@ -32,6 +59,13 @@ pub fn build(b: *std.Build) void {
     // });
     octave_compiler.addIncludePath(b.path("src"));
     octave_compiler.linkLibC();
-
     b.installArtifact(octave_compiler);
+
+    _ = run_compiler_on_dir(b, octave_compiler, "test", "run-examples", "Run the examples, only does Semantic Anaylsis",
+        &.{ "-o", "-", "--stage", "Sema" });
+
+    _ = run_compiler_on_dir(b, octave_compiler, "test/lexer", "run-lexer-tests", "Run the lexer tests",
+        &.{ "-o", "-", "--stage", "Lexing" });
+
+    
 }
