@@ -1,13 +1,9 @@
-const c = @cImport({
-    @cInclude("lexer.h");
-    @cInclude("ast.h");
-    @cInclude("parser.h");
-    @cInclude("backend.h");
-    @cInclude("utils.h");
-    @cInclude("sema.h");
-});
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+
+const c = @import("c.zig");
+
+const Eval = @import("evaluator.zig");
 
 fn usage(prog_name: []const u8) void {
     std.debug.print("Usage: {s} <input_file> -o <output_file>\n", .{prog_name});
@@ -27,7 +23,7 @@ const CompileStage = enum {
     Lexing,
     Parsing,
     Sema,
-    Compile,
+    Compiling,
 
     pub fn parse(str: []const u8) ?CompileStage {
         const fields = @typeInfo(CompileStage).@"enum".fields;
@@ -42,13 +38,11 @@ const CompileStage = enum {
     }
 };
 
-
-
 const Options = struct {
     input_paths: [][:0]const u8 = &.{},
     output_path: [:0]const u8 = "",
     
-    compile_stage: CompileStage = .Compile,
+    compile_stage: CompileStage = .Compiling,
     
     pub fn init(args: *std.process.ArgIterator, a: std.mem.Allocator) !Options {
         var input_paths = std.ArrayList([:0]const u8).init(a); 
@@ -76,7 +70,7 @@ const Options = struct {
                 };
                 compile_stage = CompileStage.parse(stage_str) orelse {
                     std.log.err("Expects <stage> after `--stage`, found `{s}`", .{stage_str});
-                    std.log.info("<stage> should be one of Lexing|Parsing|Sema|Compile", .{});
+                    std.log.info("<stage> should be one of Lexing|Parsing|Sema|Compiling", .{});
                     return Error.InvalidCliArg;
                 };
             } else {
@@ -99,7 +93,7 @@ const Options = struct {
                 std.log.info("<output-path> not set, defaults to `a.out`", .{});
                 break :blk "a.out";
             },
-            .compile_stage = compile_stage orelse CompileStage.Compile,
+            .compile_stage = compile_stage orelse CompileStage.Compiling,
         };
     }
 };
@@ -144,17 +138,22 @@ pub fn main() !void  {
     if (!pgm.success) {
         return Error.SyntaxError;
     }
-    if (opts.compile_stage.after(.Parsing)) return;
+    if (opts.compile_stage == .Parsing) return;
     // ----- Sema -----
     var ctx: c.Context = undefined;
     c.sema_analy(&pgm, &lexer, &ctx);
     if (!ctx.success) {
         return Error.TypeMismatch;
     }
-    if (opts.compile_stage.after(.Sema)) return;
+    if (opts.compile_stage == .Sema) return;
     // ----- Compile -----
-    std.log.err("Compile stage not supported!", .{});
-    return Error.InvalidCliArg;
+    //std.log.err("Compiling stage not supported!", .{});
+    //return Error.InvalidCliArg;
+    var eval = Eval.Evaulator.init(&ctx, alloc);
+    eval.start();
 
+    while (eval.get()) |note| {
+        std.log.debug("note {}", .{note});
+    }
 }
 

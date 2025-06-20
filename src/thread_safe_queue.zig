@@ -12,7 +12,7 @@ pub fn ThreadSafeQueue(comptime T: type) type {
         tail: u32,
         count: u32, // The actual size
         a: Allocator,
-        pub fn initCapacity(cap: u32, a: Allocator) ThreadSafeQueue {
+        pub fn initCapacity(cap: u32, a: Allocator) Self {
             return .{
                 .data = a.alloc(T, cap) catch unreachable,
                 .mtx = .{},
@@ -23,7 +23,7 @@ pub fn ThreadSafeQueue(comptime T: type) type {
                 .a = a,
             };
         }
-        fn resize(self: *Self) void {
+        fn resize(self: *Self) u32 {
             const old_data = self.data;
             self.data = self.a.alloc(T, 2 * old_data.len) catch unreachable;
             var new_i: u32 = 0;
@@ -31,19 +31,19 @@ pub fn ThreadSafeQueue(comptime T: type) type {
             while (new_i < self.count) {
                 self.data[new_i] = old_data[old_i];
                 new_i += 1;
-                old_i = (old_i + 1) % old_data.count;
+                old_i = (old_i + 1) % @as(u32, @intCast(old_data.len));
             }
             self.a.free(old_data);
 
             self.head = 0;
             self.tail = new_i;
-            return self.data.len;
+            return @intCast(self.data.len);
         }
         pub fn push(self: *Self, el: T) void {
             self.mtx.lock();
-            if (self.data.len == self.count) self.resize();
+            if (self.data.len == self.count) _ = self.resize();
             self.data[self.tail] = el;
-            self.tail = (self.tail + 1) % self.data.len;
+            self.tail = (self.tail + 1) % @as(u32, @intCast(self.data.len));
             self.count += 1;
             self.mtx.unlock();
 
@@ -55,8 +55,8 @@ pub fn ThreadSafeQueue(comptime T: type) type {
             defer self.mtx.unlock();
             while (self.count == 0)
                 self.cond.wait(&self.mtx);
-            const head = self.top;
-            self.top = (self.top + 1) % self.data.len;
+            const head = self.head;
+            self.head = (self.head + 1) % @as(u32, @intCast(self.data.len));
             self.count -= 1;
             return self.data[head];
         }
