@@ -12,7 +12,7 @@ pub fn ThreadSafeQueue(comptime T: type) type {
         tail: u32,
         count: u32, // The actual size
         a: Allocator,
-        pub fn initCapacity(cap: u32, a: Allocator) ThreadSafeQueue {
+        pub fn initCapacity(cap: u32, a: Allocator) Self {
             return .{
                 .data = a.alloc(T, cap) catch unreachable,
                 .mtx = .{},
@@ -55,8 +55,8 @@ pub fn ThreadSafeQueue(comptime T: type) type {
             defer self.mtx.unlock();
             while (self.count == 0)
                 self.cond.wait(&self.mtx);
-            const head = self.top;
-            self.top = (self.top + 1) % self.data.len;
+            const head = self.head;
+            self.head = (self.head + 1) % @as(u32, @intCast(self.data.len));
             self.count -= 1;
             return self.data[head];
         }

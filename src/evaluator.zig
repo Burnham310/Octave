@@ -1,8 +1,6 @@
 const std = @import("std");
 const assert = std.debug.assert;
-const c = @cImport({
-    @cInclude("sema.h");
-});
+const c = @import("c.zig");
 
 const ThreadSafeQueue = @import("thread_safe_queue.zig").ThreadSafeQueue;
 const Allocator = std.mem.Allocator;
@@ -12,6 +10,7 @@ pub const Evaulator = struct {
     ctx: *c.Context,
     queue: ThreadSafeQueue(Note),
     worker: std.Thread,
+
     pub fn init(ctx: *c.Context, a: Allocator) Evaulator {
         return .{
             .ctx = ctx,
@@ -19,9 +18,11 @@ pub const Evaulator = struct {
             .worker = undefined,
         };
     }
-    pub fn start(self: Evaulator) void {
-        self.worker = std.Thread.spawn(.{}, eval, self.ctx, &self.queue);
+
+    pub fn start(self: *Evaulator) void {
+        self.worker = std.Thread.spawn(.{}, eval, .{ self.ctx, &self.queue } ) catch undefined; // TODO: handle error
     }
+
     fn eval(ctx: *c.Context, queue: *ThreadSafeQueue(Note)) void {
         const pgm: *c.Pgm = ctx.pgm.?;
         _ = queue;
@@ -30,13 +31,27 @@ pub const Evaulator = struct {
         // The section cannot contain any declaration.
         // It cannot contain any chord, but only single notes
         const formals = pgm.formals.ptr[0..pgm.formals.len];
+        const exprs = pgm.exprs.ptr[0..pgm.exprs.len];
+        const secs = pgm.secs.ptr[0..pgm.secs.len];
         assert(formals.len == 0);
 
         const main_formal = formals[0];
         assert(main_formal.ident == ctx.builtin_syms.main);
 
+        const expr = exprs[@intCast(main_formal.expr)];
+        assert(expr.tag == c.EXPR_SEC);
+        
+        const sec = secs[@intCast(expr.data.sec)];
+        
+        assert(sec.vars.len == 0);
+        assert(sec.config.len == 0);
+        assert(sec.labels.len == 0);
+
+        const note_exprs = sec.note_exprs.ptr[0..sec.note_exprs.len];
+        _ = note_exprs;
     }
-    pub fn get(self: Evaulator) Note {
+
+    pub fn get(self: *Evaulator) Note {
         return self.queue.pull();
     }
 };
