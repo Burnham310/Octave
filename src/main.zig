@@ -4,6 +4,10 @@ const Allocator = std.mem.Allocator;
 const c = @import("c.zig");
 
 const Eval = @import("evaluator.zig");
+const Player = @import("player.zig");
+
+const Zynth = @import("zynth");
+
 
 fn usage(prog_name: []const u8) void {
     std.debug.print("Usage: {s} <input_file> -o <output_file>\n", .{prog_name});
@@ -147,13 +151,17 @@ pub fn main() !void  {
     }
     if (opts.compile_stage == .Sema) return;
     // ----- Compile -----
-    //std.log.err("Compiling stage not supported!", .{});
-    //return Error.InvalidCliArg;
-    var eval = Eval.Evaulator.init(&ctx, alloc);
+    var eval = Eval.Evaluator.init(&ctx, alloc);
     eval.start();
 
-    while (eval.get()) |note| {
-        std.log.debug("note {}", .{note});
-    }
+    var player = Player {.evaluator = &eval, .a = alloc };
+    var streamer = player.streamer();
+
+    var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
+    try audio_ctx.init(&streamer);
+    try audio_ctx.start();
+
+    
+    Zynth.Audio.wait_for_input();
 }
 

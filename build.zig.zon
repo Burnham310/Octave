@@ -1,0 +1,10 @@
+.{ 
+    .name = .Octave, 
+    .version = "0.1.0", 
+    .dependencies = .{
+        .zynth = .{
+            .path = "zynth",
+        },
+    }, 
+    .fingerprint = 0x78abc9fc67ccb72e, 
+    .paths = .{ "src", "test", "doc", "tutorial", "build.zig", "build.zig.zon" } }
