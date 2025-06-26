@@ -36,12 +36,16 @@ pub fn build(b: *Build) void {
     const target = b.resolveTargetQuery(.{});
     const opt = b.standardOptimizeOption(.{});
 
+    const zynth = b.dependency("zynth", .{});
+    const zynth_mod = zynth.module("zynth");
+
     const octave_compiler = b.addExecutable(.{
         .name = "octc",
         .target = target,
         .optimize = opt,
         .root_source_file = b.path("src/main.zig"),
     });
+    octave_compiler.root_module.addImport("zynth", zynth_mod);
     octave_compiler.addCSourceFiles(.{
         .root = b.path("src"),
         .files = &.{

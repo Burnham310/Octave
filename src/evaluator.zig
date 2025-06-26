@@ -4,17 +4,17 @@ const c = @import("c.zig");
 
 const ThreadSafeQueue = @import("thread_safe_queue.zig").ThreadSafeQueue;
 const Allocator = std.mem.Allocator;
-const Note = struct {
+pub const Note = struct {
     freq: f32,
     duration: f32,
 };
 
-pub const Evaulator = struct {
+pub const Evaluator = struct {
     ctx: *c.Context,
     queue: ThreadSafeQueue(?Note),
     worker: std.Thread,
 
-    pub fn init(ctx: *c.Context, a: Allocator) Evaulator {
+    pub fn init(ctx: *c.Context, a: Allocator) Evaluator {
         return .{
             .ctx = ctx,
             .queue = ThreadSafeQueue(?Note).initCapacity(10, a),
@@ -22,7 +22,7 @@ pub const Evaulator = struct {
         };
     }
 
-    pub fn start(self: *Evaulator) void {
+    pub fn start(self: *Evaluator) void {
         self.worker = std.Thread.spawn(.{}, eval, .{ self.ctx, &self.queue } ) catch undefined; // TODO: handle error
     }
 
@@ -63,7 +63,7 @@ pub const Evaulator = struct {
         queue.push(null);
     }
 
-    pub fn get(self: *Evaulator) ?Note {
+    pub fn get(self: *Evaluator) ?Note {
         return self.queue.pull();
     } };
 
