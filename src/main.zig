@@ -94,8 +94,8 @@ const Options = struct {
         return Options {
             .input_paths = try input_paths.toOwnedSlice(),
             .output_path = output_path orelse blk: {
-                std.log.info("<output-path> not set, defaults to `a.out`", .{});
-                break :blk "a.out";
+                std.log.info("<output-path> not set, defaults to `stdout`", .{});
+                break :blk "-";
             },
             .compile_stage = compile_stage orelse CompileStage.Compiling,
         };

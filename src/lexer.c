@@ -163,6 +163,7 @@ void skip_ws(Lexer *lexer)
 		case '\n':
 		case ' ':
 		case '\t':
+		case '\r':
 			break;
 		default:
 			return;
