@@ -50,6 +50,24 @@ To evaluate this progrom, we starts from `main` (even though it is defined the l
 - ...
 #### Lazy Evaluation?
 The aforementioned semantics look like [non-strict evaulation](https://wiki.haskell.org/Lazy_evaluation). The idea of [infinite data structure](https://hernandis.me/2019/10/20/haskell-infinite-structures.html) seems to be a good fit for the purpose of Octave. The downside being, it requires complete rework of the interpreter, and induces a lot of overhead, even with optimization.
+
+Here is some thoughts:
+
+To allow indefinetely generated music, lazy evaluation is a must. Each time we request a note, we only want to take the head of the section:
+
+```haskell
+head x:xs = x
+[1 2 3]
+f <$> x:xs = (f x) : f <$> xs
+
+head $ f <$> [0 1 2]
+=> head ((f 0) : f <$> [1 2])
+=> f 0
+
+```
+
+type inference
+ 
 ## Other
 ### Ast Internals
 

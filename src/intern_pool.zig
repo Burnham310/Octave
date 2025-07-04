@@ -27,6 +27,12 @@ pub const StringInternPool = struct {
     }
 };
 
+pub var string_pool: StringInternPool = undefined;
+
+pub fn init_global_string_pool(a: Allocator) void {
+    string_pool = StringInternPool.init(a);
+}
+
 pub fn InternPool(comptime T: type) type {
     return struct {
         const Self = @This();
