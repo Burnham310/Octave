@@ -1,10 +1,12 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
-const c = @import("c.zig");
+const InternPool = @import("intern_pool.zig");
+const Lexer = @import("lexer.zig");
+const Parser = @import("parser.zig");
 
-const Eval = @import("evaluator.zig");
-const Player = @import("player.zig");
+//const Eval = @import("evaluator.zig");
+//const Player = @import("player.zig");
 
 const Zynth = @import("zynth");
 
@@ -112,7 +114,6 @@ pub fn main() !void  {
     const opts = try Options.init(&args, alloc); 
 
     const stdout_raw = std.io.getStdOut();
-    const stdout_reader = stdout_raw.writer();
     //var stdout_buffered = std.io.bufferedWriter(stdout_reader);
     //const stdout = stdout_buffered.writer();
     //defer stdout_buffered.flush() catch unreachable;
@@ -121,47 +122,57 @@ pub fn main() !void  {
     const input_f = try cwd.openFileZ(opts.input_paths[0], .{.mode = .read_only });
     defer input_f.close();
     const output_f = if (std.mem.eql(u8, opts.output_path, "-")) 
-        std.io.getStdOut() else try cwd.createFileZ(opts.output_path, .{});
+        stdout_raw else try cwd.createFileZ(opts.output_path, .{});
     defer output_f.close();
+    const output_writer = output_f.writer();
 
     std.log.info("Invoking {s} {s} into {s}", .{@tagName(opts.compile_stage), opts.input_paths[0], opts.output_path});
 
+    InternPool.init_global_string_pool(alloc);
     // ----- Lexing -----
     const buf = try input_f.readToEndAlloc(alloc, 1024 * 1024);
-    var lexer = c.lexer_init(buf.ptr, buf.len, opts.input_paths[0]);
+    var lexer = Lexer.init(buf, opts.input_paths[0]);
     if (opts.compile_stage == .Lexing) {
         while (true) {
-            const tk = c.lexer_next(&lexer);
-            try stdout_reader.print("{}\n", .{tk.type});
-            if (tk.type == c.TK_NULL) break;
+            const tk = try lexer.next();
+            if (tk.tag == .eof) break;
+            const loc = lexer.to_loc(tk.off);
+            try output_writer.print("{} {}:{}\n", .{tk.tag, loc.row, loc.col});
         }
         return;
     }
     // ----- Parsing -----
-    var pgm = c.parse_ast(&lexer);
-    if (!pgm.success) {
-        return Error.SyntaxError;
+    var parser = Parser { .lexer = &lexer, .a = alloc };
+    const pgm = parser.parse() catch {
+        return;
+    };
+    if (opts.compile_stage == .Parsing) {
+        pgm.dump(output_writer, lexer);
     }
-    if (opts.compile_stage == .Parsing) return;
-    // ----- Sema -----
-    var ctx: c.Context = undefined;
-    c.sema_analy(&pgm, &lexer, &ctx);
-    if (!ctx.success) {
-        return Error.TypeMismatch;
-    }
-    if (opts.compile_stage == .Sema) return;
-    // ----- Compile -----
-    var eval = Eval.Evaluator.init(&ctx, alloc);
-    eval.start();
+    // var pgm = c.parse_ast(&lexer);
+    // if (!pgm.success) {
+    //     return Error.SyntaxError;
+    // }
+    // if (opts.compile_stage == .Parsing) return;
+    // // ----- Sema -----
+    // var ctx: c.Context = undefined;
+    // c.sema_analy(&pgm, &lexer, &ctx);
+    // if (!ctx.success) {
+    //     return Error.TypeMismatch;
+    // }
+    // if (opts.compile_stage == .Sema) return;
+    // // ----- Compile -----
+    // var eval = Eval.Evaluator.init(&ctx, alloc);
+    // eval.start();
 
-    var player = Player {.evaluator = &eval, .a = alloc };
-    var streamer = player.streamer();
+    // var player = Player {.evaluator = &eval, .a = alloc };
+    // var streamer = player.streamer();
 
-    var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
-    try audio_ctx.init(&streamer);
-    try audio_ctx.start();
+    // var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
+    // try audio_ctx.init(&streamer);
+    // try audio_ctx.start();
 
-    
-    Zynth.Audio.wait_for_input();
+    // 
+    // Zynth.Audio.wait_for_input();
 }
 

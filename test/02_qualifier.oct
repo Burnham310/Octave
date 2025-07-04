@@ -2,7 +2,7 @@
 // Composer: Algernon Cadwallader 
 // Genra: Midwest Emo
 
-main = | :scale=/D 3 MAJ/, bpm=140, instrument=27:   // section configuration
+main = | :tonic=D, octave=3, mode=MAJ, bpm=140, instrument=27:   // section configuration
     1.. oo'2.. o'7.. o'5..
     2... 3... 5... 6... o'2... o#'4... o'5..
 
