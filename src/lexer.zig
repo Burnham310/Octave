@@ -98,38 +98,38 @@ pub const TokenType = enum {
 };
 
 src: []const u8,
-    off: u32,
-    path: []const u8, // for error reporting
-    peek_buf: ?Token,
-    string_pool: *InternPool.StringInternPool = &InternPool.string_pool,
+off: u32,
+path: []const u8, // for error reporting
+peek_buf: ?Token,
+string_pool: *InternPool.StringInternPool = &InternPool.string_pool,
 
-    pub const BuiltinSymbols = struct {
-        pub var main: Symbol = undefined;
-        pub var tonic: Symbol = undefined;
-        pub var mode: Symbol = undefined;
-        pub var octave: Symbol = undefined;
+pub const BuiltinSymbols = struct {
+    pub var main: Symbol = undefined;
+    pub var tonic: Symbol = undefined;
+    pub var mode: Symbol = undefined;
+    pub var octave: Symbol = undefined;
 
-        pub var C: Symbol = undefined;
-        pub var D: Symbol = undefined;
-        pub var E: Symbol = undefined;
-        pub var F: Symbol = undefined;
-        pub var G: Symbol = undefined;
-        pub var A: Symbol = undefined;
-        pub var B: Symbol = undefined;
+    pub var C: Symbol = undefined;
+    pub var D: Symbol = undefined;
+    pub var E: Symbol = undefined;
+    pub var F: Symbol = undefined;
+    pub var G: Symbol = undefined;
+    pub var A: Symbol = undefined;
+    pub var B: Symbol = undefined;
 
-        pub var Maj: Symbol = undefined;
-        pub var Min: Symbol = undefined;
+    pub var Maj: Symbol = undefined;
+    pub var Min: Symbol = undefined;
 
-        pub fn init(string_pool: *InternPool.StringInternPool) void {
-            const Self = @This();
-            const decls = @typeInfo(Self).@"struct".decls;
+    pub fn init(string_pool: *InternPool.StringInternPool) void {
+        const Self = @This();
+        const decls = @typeInfo(Self).@"struct".decls;
 
-            inline for (decls) |decl| {
-                if (comptime std.mem.eql(u8, decl.name, "init")) continue; 
-                @field(Self, decl.name) = string_pool.intern(decl.name);
-            }
+        inline for (decls) |decl| {
+            if (comptime std.mem.eql(u8, decl.name, "init")) continue; 
+            @field(Self, decl.name) = string_pool.intern(decl.name);
         }
-    };
+    }
+};
 
 pub fn init(src: []const u8, path: []const u8) Lexer {
     BuiltinSymbols.init(&InternPool.string_pool);

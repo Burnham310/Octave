@@ -4,9 +4,11 @@ const Allocator = std.mem.Allocator;
 const InternPool = @import("intern_pool.zig");
 const Lexer = @import("lexer.zig");
 const Parser = @import("parser.zig");
+const TypePool = @import("type_pool.zig");
+const Sema = @import("sema.zig");
 
-//const Eval = @import("evaluator.zig");
-//const Player = @import("player.zig");
+const Eval = @import("evaluator.zig");
+const Player = @import("player.zig");
 
 const Zynth = @import("zynth");
 
@@ -143,36 +145,30 @@ pub fn main() !void  {
     }
     // ----- Parsing -----
     var parser = Parser { .lexer = &lexer, .a = alloc };
-    const pgm = parser.parse() catch {
+    var ast = parser.parse() catch {
         return;
     };
     if (opts.compile_stage == .Parsing) {
-        pgm.dump(output_writer, lexer);
+        ast.dump(output_writer, lexer);
     }
-    // var pgm = c.parse_ast(&lexer);
-    // if (!pgm.success) {
-    //     return Error.SyntaxError;
-    // }
-    // if (opts.compile_stage == .Parsing) return;
-    // // ----- Sema -----
-    // var ctx: c.Context = undefined;
-    // c.sema_analy(&pgm, &lexer, &ctx);
-    // if (!ctx.success) {
-    //     return Error.TypeMismatch;
-    // }
+    // ----- Sema -----
+    TypePool.init(alloc);
+    var sema = Sema {.lexer = &lexer, .ast = &ast };
+    const anno = try sema.sema();
+
     // if (opts.compile_stage == .Sema) return;
-    // // ----- Compile -----
-    // var eval = Eval.Evaluator.init(&ctx, alloc);
-    // eval.start();
+    // ----- Compile -----
+    var eval = Eval.Evaluator.init(&anno, alloc);
+    eval.start();
 
-    // var player = Player {.evaluator = &eval, .a = alloc };
-    // var streamer = player.streamer();
+    var player = Player {.evaluator = &eval, .a = alloc };
+    var streamer = player.streamer();
 
-    // var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
-    // try audio_ctx.init(&streamer);
-    // try audio_ctx.start();
+    var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
+    try audio_ctx.init(&streamer);
+    try audio_ctx.start();
 
-    // 
-    // Zynth.Audio.wait_for_input();
+    
+    Zynth.Audio.wait_for_input();
 }
 

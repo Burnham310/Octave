@@ -2,8 +2,12 @@ const std = @import("std");
 
 const Lexer = @import("lexer.zig");
 const Symbol = Lexer.Symbol;
+const TypePool = @import("type_pool.zig");
+
+const Ast = @This();
 
 pub const Expr = struct {
+    ty: TypePool.Type = undefined,
     off: u32,
     data: union(enum) {
         num: isize,
@@ -103,15 +107,13 @@ pub const Formal = struct {
     }
 };
 
-pub const Pgm = struct {
-    toplevels: []*Formal,
-    formals: std.SegmentedList(Formal, 1),
-    exprs: std.SegmentedList(Expr, 0),
-    secs: std.SegmentedList(Expr.Section, 1),
+toplevels: []*Formal,
+formals: std.SegmentedList(Formal, 1),
+exprs: std.SegmentedList(Expr, 0),
+secs: std.SegmentedList(Expr.Section, 1),
 
-    pub fn dump(self: Pgm, writer: anytype, lexer: Lexer) void {
-        for (self.toplevels) |toplevel| {
-            toplevel.dump(writer, lexer, 0);
-        }
+pub fn dump(self: Ast, writer: anytype, lexer: Lexer) void {
+    for (self.toplevels) |toplevel| {
+        toplevel.dump(writer, lexer, 0);
     }
-}; 
+}

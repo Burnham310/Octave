@@ -28,7 +28,7 @@ const Error = error {
 //    return 
 //}
 
-pub fn parse(self: *Parser) Error!Ast.Pgm {
+pub fn parse(self: *Parser) Error!Ast {
     var toplevels = std.ArrayListUnmanaged(*Formal) {};
 
     while (true) {
@@ -41,7 +41,7 @@ pub fn parse(self: *Parser) Error!Ast.Pgm {
     const last = if (toplevels.getLastOrNull()) |last| last.last_off(self.lexer.*) else 0;
     _ = try self.expect_token_crit_off(.eof, last, "declaration");
 
-    return Ast.Pgm {
+    return Ast {
         .toplevels = toplevels.toOwnedSlice(self.a) catch unreachable,
         .formals = self.formals,
         .exprs = self.exprs,
