@@ -165,13 +165,13 @@ pub fn main() !void  {
     eval.start();
 
     var player = Player {.evaluator = &eval, .a = alloc };
-    var streamer = player.streamer();
+    const streamer = player.streamer();
 
     var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
-    try audio_ctx.init(&streamer);
+    try audio_ctx.init(streamer);
     try audio_ctx.start();
 
     
-    Zynth.Audio.wait_for_input();
+    audio_ctx.drain();
 }
 
