@@ -8,7 +8,7 @@ const Sema = @This();
 
 ast: *Ast,
 lexer: *Lexer,
-main_formal: ?*Ast.Formal = undefined,
+main_formal: ?*Ast.Formal = null,
 
 pub const Annotations = struct {
     main_formal: *Ast.Formal,
@@ -49,7 +49,6 @@ pub fn expect_type(self: *Sema, expected: Type, got: Type, off: u32) !void {
     self.lexer.report_err(off, "Expect Type `{}`, got `{}`", .{expected, got}); 
     self.lexer.report_line(off);
     return Error.TypeMismatched;
-
 }
 
 pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: ?Type) !Type {

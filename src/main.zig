@@ -150,15 +150,18 @@ pub fn main() !void  {
     };
     if (opts.compile_stage == .Parsing) {
         ast.dump(output_writer, lexer);
+        return;
     }
     // ----- Sema -----
     TypePool.init(alloc);
     var sema = Sema {.lexer = &lexer, .ast = &ast };
-    const anno = try sema.sema();
-
-    // if (opts.compile_stage == .Sema) return;
+    var anno = try sema.sema();
+    if (opts.compile_stage == .Sema) {
+        std.log.info("type check successful", .{});
+        return;
+    }
     // ----- Compile -----
-    var eval = Eval.Evaluator.init(&anno, alloc);
+    var eval = Eval.Evaluator.init(&ast, &anno, alloc);
     eval.start();
 
     var player = Player {.evaluator = &eval, .a = alloc };
