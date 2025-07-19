@@ -146,22 +146,46 @@ pub fn parse_prefix(self: *Parser) Error!?*Expr {
             };
             return self.create(Expr {.off = tok.off, .data = .{.sec = self.create(sec) }});
         },
+        .lbrac => {
+            self.lexer.consume();
+            var expr_list = std.ArrayListUnmanaged(*Expr) {};
+            while (try self.parse_expr()) |expr| {
+                expr_list.append(self.a, expr) catch unreachable;
+            }
+            const last_expr, const last_expr_name = self.get_last_or_tok(expr_list, tok);
+            const rbrac = try self.expect_token_crit_off(.rbrac, last_expr, last_expr_name);
+            const list = Expr.List {.els = expr_list.toOwnedSlice(self.a) catch unreachable, .rbrac_off = rbrac.off };
+            return self.create(Expr {.off = tok.off, .data = .{.list = list}});
+
+        },
+        .slash => {
+            self.lexer.consume();
+            const rhs = try self.parse_expr() orelse {
+                self.lexer.report_err(tok.off, "expect expression after `/`", .{});
+                self.lexer.report_line(tok.off);
+                return Error.UnexpectedToken;
+            };
+            const lhs = self.create(Expr {.off = tok.off, .data = .{.num = 1 }});
+            const infix = Expr.Infix {.lhs = lhs, .rhs = rhs, .op = tok.tag };
+            return self.create(Expr {.off = tok.off, .data = .{.infix = infix}});
+        },
         else => return null,
     } 
 }
 
-// fn prefix_bp(tt: TokenType) ?u32 {
-//     switch (tt) {
-//         .single_quote => 20,
-//         
-//     }
-// }
-//
+fn prefix_bp(tt: TokenType) ?u32 {
+    switch (tt) {
+        .slash => 30,
+        
+    }
+}
+
 fn infix_bp(tt: TokenType) ?struct {u32, u32} {
     return switch (tt) {
         .plus, .minus => .{5, 4},
         .times => .{7, 6},
         .single_quote => .{19, 20},
+        .slash => .{29, 30},
         else => null,
     };
 }

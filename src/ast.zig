@@ -8,12 +8,14 @@ const Ast = @This();
 
 pub const Expr = struct {
     ty: TypePool.Type = undefined,
+    i: u32 = 0,
     off: u32,
     data: union(enum) {
         num: isize,
         ident: Symbol,
         sec: *Section,
         infix: Infix,
+        list: List,
     },
 
     pub const Section = struct {
@@ -30,6 +32,11 @@ pub const Expr = struct {
         }
     };
 
+    pub const List = struct {
+        els: []*Expr,
+        rbrac_off: u32,
+    };
+
     pub const Infix = struct {
         op: Lexer.TokenType,
         lhs: *Expr,
@@ -38,7 +45,7 @@ pub const Expr = struct {
 
     pub fn first_off(self: Expr) u32 {
         switch (self.data) {
-            .num, .ident, .sec => return self.off,
+            .num, .ident, .sec, .list => return self.off,
             .infix => |infix| return infix.lhs.first_off(),
         }
     }
@@ -49,6 +56,7 @@ pub const Expr = struct {
            .ident => return @as(u32, @intCast(lexer.re_ident_impl(self.off).len)) + self.off,
            .infix => |infix| return infix.rhs.last_off(lexer),
            .sec => |sec| return sec.rcurly_off,
+           .list => |list| return list.rbrac_off,
         }
     }
 
@@ -76,6 +84,13 @@ pub const Expr = struct {
                 infix.lhs.dump(writer, lexer, level+1);
                 infix.rhs.dump(writer, lexer, level+1);
             },
+            .list => |list| {
+                _ = writer.print("List<{}>", .{list.els.len}) catch unreachable;
+                writer.writeByte('\n') catch unreachable; 
+                for (list.els) |el| {
+                    el.dump(writer, lexer, level+1);
+                }
+            }
 
         }
     }

@@ -10,9 +10,6 @@ const ThreadSafeQueue = @import("thread_safe_queue.zig").ThreadSafeQueue;
 
 const Zynth = @import("zynth");
 
-
-
-
 pub const Note = struct {
     freq: f32,
     duration: f32,
@@ -48,7 +45,6 @@ pub const Evaluator = struct {
     anno: *Sema.Annotations,
     queue: ThreadSafeQueue(Note),
     worker: std.Thread,
-    //iterators: []u32,
     
     fn post_inc(it: *u32) u32 {
         it.* += 1;
@@ -75,30 +71,85 @@ pub const Evaluator = struct {
 
     const PreNote = struct {
         deg: isize,
-        duration: Zynth.NoteDuration,
+        duration: Fraction,
     };
 
-    const Val = union {
+    const Fraction = struct {
+        numerator: i32,
+        dominator: i32,
+
+        pub fn to_float(self: Fraction) f32 {
+            return @as(f32, @floatFromInt(self.numerator)) / @as(f32, @floatFromInt(self.dominator));
+        }
+
+        pub fn to_sec(self: Fraction, bpm: f32) f32 {
+            return self.to_float() * 4 * (60/bpm);
+        }
+    };
+
+    const Val = union(enum) {
         num: isize,
+        frac: Fraction,
         note: PreNote,
     };
 
     // only works on number
-    pub fn eval_expr(self: *Evaluator, expr: *Ast.Expr) Val {
+    pub fn eval_expr_strict(self: *Evaluator, expr: *Ast.Expr) Val {
         const t_full = TypePool.lookup(expr.ty);
+        _ = t_full;
         switch (expr.data) {
-            .num => |i| {
-                switch (t_full) {
-                    .int => return Val {.num = i },
-                    .note => return Val {.note = PreNote {.deg = i, .duration = .Quarter}},
+            .num => |i| return Val {.num = i},
+            .infix => |infix| {
+                const lhs = self.eval_expr_strict(infix.lhs);
+                const rhs = self.eval_expr_strict(infix.rhs);
+                switch (infix.op) {
+                    .single_quote => {
+                        return Val {.note = PreNote {.deg = lhs.num, .duration = rhs.frac}};
+                    },
+                    .slash => {
+                        return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
+                    },
                     else => unreachable,
                 }
+                
+            },
+            .list => unreachable,
+            .ident => @panic("TODO"),
+            .sec => unreachable,
+        }  
+    }
+    pub fn eval_expr(self: *Evaluator, expr: *Ast.Expr) ?Val {
+        const t_full = TypePool.lookup(expr.ty);
+        _ = t_full;
+        switch (expr.data) {
+            .num => |i| {
+                if (expr.i > 0) return null;
+                expr.i += 1;
+                return Val {.num = i};
             },
             .infix => |infix| {
-                std.debug.assert(infix.op == .single_quote);
-                const lhs = self.eval_expr(infix.lhs);
-                const rhs = self.eval_expr(infix.rhs);
-                return Val {.note = PreNote {.deg = lhs.num, .duration = @enumFromInt(rhs.num - 1)}};
+                if (expr.i > 0) return null;
+                const lhs = self.eval_expr(infix.lhs) orelse {
+                    expr.i += 1;
+                    return null;
+                };
+                const rhs = self.eval_expr_strict(infix.rhs);
+                switch (infix.op) {
+                    .single_quote => {
+                        return Val {.note = PreNote {.deg = lhs.num, .duration = rhs.frac}};
+                    },
+                    .slash => {
+                        return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
+                    },
+                    else => unreachable,
+                }
+                
+            },
+            .list => |list| {
+                while (expr.i < list.els.len): (expr.i += 1) {
+                    return self.eval_expr(list.els[expr.i]) orelse continue;
+                }
+                return null;
             },
             .ident => @panic("TODO"),
             .sec => unreachable,
@@ -135,7 +186,6 @@ pub const Evaluator = struct {
         //
         const scale = Tonality.Scale.MiddleCMajor;
         const note_exprs = sec.notes;
-        var gap: f32 = 0;
         //for (note_exprs) |note_expr| {
         //    const note = exprs[@intCast(note_expr)].data.note;
         //    const dots = note.dots;
@@ -153,13 +203,24 @@ pub const Evaluator = struct {
         //    gap = dura.to_sec(bpm);
         //    
         //}
+        var gap: f32 = 0;
+        const default_dura = Fraction {.numerator = 1, .dominator = 4};
         for (note_exprs) |note_expr| {
-            const pre_note = self.eval_expr(note_expr).note;
-            const abspitch = scale.get_abspitch(@intCast(pre_note.deg));
-            const freq = Tonality.abspitch_to_freq(abspitch);
-            const note = Note {.freq = freq, .duration = pre_note.duration.to_sec(bpm), .gap = gap};
-            gap = note.duration;
-            self.queue.push(note);
+            var first = true;
+            while (self.eval_expr(note_expr)) |val| {
+                const pre_note = switch (val) {
+                    .num => |i| PreNote  {.deg = i, .duration = default_dura},
+                    .note => val.note,
+                    else => |t| @panic(@tagName(t)),
+                };
+
+                const abspitch = scale.get_abspitch(@intCast(pre_note.deg));
+                const freq = Tonality.abspitch_to_freq(abspitch);
+                const note = Note {.freq = freq, .duration = pre_note.duration.to_sec(bpm), .gap = if (first) gap else 0};
+                self.queue.push(note);
+                first = false;
+                gap = note.duration;
+            }
         }
         self.queue.push(Note.eof(gap));
     }
