@@ -165,10 +165,12 @@ pub fn main() !void  {
     eval.start();
 
     var player = Player {.evaluator = &eval, .a = alloc };
-    const streamer = player.streamer();
+    var silence = Zynth.Waveform.Simple.silence;
+    var cutoff = Zynth.Envelop.SimpleCutoff {.cutoff_sec = 0.5, .sub_stream = silence.streamer()};
+    var and_then = Zynth.Delay.AndThen {.lhs = player.streamer(), .rhs = cutoff.streamer()};
 
     var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
-    try audio_ctx.init(streamer);
+    try audio_ctx.init(and_then.streamer());
     try audio_ctx.start();
 
     
