@@ -7,6 +7,7 @@ const Sema = @import("sema.zig");
 const TypePool = @import("type_pool.zig");
 const Tonality = @import("tonality.zig");
 const ThreadSafeQueue = @import("thread_safe_queue.zig").ThreadSafeQueue;
+const BS = @import("lexer.zig").BuiltinSymbols;
 
 const Zynth = @import("zynth");
 
@@ -69,6 +70,11 @@ pub const Evaluator = struct {
         return slice.ptr[0..slice.len];
     }
 
+    const SectionConfig = struct {
+        scale: Tonality.Scale = .MiddleCMajor,
+        bpm: f32 = 120,
+    };
+
     const PreNote = struct {
         deg: isize,
         duration: Fraction,
@@ -114,7 +120,9 @@ pub const Evaluator = struct {
                 
             },
             .list => unreachable,
-            .ident => @panic("TODO"),
+            .ident => |ident| {
+                return Val {.num = self.anno.builtin_vars.get(ident).?[1]};
+            },
             .sec => unreachable,
         }  
     }
@@ -159,7 +167,6 @@ pub const Evaluator = struct {
     fn eval(self: *Evaluator) void {
         const anno = self.anno;
         const ast = self.ast;
-        const bpm = 120.0;
         // Temporay Implementation: assume it only has one declaration, which is main.
         // main MUST be a single section.
         // The section cannot contain any declaration.
@@ -170,39 +177,17 @@ pub const Evaluator = struct {
         const main_formal = anno.main_formal;
         assert(main_formal == ast.toplevels[0]);
         const sec = main_formal.expr.data.sec;
-        assert(sec.config.len == 0);
-        // const configs = as_slice(sec.config);
-        // const env = c.get_curr_env(ctx, 0);
-        // for (configs) |formal_idx| {
-        //     const formal = &formals[@intCast(formal_idx)];
-        //     c.hmgetp(env.*, formal.ident).value.data.i = eval_strict(formal.expr);
-        // }
 
-        // const scale = c.Scale {
-        //     .tonic = c.hmgetp(env, ctx.builtin_syms.tonic),
-        //     .octave = c.hmgetp(env, ctx.builtin_syms.octave),
-        //     .mode = c.hmgetp(env, ctx.builtin_syms.mode),
-        // };
-        //
-        const scale = Tonality.Scale.MiddleCMajor;
+        var config = SectionConfig {};
+        for (sec.config) |formal| {
+            if (formal.ident == BS.tonic) config.scale.tonic = @enumFromInt(self.eval_expr_strict(formal.expr).num)
+            else if (formal.ident == BS.octave) config.scale.octave = @intCast(self.eval_expr_strict(formal.expr).num)
+            else if (formal.ident == BS.mode) config.scale.mode = @enumFromInt(self.eval_expr_strict(formal.expr).num)
+            else if (formal.ident == BS.bpm) config.bpm = @floatFromInt(self.eval_expr_strict(formal.expr).num)
+            else unreachable;
+        }
         const note_exprs = sec.notes;
-        //for (note_exprs) |note_expr| {
-        //    const note = exprs[@intCast(note_expr)].data.note;
-        //    const dots = note.dots;
-        //    var i: u32 = 0; 
-        //    const dura: Zynth.NoteDuration = @enumFromInt(dots);
-        //    while (self.eval_lazy_head(note.expr, i)) |pitch_expr_next|: (i += 1) {
-        //        const deg = self.eval_strict(pitch_expr_next);
-        //        const abs_pitch = abspitch_from_scale(scale, @intCast(deg.degree));
-        //        const freq = Zynth.pitch_to_freq(abs_pitch+deg.shift-24);
-        //        // the first one should have gap equal to the duration of the previous note
-        //        // the rest should have zero
-        //        self.queue.push(Note {.freq = freq, .duration = dura.to_sec(bpm), .gap = gap }); 
-        //        gap = 0;
-        //    }
-        //    gap = dura.to_sec(bpm);
-        //    
-        //}
+        
         var gap: f32 = 0;
         const default_dura = Fraction {.numerator = 1, .dominator = 4};
         for (note_exprs) |note_expr| {
@@ -214,9 +199,9 @@ pub const Evaluator = struct {
                     else => |t| @panic(@tagName(t)),
                 };
 
-                const abspitch = scale.get_abspitch(@intCast(pre_note.deg));
+                const abspitch = config.scale.get_abspitch(@intCast(pre_note.deg));
                 const freq = Tonality.abspitch_to_freq(abspitch);
-                const note = Note {.freq = freq, .duration = pre_note.duration.to_sec(bpm), .gap = if (first) gap else 0};
+                const note = Note {.freq = freq, .duration = pre_note.duration.to_sec(config.bpm), .gap = if (first) gap else 0};
                 self.queue.push(note);
                 first = false;
                 gap = note.duration;

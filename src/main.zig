@@ -133,7 +133,7 @@ pub fn main() !void  {
     InternPool.init_global_string_pool(alloc);
     // ----- Lexing -----
     const buf = try input_f.readToEndAlloc(alloc, 1024 * 1024);
-    var lexer = Lexer.init(buf, opts.input_paths[0]);
+    var lexer = Lexer.init(buf, opts.input_paths[0], alloc);
     if (opts.compile_stage == .Lexing) {
         while (true) {
             const tk = try lexer.next();
@@ -155,7 +155,8 @@ pub fn main() !void  {
     // ----- Sema -----
     TypePool.init(alloc);
     var sema = Sema {.lexer = &lexer, .ast = &ast };
-    var anno = try sema.sema();
+    var anno = try sema.sema(alloc);
+    defer anno.deinit(alloc);
     if (opts.compile_stage == .Sema) {
         std.log.info("type check successful", .{});
         return;

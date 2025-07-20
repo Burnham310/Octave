@@ -1,25 +1,55 @@
 const std = @import("std");
 const Lexer =  @import("lexer.zig");
+const BS = Lexer.BuiltinSymbols;
+const Symbol = Lexer.Symbol;
 const Ast = @import("ast.zig");
 const TypePool = @import("type_pool.zig");
 const Type = TypePool.Type;
+
+const Tonality = @import("tonality.zig");
 
 const Sema = @This();
 
 ast: *Ast,
 lexer: *Lexer,
 main_formal: ?*Ast.Formal = null,
+builtin_vars: std.AutoHashMapUnmanaged(Symbol, struct {Type, u32}) = .{},
+config_tys: std.AutoHashMapUnmanaged(Symbol, Type) = .{},
 
 pub const Annotations = struct {
     main_formal: *Ast.Formal,
+    builtin_vars: std.AutoHashMapUnmanaged(Symbol, struct {Type, u32}),
+    config_tys: std.AutoHashMapUnmanaged(Symbol, Type),
+
+    pub fn deinit(self: *Annotations, a: std.mem.Allocator) void {
+       self.builtin_vars.deinit(a); 
+    }
 };
 
 const Error = error {
     TypeMismatched,
     Undefined,
+    UnknownConfig,
 };
 
-pub fn sema(self: *Sema) Error!Annotations {
+pub fn sema(self: *Sema, a: std.mem.Allocator) Error!Annotations {
+    // initialize builtin variables
+    const modes = @typeInfo(Tonality.Mode).@"enum".fields;
+    inline for (modes) |mode| {
+        self.builtin_vars.putNoClobber(a, self.lexer.intern(mode.name), .{Type.mode, mode.value}) catch unreachable;
+    }
+    self.builtin_vars.putNoClobber(a, self.lexer.intern("major"), .{Type.mode, @intFromEnum(Tonality.Mode.major)}) catch unreachable;
+    self.builtin_vars.putNoClobber(a, self.lexer.intern("minor"), .{Type.mode, @intFromEnum(Tonality.Mode.minor)}) catch unreachable;
+    const pitches = @typeInfo(Tonality.Pitch).@"enum".fields;
+    inline for (pitches) |pitch| {
+        self.builtin_vars.putNoClobber(a, self.lexer.intern(pitch.name), .{Type.pitch, pitch.value}) catch unreachable;
+    }
+    // initialize config types
+    self.config_tys.putNoClobber(a, self.lexer.intern("octave"), Type.int) catch unreachable;
+    self.config_tys.putNoClobber(a, self.lexer.intern("mode"), Type.mode) catch unreachable;
+    self.config_tys.putNoClobber(a, self.lexer.intern("tonic"), Type.pitch) catch unreachable;
+    self.config_tys.putNoClobber(a, self.lexer.intern("bpm"), Type.int) catch unreachable;
+    // typecheck each toplevel declaration
     for (self.ast.toplevels) |formal| {
        try self.sema_formal(formal);
     }
@@ -27,7 +57,11 @@ pub fn sema(self: *Sema) Error!Annotations {
         self.lexer.report_err(0, "main is undefiend", .{});
         return Error.Undefined;
     }
-    return Annotations {.main_formal = self.main_formal.? };
+    return Annotations {
+        .main_formal = self.main_formal.?,
+        .builtin_vars = self.builtin_vars,
+        .config_tys = self.config_tys,
+    };
 
 }
 
@@ -35,6 +69,15 @@ pub fn sema_formal(self: *Sema, formal: *Ast.Formal) Error!void {
     if (formal.ident == Lexer.BuiltinSymbols.main)
         self.main_formal = formal;
     try self.expect_type(Type.section, try self.sema_expr(formal.expr, null), formal.ident_off);
+}
+
+pub fn sema_config(self: *Sema, formal: *Ast.Formal) Error!void {
+    const expected_ty = self.config_tys.get(formal.ident) orelse {
+        self.lexer.report_err(formal.first_off(), "unrecognized config name `{s}`", .{self.lexer.lookup(formal.ident)});   
+        self.lexer.report_line(formal.first_off());
+        return Error.UnknownConfig;
+    };
+    try self.expect_type(expected_ty, try self.sema_expr(formal.expr, expected_ty), formal.ident_off);
 }
 
 pub fn sema_expr(self: *Sema, expr: *Ast.Expr, infer: ?Type) Error!Type {
@@ -71,10 +114,18 @@ pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, _: ?Type) !Type {
             //if (infer == TypePool.note) return TypePool.note;
             return Type.int;
         },
-        .ident => @panic("TODO"),
+        .ident => |ident| {
+            const builtin = self.builtin_vars.get(ident) orelse {
+                self.lexer.report_err(expr.off, "undefined variable `{s}`", .{self.lexer.lookup(ident)});
+                self.lexer.report_line(expr.off);
+                return Error.Undefined;
+            };
+            return builtin[0];
+        },
         .sec => |sec| {
-            if (sec.config.len != 0) 
-                @panic("TODO");
+            for (sec.config) |config| {
+                try self.sema_config(config);
+            }
             for (sec.notes) |note| {
                 const allowed_tys = [_]Type {Type.note, Type.chord, Type.int, TypePool.intern(.{.list = Type.int})};
                 const note_ty = try self.sema_expr(note, Type.note);

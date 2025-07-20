@@ -22,7 +22,7 @@ pub const Loc = struct {
     pub fn format(value: Loc, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
         return writer.print("{s}:{}:{}", .{ value.path, value.row, value.col });
     }
-};  
+};
 
 pub const TokenType = enum {
     ident,
@@ -53,6 +53,11 @@ pub const TokenType = enum {
     slash,
     lcurly,
     rcurly,
+
+    hash,
+    tilde,
+    power,
+    period,
     //le,
     //ge,
     //ampersand,
@@ -65,36 +70,64 @@ pub const TokenType = enum {
 
     eof,
 
-    pub fn format(
-        self: TokenType,
-        comptime fmt: []const u8,
-        options: std.fmt.FormatOptions,
-        writer: anytype) !void {
+    //pub fn format(
+    //    self: TokenType,
+    //    comptime fmt: []const u8,
+    //    options: std.fmt.FormatOptions,
+    //    writer: anytype) !void {
 
-        _ = fmt;
-        _ = options;
+    //    _ = fmt;
+    //    _ = options;
 
-        switch (self) {
-            // single character
-            .eq => _ = try writer.write("="),
-            .lbrac => _ = try writer.write("["),
-            .rbrac => _ = try writer.write("]"),
-            .comma => _ = try writer.write(","),
-            .bar => _ = try writer.write("|"),
-            .colon => _ = try writer.write(":"),
-            .semi_colon => _ = try writer.write(";"),
-            .slash => _ = try writer.write("/"),
-            .lparen => _ = try writer.write("("),
-            .rparen => _ = try writer.write(")"),
-            .lcurly => _ = try writer.write("{"),
-            .rcurly => _ = try writer.write("}"),
-            .single_quote => _ = try writer.write("'"),
-            .plus => _ = try writer.write("+"),
-            .minus => _ = try writer.write("-"),
-            .times => _ = try writer.write("*"),
-            else => _ = try writer.write(@tagName(self)),
-        }
-    }
+    //    switch (self) {
+    //        // single character
+    //        .eq => _ = try writer.write("="),
+    //        .lbrac => _ = try writer.write("["),
+    //        .rbrac => _ = try writer.write("]"),
+    //        .comma => _ = try writer.write(","),
+    //        .bar => _ = try writer.write("|"),
+    //        .colon => _ = try writer.write(":"),
+    //        .semi_colon => _ = try writer.write(";"),
+    //        .slash => _ = try writer.write("/"),
+    //        .lparen => _ = try writer.write("("),
+    //        .rparen => _ = try writer.write(")"),
+    //        .lcurly => _ = try writer.write("{"),
+    //        .rcurly => _ = try writer.write("}"),
+    //        .single_quote => _ = try writer.write("'"),
+    //        .plus => _ = try writer.write("+"),
+    //        .minus => _ = try writer.write("-"),
+    //        .times => _ = try writer.write("*"),
+    //        else => _ = try writer.write(@tagName(self)),
+    //    }
+    //}
+};
+
+const single_char_tokens = [_]struct {TokenType, u8} {
+    .{.lbrac, '['},
+    .{.rbrac, ']'},
+    .{.comma, ','},
+    .{.bar, '|'},
+    .{.eq, '='},
+    .{.colon, ':'},
+    .{.semi_colon, ';'},
+    .{.slash, '/'},
+    //.{.le, '<'},
+    //.{.ge, '>'},
+    //.{.ampersand, '&'},
+    .{.lcurly, '{'},
+    .{.rcurly, '}'},
+    .{.lparen, '('},
+    .{.rparen, ')'},
+    .{.single_quote, '\''},
+
+    .{.hash, '#'},
+    .{.tilde, '~'},
+    .{.power, '^'},
+    .{.period, '.'},
+    //.{.dollar, '$'},
+    .{.plus, '+'},
+    .{.minus, '-'},
+    .{.times, '*'},
 };
 
 src: []const u8,
@@ -102,12 +135,16 @@ off: u32,
 path: []const u8, // for error reporting
 peek_buf: ?Token,
 string_pool: *InternPool.StringInternPool = &InternPool.string_pool,
+token_char_map: std.AutoHashMapUnmanaged(TokenType, u8),
+char_token_map: std.AutoHashMapUnmanaged(u8, TokenType),
+
 
 pub const BuiltinSymbols = struct {
     pub var main: Symbol = undefined;
     pub var tonic: Symbol = undefined;
     pub var mode: Symbol = undefined;
     pub var octave: Symbol = undefined;
+    pub var bpm: Symbol = undefined;
 
     pub var C: Symbol = undefined;
     pub var D: Symbol = undefined;
@@ -117,8 +154,8 @@ pub const BuiltinSymbols = struct {
     pub var A: Symbol = undefined;
     pub var B: Symbol = undefined;
 
-    pub var Maj: Symbol = undefined;
-    pub var Min: Symbol = undefined;
+    pub var major: Symbol = undefined;
+    pub var minor: Symbol = undefined;
 
     pub fn init(string_pool: *InternPool.StringInternPool) void {
         const Self = @This();
@@ -131,15 +168,22 @@ pub const BuiltinSymbols = struct {
     }
 };
 
-pub fn init(src: []const u8, path: []const u8) Lexer {
+pub fn init(src: []const u8, path: []const u8, a: std.mem.Allocator) Lexer {
     BuiltinSymbols.init(&InternPool.string_pool);
-    return .{
+    var lexer = Lexer {
         .src = src,
         .off = 0,
         .path = path,
         .peek_buf = null,
         .string_pool = &InternPool.string_pool,
+        .token_char_map = std.AutoHashMapUnmanaged(TokenType, u8) {},
+        .char_token_map = std.AutoHashMapUnmanaged(u8, TokenType) {},
     };
+    for (single_char_tokens) |tk_char| {
+        lexer.token_char_map.putNoClobber(a, tk_char[0], tk_char[1]) catch unreachable;
+        lexer.char_token_map.putNoClobber(a, tk_char[1], tk_char[0]) catch unreachable;
+    }
+    return lexer;
 }
 pub fn deinit(self: *Lexer) void {
     self.string_pool.deinit();
@@ -199,34 +243,10 @@ fn rewind_char2(self: *Lexer) void {
 
 fn match_single(self: *Lexer) ?Token {
     return Token {
-        .tag = switch (self.next_char() orelse return null) {
-            '[' => .lbrac,
-            ']' => .rbrac,
-            ',' => .comma,
-            '|' => .bar,
-            '=' => .eq,
-            ':' => .colon,
-            ';' => .semi_colon,
-            '/' => .slash,
-            //'<' => .le,
-            //'>' => .ge,
-            //'&' => .ampersand,
-            '{' => .lcurly,
-            '}' => .rcurly,
-            '(' => .lparen,
-            ')' => .rparen,
-            '\'' => .single_quote,
-            //'~' => .tilde,
-            //'$' => .dollar,
-            '+' => .plus,
-            '-' => .minus,
-            '*' => .times,
-            //'@' => .at,
-            else => {
-                self.off -= 1;
-                return null;
-            },
-            },
+        .tag = self.char_token_map.get(self.next_char() orelse return null) orelse {
+            self.off -= 1;
+            return null;
+        },
         .off = self.off - 1,
     };
 }
@@ -368,18 +388,10 @@ pub fn re_ident_impl(self: Lexer, off: u32) []const u8 {
 }
 
 pub fn stringify_token(self: Lexer, tk: Token) []const u8 {
+    if (self.token_char_map.get(tk.tag)) |char| {
+        return &.{char};
+    }
     switch (tk.tag) {
-        .eq => _ = return "=",
-        .lbrac => _ = return "[",
-        .rbrac => _ = return "]",
-        .comma => _ = return ",",
-        .bar => _ = return "|",
-        .colon => _ = return ":",
-        .semi_colon => _ = return ";",
-        .slash => _ = return "/",
-        .lparen => _ = return "(",
-        .rparen => _ = return ")",
-        .single_quote => _ = return "'",
         .ident => return self.re_ident_impl(tk.off),
         else => _ = return @tagName(tk.tag),
     }

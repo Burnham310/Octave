@@ -7,6 +7,8 @@ pub const Type = packed struct {
     t: u32,
     pub var @"void":    Type = undefined;
     pub var int:        Type = undefined;
+    pub var mode:       Type = undefined;
+    pub var pitch:      Type = undefined;
     pub var fraction:   Type = undefined;
     pub var note:       Type = undefined;
     pub var chord:      Type = undefined;
@@ -22,6 +24,8 @@ pub const TypeStorage = struct {
 pub const Kind = enum(u8) {
     void,
     int,
+    mode,
+    pitch,
     fraction,
     note,
     section,
@@ -29,7 +33,9 @@ pub const Kind = enum(u8) {
 };
 pub const TypeFull = union(Kind) {
     void,
-    int,            // leaf
+    int,
+    mode,
+    pitch,
     fraction,
     note,
     section,
@@ -62,6 +68,8 @@ pub const TypeFull = union(Kind) {
             switch (a) {
                 .void,
                 .int,
+                .mode,
+                .pitch,
                 .fraction,
                 .note,
                 .section => return true,
@@ -73,6 +81,8 @@ pub const TypeFull = union(Kind) {
             return switch (a) {
                 .void,
                 .int,
+                .mode,
+                .pitch,
                 .fraction,
                 .note,
                 .section => std.hash.uint32(@intFromEnum(a)),
@@ -112,6 +122,8 @@ pub const TypeFull = union(Kind) {
         switch (value) {
             .void,
             .int,
+            .mode,
+            .pitch,
             .fraction,
             .note,
             .section => _ = try writer.write(@tagName(value)),
@@ -140,6 +152,8 @@ pub const TypeIntern = struct {
         const more = switch (s) {
             .void,
             .int,
+            .mode,
+            .pitch,
             .note,
             .fraction,
             .section => undefined,
@@ -176,6 +190,8 @@ pub const TypeIntern = struct {
         switch (storage.kind) {
             .void => return .void,
             .int => return .int,
+            .pitch => return .pitch,
+            .mode => return .mode,
             .fraction => return .fraction,
             .note => return .note,
             .section => return .section,
@@ -197,6 +213,8 @@ pub fn init(a: std.mem.Allocator) void {
     type_pool = TypeIntern.init(a);
     Type.@"void" = intern(TypeFull.void);
     Type.int = intern(TypeFull.int);
+    Type.pitch = intern(TypeFull.pitch);
+    Type.mode = intern(TypeFull.mode);
     Type.fraction = intern(TypeFull.fraction);
     Type.note = intern(TypeFull.note);
     Type.chord = intern(TypeFull {.list = Type.note });

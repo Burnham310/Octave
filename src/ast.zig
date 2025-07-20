@@ -113,7 +113,7 @@ pub const Formal = struct {
         self.expr.dump(writer, lexer, level+1);
     }
 
-    pub fn first_of(self: Formal) u32 {
+    pub fn first_off(self: Formal) u32 {
        return self.ident_off; 
     }
 
