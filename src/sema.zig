@@ -15,11 +15,17 @@ lexer: *Lexer,
 main_formal: ?*Ast.Formal = null,
 builtin_vars: std.AutoHashMapUnmanaged(Symbol, struct {Type, u32}) = .{},
 config_tys: std.AutoHashMapUnmanaged(Symbol, Type) = .{},
+sec_envs: std.AutoHashMapUnmanaged(*Ast.Expr.Section, SectionEnv) = .{},
+active_sec_env: ?*SectionEnv = null,
+a: std.mem.Allocator,
+
+pub const SectionEnv = std.AutoHashMapUnmanaged(Symbol, *Ast.Formal);
 
 pub const Annotations = struct {
     main_formal: *Ast.Formal,
     builtin_vars: std.AutoHashMapUnmanaged(Symbol, struct {Type, u32}),
     config_tys: std.AutoHashMapUnmanaged(Symbol, Type),
+    sec_envs: std.AutoHashMapUnmanaged(*Ast.Expr.Section, SectionEnv),
 
     pub fn deinit(self: *Annotations, a: std.mem.Allocator) void {
        self.builtin_vars.deinit(a); 
@@ -29,13 +35,15 @@ pub const Annotations = struct {
 const Error = error {
     TypeMismatched,
     Undefined,
+    Redefined,
     UnknownConfig,
-    InsufficientInference
+    InsufficientInference,
 };
 
-pub fn sema(self: *Sema, a: std.mem.Allocator) Error!Annotations {
+pub fn sema(self: *Sema) Error!Annotations {
     // initialize builtin variables
     const modes = @typeInfo(Tonality.Mode).@"enum".fields;
+    const a = self.a;
     inline for (modes) |mode| {
         self.builtin_vars.putNoClobber(a, self.lexer.intern(mode.name), .{Type.mode, mode.value}) catch unreachable;
     }
@@ -63,6 +71,7 @@ pub fn sema(self: *Sema, a: std.mem.Allocator) Error!Annotations {
         .main_formal = self.main_formal.?,
         .builtin_vars = self.builtin_vars,
         .config_tys = self.config_tys,
+        .sec_envs = self.sec_envs,
     };
 
 }
@@ -122,20 +131,38 @@ pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: ?Type) !Type {
                 return Error.InsufficientInference;
             }
         },
-        .ident => |ident| {
-            const builtin = self.builtin_vars.get(ident) orelse {
-                self.lexer.report_err(expr.off, "undefined variable `{s}`", .{self.lexer.lookup(ident)});
+        .ident => |*ident| {
+            if (self.active_sec_env.?.get(ident.sym)) |formal| {
+                ident.sema_expr = formal.expr;
+                return self.sema_expr(formal.expr, infer);
+            } 
+            const builtin = self.builtin_vars.get(ident.sym) orelse {
+                self.lexer.report_err(expr.off, "undefined variable `{s}`", .{self.lexer.lookup(ident.sym)});
                 self.lexer.report_line(expr.off);
                 return Error.Undefined;
             };
             return builtin[0];
         },
         .sec => |sec| {
+            const gop = self.sec_envs.getOrPut(self.a, sec) catch unreachable;
+            std.debug.assert(!gop.found_existing);
+            gop.value_ptr.* = .{};
+            const env = gop.value_ptr;
+            self.active_sec_env = env;
+            for (sec.variable) |v| {
+                if (env.fetchPut(self.a, v.ident, v) catch unreachable) |shadowed| {
+                    self.lexer.report_err(v.first_off(), "variable `{s}` is alread defined", .{self.lexer.lookup(v.ident)});
+                    self.lexer.report_line(v.first_off());
+                    self.lexer.report_note(shadowed.value.first_off(), "previously defined here", .{});
+                    self.lexer.report_line(shadowed.value.first_off());
+                    return Error.Redefined;
+                }
+            }
             for (sec.config) |config| {
                 try self.sema_config(config);
             }
+            const allowed_tys = [_]Type {Type.note, Type.pitch, Type.void, TypePool.intern(.{.list = Type.pitch})};
             for (sec.notes) |note| {
-                const allowed_tys = [_]Type {Type.note, Type.pitch, Type.void};
                 const note_ty = try self.sema_expr(note, Type.note);
                 for (allowed_tys) |allowed| {
                     if (allowed == note_ty) break;

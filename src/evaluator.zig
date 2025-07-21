@@ -132,7 +132,7 @@ pub const Evaluator = struct {
             },
             .list => unreachable,
             .ident => |ident| {
-                return Val {.num = self.anno.builtin_vars.get(ident).?[1]};
+                return Val {.num = self.anno.builtin_vars.get(ident.sym).?[1]};
             },
             .sec => unreachable,
         }  
@@ -191,7 +191,12 @@ pub const Evaluator = struct {
                 }
                 return null;
             },
-            .ident => @panic("TODO"),
+            .ident => |ident| {
+                return self.eval_expr(ident.sema_expr) orelse {
+                    ident.sema_expr.reset();
+                    return null;
+                };
+            },
             .sec => unreachable,
         }  
     } 

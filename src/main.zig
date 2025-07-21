@@ -154,8 +154,8 @@ pub fn main() !void  {
     }
     // ----- Sema -----
     TypePool.init(alloc);
-    var sema = Sema {.lexer = &lexer, .ast = &ast };
-    var anno = try sema.sema(alloc);
+    var sema = Sema {.lexer = &lexer, .ast = &ast, .a = alloc };
+    var anno = try sema.sema();
     defer anno.deinit(alloc);
     if (opts.compile_stage == .Sema) {
         std.log.info("type check successful", .{});

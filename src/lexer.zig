@@ -436,7 +436,6 @@ pub fn report_line(self: Lexer, off: u32) void {
 
     while (end < self.src.len): (end += 1) {
         if (self.src[end] == '\n') {
-            end -= 1;
             break;
         } 
     }

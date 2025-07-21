@@ -12,18 +12,27 @@ pub const Expr = struct {
     off: u32,
     data: union(enum) {
         num: isize,
-        ident: Symbol,
+        ident: Ident,
         sec: *Section,
         infix: Infix,
         prefix: Prefix,
         list: List,
     },
 
+    pub const Ident = struct {
+        sym: Symbol,
+        sema_expr: *Expr = undefined,
+    };
+
     pub const Section = struct {
         rcurly_off: u32,
+        variable: []*Formal,
         config: []*Formal,
         notes: []*Expr,
         pub fn dump(self: Section, writer: anytype, lexer: Lexer, level: u32) void {
+            for (self.variable) |formal| {
+                formal.dump(writer, lexer, level+1);
+            }
             for (self.config) |formal| {
                 formal.dump(writer, lexer, level+1);
             }
@@ -71,13 +80,13 @@ pub const Expr = struct {
         for (0..level) |_|
             writer.writeByte(' ') catch unreachable; 
         _ = writer.write("|-") catch unreachable;
-                switch (self.data) {
+        switch (self.data) {
             .num => |num| {
                 _ = writer.print("Num<{}>", .{num}) catch unreachable;
                 writer.writeByte('\n') catch unreachable; 
             },
             .ident => |ident| {
-                _ = writer.print("Ident<{s}>", .{lexer.lookup(ident)}) catch unreachable;
+                _ = writer.print("Ident<{s}>", .{lexer.lookup(ident.sym)}) catch unreachable;
                 writer.writeByte('\n') catch unreachable; 
             },
             .sec => |section| {
@@ -106,6 +115,21 @@ pub const Expr = struct {
 
         }
     }
+
+    pub fn reset(self: *Expr) void {
+        self.i = 0;
+        switch (self.data) {
+            .num,
+            .ident => {}, // TODO
+            .sec => unreachable,
+            .prefix => |prefix| prefix.rhs.reset(),
+            .infix => |infix| {
+                infix.lhs.reset();
+                infix.rhs.reset();
+            },
+            .list => |list| for (list.els) |el| el.reset(),
+        }
+    }
 };
 
 pub const Formal = struct {
@@ -126,7 +150,7 @@ pub const Formal = struct {
     }
 
     pub fn first_off(self: Formal) u32 {
-       return self.ident_off; 
+        return self.ident_off; 
     }
 
     pub fn last_off(self: Formal, lexer: Lexer) u32 {
@@ -134,13 +158,14 @@ pub const Formal = struct {
     }
 };
 
-toplevels: []*Formal,
-formals: std.SegmentedList(Formal, 1),
-exprs: std.SegmentedList(Expr, 0),
-secs: std.SegmentedList(Expr.Section, 1),
 
-pub fn dump(self: Ast, writer: anytype, lexer: Lexer) void {
-    for (self.toplevels) |toplevel| {
-        toplevel.dump(writer, lexer, 0);
+toplevels: []*Formal,
+    formals: std.SegmentedList(Formal, 1),
+    exprs: std.SegmentedList(Expr, 0),
+    secs: std.SegmentedList(Expr.Section, 1),
+
+    pub fn dump(self: Ast, writer: anytype, lexer: Lexer) void {
+        for (self.toplevels) |toplevel| {
+            toplevel.dump(writer, lexer, 0);
+        }
     }
-}

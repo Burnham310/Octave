@@ -94,7 +94,7 @@ pub fn parse_atomic_expr(self: *Parser) Error!?*Expr {
     switch (tok.tag) {
         .ident => {
             self.lexer.consume();
-            return self.create(Expr {.off = tok.off, .data = .{ .ident = self.lexer.re_ident(tok.off) }});
+            return self.create(Expr {.off = tok.off, .data = .{ .ident = .{.sym = self.lexer.re_ident(tok.off) }}});
         },
         .int => {
             self.lexer.consume();
@@ -147,17 +147,25 @@ pub fn parse_prefix(self: *Parser) Error!?*Expr {
         .lcurly => {
             self.lexer.consume();
             var expr_list = std.ArrayListUnmanaged(*Expr) {};
-            const formal_list = try self.parse_list_of(*Formal, parse_formal);
-            const last_formal, const last_formal_name = self.get_slice_last_or_tok(formal_list, tok);
-            const semi_colon = try self.expect_token_crit_off(.semi_colon, last_formal, last_formal_name);
+
+            const formal_list1 = try self.parse_list_of(*Formal, parse_formal);
+            const last_formal1, const last_formal_name1 = self.get_slice_last_or_tok(formal_list1, tok);
+            const semi_colon1 = try self.expect_token_crit_off(.semi_colon, last_formal1, last_formal_name1);
+            _ = semi_colon1;
+
+            const formal_list2 = try self.parse_list_of(*Formal, parse_formal);
+            const last_formal2, const last_formal_name2 = self.get_slice_last_or_tok(formal_list2, tok);
+            const semi_colon2 = try self.expect_token_crit_off(.semi_colon, last_formal2, last_formal_name2);
+
             while (try self.parse_expr()) |expr| {
                 expr_list.append(self.a, expr) catch unreachable;
             }
-            const last_expr, const last_expr_name = self.get_last_or_tok(expr_list, semi_colon);
+            const last_expr, const last_expr_name = self.get_last_or_tok(expr_list, semi_colon2);
             const rcurly = try self.expect_token_crit_off(.rcurly, last_expr, last_expr_name);
             const sec = Section {
                 .rcurly_off = rcurly.off,
-                .config = formal_list,
+                .variable = formal_list1,
+                .config = formal_list2,
                 .notes = expr_list.toOwnedSlice(self.a) catch unreachable
             };
             return self.create(Expr {.off = tok.off, .data = .{.sec = self.create(sec) }});
