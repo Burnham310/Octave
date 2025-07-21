@@ -15,6 +15,7 @@ pub const Expr = struct {
         ident: Symbol,
         sec: *Section,
         infix: Infix,
+        prefix: Prefix,
         list: List,
     },
 
@@ -37,6 +38,11 @@ pub const Expr = struct {
         rbrac_off: u32,
     };
 
+    pub const Prefix = struct {
+        op: Lexer.TokenType,
+        rhs: *Expr,
+    };
+
     pub const Infix = struct {
         op: Lexer.TokenType,
         lhs: *Expr,
@@ -45,7 +51,7 @@ pub const Expr = struct {
 
     pub fn first_off(self: Expr) u32 {
         switch (self.data) {
-            .num, .ident, .sec, .list => return self.off,
+            .num, .ident, .sec, .list, .prefix => return self.off,
             .infix => |infix| return infix.lhs.first_off(),
         }
     }
@@ -55,6 +61,7 @@ pub const Expr = struct {
            .num => return @as(u32, @intCast(lexer.re_int_impl(self.off).len)) + self.off,
            .ident => return @as(u32, @intCast(lexer.re_ident_impl(self.off).len)) + self.off,
            .infix => |infix| return infix.rhs.last_off(lexer),
+           .prefix => |prefix| return prefix.rhs.last_off(lexer),
            .sec => |sec| return sec.rcurly_off,
            .list => |list| return list.rbrac_off,
         }
@@ -78,8 +85,13 @@ pub const Expr = struct {
                 writer.writeByte('\n') catch unreachable; 
                 section.dump(writer, lexer, level);
             },
+            .prefix => |prefix| {
+                _ = writer.print("Prefix<{s}>", .{@tagName(prefix.op)}) catch unreachable;
+                writer.writeByte('\n') catch unreachable; 
+                prefix.rhs.dump(writer, lexer, level+1);
+            },
             .infix => |infix| {
-                _ = writer.print("{}", .{infix.op}) catch unreachable;
+                _ = writer.print("Infix<{s}>", .{@tagName(infix.op)}) catch unreachable;
                 writer.writeByte('\n') catch unreachable; 
                 infix.lhs.dump(writer, lexer, level+1);
                 infix.rhs.dump(writer, lexer, level+1);

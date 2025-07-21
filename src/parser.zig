@@ -127,6 +127,22 @@ pub fn parse_expr(self: *Parser) Error!?*Expr {
 
 pub fn parse_prefix(self: *Parser) Error!?*Expr {
     const tok = try self.lexer.peek();
+    if (prefix_bp(tok.tag)) |bp| {
+        self.lexer.consume();
+        const rhs = try self.parse_expr_climb(bp) orelse {
+            self.lexer.report_err(tok.off, "Expect expression after prefix operator `{s}`", .{self.lexer.stringify_token(tok)});
+            self.lexer.report_line(tok.off);
+            return Error.UnexpectedToken;
+        };
+        if (tok.tag == .slash) {
+            const lhs = self.create(Expr {.off = tok.off, .data = .{.num = 1 }});
+            const infix = Expr.Infix {.lhs = lhs, .rhs = rhs, .op = tok.tag };
+            return self.create(Expr {.off = tok.off, .data = .{.infix = infix}});
+        }
+        const prefix = Expr.Prefix {.rhs = rhs, .op = tok.tag};
+        return self.create(Expr {.off = tok.off, .data = .{.prefix = prefix}});       
+    }
+
     switch (tok.tag) {
         .lcurly => {
             self.lexer.consume();
@@ -158,26 +174,19 @@ pub fn parse_prefix(self: *Parser) Error!?*Expr {
             return self.create(Expr {.off = tok.off, .data = .{.list = list}});
 
         },
-        .slash => {
-            self.lexer.consume();
-            const rhs = try self.parse_expr() orelse {
-                self.lexer.report_err(tok.off, "expect expression after `/`", .{});
-                self.lexer.report_line(tok.off);
-                return Error.UnexpectedToken;
-            };
-            const lhs = self.create(Expr {.off = tok.off, .data = .{.num = 1 }});
-            const infix = Expr.Infix {.lhs = lhs, .rhs = rhs, .op = tok.tag };
-            return self.create(Expr {.off = tok.off, .data = .{.infix = infix}});
-        },
         else => return null,
     } 
 }
 
 fn prefix_bp(tt: TokenType) ?u32 {
-    switch (tt) {
+    return switch (tt) {
         .slash => 30,
-        
-    }
+        .power,
+        .period,
+        .hash,
+        .tilde => 40,
+        else => null,     
+    };
 }
 
 fn infix_bp(tt: TokenType) ?struct {u32, u32} {
@@ -230,12 +239,12 @@ pub fn expect_token_crit(self: *Parser, kind: TokenType, before: Token) !Token {
 
 pub fn expect_token_crit_off(self: *Parser, kind: TokenType, off: u32, before: []const u8) !Token {
     const tok = self.lexer.next() catch |e| {
-        self.lexer.report_err(off, "Expect {} after `{s}`, but encounter {}", .{ kind, before, e });
+        self.lexer.report_err(off, "Expect {s} after `{s}`, but encounter {}", .{ @tagName(kind), before, e });
         self.lexer.report_line(off);
         return Error.EndOfStream;
     };
     if (tok.tag != kind) {
-        self.lexer.report_err(tok.off, "Expect {} after `{s}`, found {s}", .{ kind, before, self.lexer.stringify_token(tok) });
+        self.lexer.report_err(tok.off, "Expect {s} after `{s}`, found {s}", .{ @tagName(kind), before, self.lexer.stringify_token(tok) });
         self.lexer.report_line(tok.off);
         return Error.UnexpectedToken;
     }

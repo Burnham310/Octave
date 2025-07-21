@@ -30,6 +30,7 @@ const Error = error {
     TypeMismatched,
     Undefined,
     UnknownConfig,
+    InsufficientInference
 };
 
 pub fn sema(self: *Sema, a: std.mem.Allocator) Error!Annotations {
@@ -49,6 +50,7 @@ pub fn sema(self: *Sema, a: std.mem.Allocator) Error!Annotations {
     self.config_tys.putNoClobber(a, self.lexer.intern("mode"), Type.mode) catch unreachable;
     self.config_tys.putNoClobber(a, self.lexer.intern("tonic"), Type.pitch) catch unreachable;
     self.config_tys.putNoClobber(a, self.lexer.intern("bpm"), Type.int) catch unreachable;
+    self.config_tys.putNoClobber(a, self.lexer.intern("tempo"), Type.fraction) catch unreachable;
     // typecheck each toplevel declaration
     for (self.ast.toplevels) |formal| {
        try self.sema_formal(formal);
@@ -108,11 +110,17 @@ pub fn expect_type_mappable(self: *Sema, expected: Type, got: Type, off: u32) !v
     return Error.TypeMismatched;
 }
 
-pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, _: ?Type) !Type {
+pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: ?Type) !Type {
     switch (expr.data) {
         .num => {
-            //if (infer == TypePool.note) return TypePool.note;
-            return Type.int;
+            if (infer == Type.pitch) return Type.pitch
+            else if (infer == Type.int) return Type.int
+            else if (infer == Type.note) return Type.pitch // What?? TODO: clean this up
+            else {
+                self.lexer.report_err(expr.off, "type of number literal cannot be inferred", .{});
+                self.lexer.report_line(expr.off);
+                return Error.InsufficientInference;
+            }
         },
         .ident => |ident| {
             const builtin = self.builtin_vars.get(ident) orelse {
@@ -127,7 +135,7 @@ pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, _: ?Type) !Type {
                 try self.sema_config(config);
             }
             for (sec.notes) |note| {
-                const allowed_tys = [_]Type {Type.note, Type.chord, Type.int, TypePool.intern(.{.list = Type.int})};
+                const allowed_tys = [_]Type {Type.note, Type.pitch, Type.void};
                 const note_ty = try self.sema_expr(note, Type.note);
                 for (allowed_tys) |allowed| {
                     if (allowed == note_ty) break;
@@ -139,10 +147,14 @@ pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, _: ?Type) !Type {
             }
             return Type.section;
         },
+        .prefix => |prefix| {
+            try self.expect_type_mappable(Type.pitch, try self.sema_expr(prefix.rhs, Type.pitch), prefix.rhs.off);
+            return Type.pitch;
+        },
         .infix => |infix| {
            switch (infix.op) {
                .single_quote => {
-                   try self.expect_type_mappable(Type.int, try self.sema_expr(infix.lhs, null), infix.rhs.off);
+                   try self.expect_type_mappable(Type.pitch, try self.sema_expr(infix.lhs, Type.pitch), infix.rhs.off);
                    try self.expect_type(Type.fraction, try self.sema_expr(infix.rhs, Type.fraction), infix.rhs.off);
                    return Type.note; 
                },
@@ -156,10 +168,16 @@ pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, _: ?Type) !Type {
            }
        },
        .list => |list| {
-            if (list.els.len == 0) return Type.@"void";
-            const el_ty = try self.sema_expr(list.els[0], null); 
+            if (list.els.len == 0) {
+                //if (infer) |infer_inner|
+                //    return TypePool.intern(.{.list = infer_inner});
+                //self.lexer.report_err(expr.off, "type of an empty list cannot be inferred", .{}); 
+                //return Error.InsufficientInference;
+                return Type.@"void";
+            }
+            const el_ty = try self.sema_expr(list.els[0], infer); 
             for (list.els[1..], 2..) |el, i| {
-                const other_ty = try self.sema_expr(el, Type.int);
+                const other_ty = try self.sema_expr(el, infer);
                 if (el_ty != other_ty) {
                     self.lexer.report_err(el.off, "exprssions in list must have the same type; 1th is {}, {}th is {}", 
                         .{TypePool.lookup(el_ty), i, TypePool.lookup(other_ty)});

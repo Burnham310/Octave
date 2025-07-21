@@ -145,6 +145,7 @@ pub const BuiltinSymbols = struct {
     pub var mode: Symbol = undefined;
     pub var octave: Symbol = undefined;
     pub var bpm: Symbol = undefined;
+    pub var tempo: Symbol = undefined;
 
     pub var C: Symbol = undefined;
     pub var D: Symbol = undefined;
@@ -361,7 +362,7 @@ pub fn re_int_impl(self: Lexer, off: u32) []const u8 {
         // TODO error if not space or digit
         switch (self.src[i]) {
             '0'...'9' => {},
-            'a'...'z', 'A'...'Z', '.' => unreachable,
+            'a'...'z', 'A'...'Z' => unreachable,
             else => break,
         }
     }

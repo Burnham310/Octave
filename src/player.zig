@@ -25,7 +25,7 @@ fn read(ptr: *anyopaque, frames: []f32) struct { u32, Streamer.Status } {
         if (self.frame_ct == 0) {
             if (self.peak) |note| {
                 if (note.is_eof()) return .{ off, .Stop };
-                const sine = create(self.a, Zynth.Waveform.Simple.init(0.5, note.freq, .Triangle));
+                const sine = create(self.a, Zynth.Waveform.Simple.init(note.amp * 0.5, note.freq, .Triangle));
                 const envelop = create(self.a, Zynth.Envelop.Envelop.init(
                         self.a.dupe(f32, &.{0.05, note.duration - 0.1, 0.05}) catch unreachable,
                         self.a.dupe(f32, &.{0, 1, 1, 0}) catch unreachable,

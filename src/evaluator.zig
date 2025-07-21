@@ -5,6 +5,7 @@ const assert = std.debug.assert;
 const Ast = @import("ast.zig");
 const Sema = @import("sema.zig");
 const TypePool = @import("type_pool.zig");
+const Type = TypePool.Type;
 const Tonality = @import("tonality.zig");
 const ThreadSafeQueue = @import("thread_safe_queue.zig").ThreadSafeQueue;
 const BS = @import("lexer.zig").BuiltinSymbols;
@@ -15,13 +16,14 @@ pub const Note = struct {
     freq: f32,
     duration: f32,
     gap: f32, // gap since last note
+    amp: f32,
 
     pub fn is_eof(self: Note) bool {
         return self.freq == 0 and self.duration == 0;
     }
 
     pub fn eof(gap: f32) Note {
-        return .{ .freq = 0,. duration = 0, .gap = gap };
+        return .{ .freq = 0,. duration = 0, .gap = gap, .amp = 0 };
     }
 };
 
@@ -73,10 +75,11 @@ pub const Evaluator = struct {
     const SectionConfig = struct {
         scale: Tonality.Scale = .MiddleCMajor,
         bpm: f32 = 120,
+        tempo: Fraction = .{.numerator = 4, .dominator = 4},
     };
 
     const PreNote = struct {
-        deg: isize,
+        pitch: NotePitch,
         duration: Fraction,
     };
 
@@ -93,8 +96,15 @@ pub const Evaluator = struct {
         }
     };
 
+    const NotePitch = struct {
+        deg: i32,
+        shift: i32,
+        amp: f32 = 1,
+    };
+
     const Val = union(enum) {
         num: isize,
+        pitch: NotePitch,
         frac: Fraction,
         note: PreNote,
     };
@@ -105,12 +115,13 @@ pub const Evaluator = struct {
         _ = t_full;
         switch (expr.data) {
             .num => |i| return Val {.num = i},
+            .prefix => @panic("TODO"),
             .infix => |infix| {
                 const lhs = self.eval_expr_strict(infix.lhs);
                 const rhs = self.eval_expr_strict(infix.rhs);
                 switch (infix.op) {
                     .single_quote => {
-                        return Val {.note = PreNote {.deg = lhs.num, .duration = rhs.frac}};
+                        return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs.frac}};
                     },
                     .slash => {
                         return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
@@ -133,7 +144,24 @@ pub const Evaluator = struct {
             .num => |i| {
                 if (expr.i > 0) return null;
                 expr.i += 1;
-                return Val {.num = i};
+                if (expr.ty == Type.int) return Val {.num = @intCast(i)};
+                if (expr.ty == Type.pitch) return Val {.pitch = .{.deg = @intCast(i), .shift = 0}}
+                else unreachable;
+            },
+            .prefix => |prefix| {
+                if (expr.i > 0) return null;
+                var pitch = (self.eval_expr(prefix.rhs) orelse {
+                    expr.i += 1;
+                    return null;
+                }).pitch;
+                switch (prefix.op) {
+                    .power => pitch.shift += 12,
+                    .period => pitch.shift -= 12,
+                    .hash => pitch.shift += 1,
+                    .tilde => pitch.shift -= 1,
+                    else => unreachable,
+                } 
+                return Val {.pitch = pitch};
             },
             .infix => |infix| {
                 if (expr.i > 0) return null;
@@ -144,7 +172,7 @@ pub const Evaluator = struct {
                 const rhs = self.eval_expr_strict(infix.rhs);
                 switch (infix.op) {
                     .single_quote => {
-                        return Val {.note = PreNote {.deg = lhs.num, .duration = rhs.frac}};
+                        return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs.frac}};
                     },
                     .slash => {
                         return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
@@ -154,6 +182,10 @@ pub const Evaluator = struct {
                 
             },
             .list => |list| {
+                if (expr.ty == Type.@"void" and expr.i == 0) {
+                    expr.i += 1;
+                    return Val {.pitch = .{.deg = 1, .shift = 0, .amp = 0}};
+                }
                 while (expr.i < list.els.len): (expr.i += 1) {
                     return self.eval_expr(list.els[expr.i]) orelse continue;
                 }
@@ -184,24 +216,30 @@ pub const Evaluator = struct {
             else if (formal.ident == BS.octave) config.scale.octave = @intCast(self.eval_expr_strict(formal.expr).num)
             else if (formal.ident == BS.mode) config.scale.mode = @enumFromInt(self.eval_expr_strict(formal.expr).num)
             else if (formal.ident == BS.bpm) config.bpm = @floatFromInt(self.eval_expr_strict(formal.expr).num)
+            else if (formal.ident == BS.tempo) config.tempo = self.eval_expr_strict(formal.expr).frac
             else unreachable;
         }
         const note_exprs = sec.notes;
         
         var gap: f32 = 0;
-        const default_dura = Fraction {.numerator = 1, .dominator = 4};
+        const default_dura = Fraction {.numerator = 1, .dominator = config.tempo.dominator};
         for (note_exprs) |note_expr| {
             var first = true;
             while (self.eval_expr(note_expr)) |val| {
                 const pre_note = switch (val) {
-                    .num => |i| PreNote  {.deg = i, .duration = default_dura},
+                    .pitch => |pitch| PreNote  {.pitch = pitch, .duration = default_dura},
                     .note => val.note,
                     else => |t| @panic(@tagName(t)),
                 };
 
-                const abspitch = config.scale.get_abspitch(@intCast(pre_note.deg));
+                const abspitch = config.scale.get_abspitch(@intCast(pre_note.pitch.deg)) + pre_note.pitch.shift;
                 const freq = Tonality.abspitch_to_freq(abspitch);
-                const note = Note {.freq = freq, .duration = pre_note.duration.to_sec(config.bpm), .gap = if (first) gap else 0};
+                const note = Note {
+                    .freq = freq,
+                    .duration = pre_note.duration.to_sec(config.bpm),
+                    .gap = if (first) gap else 0,
+                    .amp = pre_note.pitch.amp
+                };
                 self.queue.push(note);
                 first = false;
                 gap = note.duration;

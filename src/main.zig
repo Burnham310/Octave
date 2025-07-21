@@ -139,7 +139,7 @@ pub fn main() !void  {
             const tk = try lexer.next();
             if (tk.tag == .eof) break;
             const loc = lexer.to_loc(tk.off);
-            try output_writer.print("{} {}:{}\n", .{tk.tag, loc.row, loc.col});
+            try output_writer.print("{s} {}:{}\n", .{lexer.stringify_token(tk), loc.row, loc.col});
         }
         return;
     }
