@@ -8,11 +8,14 @@ const Config = Zynth.Config;
 const Player = @This();
 
 evaluator: *Eval.Evaluator,
+volume: f32,
 frame_ct: u32 = 0, // frame since last source played
 peak: ?Eval.Note = null,
 mixer: Zynth.Mixer = .{},
 
 a: std.mem.Allocator,
+
+var random = std.Random.Xoroshiro128.init(0);
 
 
 fn read(ptr: *anyopaque, frames: []f32) struct { u32, Streamer.Status } {
@@ -25,13 +28,13 @@ fn read(ptr: *anyopaque, frames: []f32) struct { u32, Streamer.Status } {
         if (self.frame_ct == 0) {
             if (self.peak) |note| {
                 if (note.is_eof()) return .{ off, .Stop };
-                const sine = create(self.a, Zynth.Waveform.Simple.init(note.amp * 0.5, note.freq, .Triangle));
-                const envelop = create(self.a, Zynth.Envelop.Envelop.init(
-                        self.a.dupe(f32, &.{0.05, note.duration - 0.1, 0.05}) catch unreachable,
-                        self.a.dupe(f32, &.{0, 1, 1, 0}) catch unreachable,
-                        sine.streamer()
-                ));
-                self.mixer.play(envelop.streamer());
+                const sine = create(self.a, Zynth.Waveform.StringNoise.init(note.amp * 0.5 * self.volume, note.freq, random.random()));
+                //const envelop = create(self.a, Zynth.Envelop.Envelop.init(
+                //        self.a.dupe(f32, &.{0.05, note.duration - 0.1, 0.05}) catch unreachable,
+                //        self.a.dupe(f32, &.{0, 1, 1, 0}) catch unreachable,
+                //        sine.streamer()
+                //));
+                self.mixer.play(sine.streamer());
             }
             self.peak = self.evaluator.get();
             self.frame_ct = @as(u32, @intFromFloat(self.peak.?.gap * Config.SAMPLE_RATE));
