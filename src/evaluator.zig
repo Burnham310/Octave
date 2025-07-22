@@ -182,7 +182,7 @@ pub const Evaluator = struct {
                 
             },
             .list => |list| {
-                if (expr.ty == Type.@"void" and expr.i == 0) {
+                if (list.els.len == 0 and expr.i == 0) {
                     expr.i += 1;
                     return Val {.pitch = .{.deg = 1, .shift = 0, .amp = 0}};
                 }
