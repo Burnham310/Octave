@@ -205,26 +205,30 @@ pub fn to_loc(lexer: Lexer, off: u32) Loc {
     return res;
 }
 
-fn skip_ws(self: *Lexer) void {
+fn skip_ws(self: *Lexer) bool {
+    var skipped_any = false;
     while (self.off < self.src.len) : (self.off += 1) {
         const c = self.src[self.off];
         if (!std.ascii.isWhitespace(c)) {
             break;
         }
+        skipped_any = true;
     }
+    return skipped_any;
 }
-fn skip_comment(self: *Lexer) void {
+fn skip_comment(self: *Lexer) bool {
     if (self.off < self.src.len - 1 and self.src[self.off] == '/' and self.src[self.off + 1] == '/') {
         //log.err("comment", .{});
         while (self.off < self.src.len): (self.off += 1) {
             if (self.src[self.off] == '\n') {
                 self.off += 1;
                 //log.err("comment break {c}", .{self.src[self.off]});
-                break;
+                return true;
             }
         }
-        // runs out of character
+        return false;
     }
+    return false;
 }
 fn next_char(self: *Lexer) ?u8 {
     if (self.off >= self.src.len) return null;
@@ -326,12 +330,11 @@ pub fn next(self: *Lexer) Error!Token {
         self.peek_buf = null;
         return peek_buf;
     }
-    self.skip_ws();
-    self.skip_comment();
+    while (self.skip_ws() or self.skip_comment()) {}
     if (self.off >= self.src.len) return Token {.tag = .eof, .off = @intCast(self.src.len-1)};
 
     const tk = try self.match_num() orelse self.match_single() orelse self.match_ident() orelse {
-        self.report_err(self.off, "unrecognized token: `{any}`", .{self.src[self.off]});
+        self.report_err(self.off, "unrecognized token: `{c}`", .{self.src[self.off]});
         self.report_line(self.off);
         return Error.Unrecognized;
     };

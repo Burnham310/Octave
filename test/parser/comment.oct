@@ -1,2 +1,9 @@
 // This is a comment
-this_is_a_comment_not = 69
+this_is_a_comment_not = 69 // comment not at line start
+// This is another comment
+
+main = {;tempo=1;
+    // comment
+    1 2 3
+    // comment
+}

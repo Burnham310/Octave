@@ -32,10 +32,7 @@ pub fn parse(self: *Parser) Error!Ast {
     var toplevels = std.ArrayListUnmanaged(*Formal) {};
 
     while (true) {
-        const formal = self.parse_formal() catch {
-            self.lexer.skip_to_new_line_star();
-            continue;
-        } orelse break;
+        const formal = try self.parse_formal() orelse break;
         toplevels.append(self.a, formal) catch unreachable;
     }
     const last = if (toplevels.getLastOrNull()) |last| last.last_off(self.lexer.*) else 0;
