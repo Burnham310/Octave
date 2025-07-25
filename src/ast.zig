@@ -7,8 +7,7 @@ const TypePool = @import("type_pool.zig");
 const Ast = @This();
 
 pub const Expr = struct {
-    ty: TypePool.Type = undefined,
-    i: u32 = 0,
+    anno_extra: u32 = undefined,
     off: u32,
     data: union(enum) {
         num: isize,
@@ -116,20 +115,7 @@ pub const Expr = struct {
         }
     }
 
-    pub fn reset(self: *Expr) void {
-        self.i = 0;
-        switch (self.data) {
-            .num,
-            .ident => {}, // TODO
-            .sec => unreachable,
-            .prefix => |prefix| prefix.rhs.reset(),
-            .infix => |infix| {
-                infix.lhs.reset();
-                infix.rhs.reset();
-            },
-            .list => |list| for (list.els) |el| el.reset(),
-        }
-    }
+    
 };
 
 pub const Formal = struct {
@@ -160,12 +146,12 @@ pub const Formal = struct {
 
 
 toplevels: []*Formal,
-    formals: std.SegmentedList(Formal, 1),
-    exprs: std.SegmentedList(Expr, 0),
-    secs: std.SegmentedList(Expr.Section, 1),
+formals: std.SegmentedList(Formal, 1),
+exprs: std.SegmentedList(Expr, 0),
+secs: std.SegmentedList(Expr.Section, 1),
 
-    pub fn dump(self: Ast, writer: anytype, lexer: Lexer) void {
-        for (self.toplevels) |toplevel| {
-            toplevel.dump(writer, lexer, 0);
-        }
+pub fn dump(self: Ast, writer: anytype, lexer: Lexer) void {
+    for (self.toplevels) |toplevel| {
+        toplevel.dump(writer, lexer, 0);
     }
+}

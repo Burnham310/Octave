@@ -39,6 +39,7 @@ pub fn run_tests_on_dir(a: Allocator, stage: CompileStage, path: []const u8, com
 const Options = struct {
     compiler_path: []const u8,
     test_root: []const u8,
+    color: bool,
 };
 
 var enable_color = false;
@@ -50,6 +51,7 @@ const Color = enum {
     reset,
 
     pub fn to_code(self: Color) []const u8 {
+        if (!enable_color) return "";
         return switch (self) {
             .red => "\x1b[31m",
             .blue => "\x1b[34m",
@@ -74,6 +76,7 @@ pub fn main() !void {
     var args_parser = Cli.ArgParser {.a = alloc};
     args_parser.add_opt([]const u8, &opts.compiler_path, null, .positional, "<compiler-path>");
     args_parser.add_opt([]const u8, &opts.test_root, null, .positional, "<test_root>");
+    args_parser.add_opt(bool, &opts.color, &false, .{.prefix = "--color"}, "");
     try args_parser.parse(&args);
 
     var test_results = TestResults {};
@@ -86,7 +89,7 @@ pub fn main() !void {
     const stdout = bufferd.writer();
     defer bufferd.flush() catch unreachable;
 
-    enable_color = stdout_raw.getOrEnableAnsiEscapeSupport();
+    enable_color = opts.color and stdout_raw.getOrEnableAnsiEscapeSupport();
 
     for (test_results.items) |result| {
         stdout.print("{s: <40}", .{result.path}) catch unreachable;

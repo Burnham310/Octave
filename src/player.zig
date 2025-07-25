@@ -11,15 +11,55 @@ evaluator: *Eval.Evaluator,
 volume: f32,
 frame_ct: u32 = 0, // frame since last source played
 peak: ?Eval.Note = null,
-mixer: Zynth.Mixer = .{},
+
+streamers: std.DoublyLinkedList = .{},
 
 a: std.mem.Allocator,
 
+const StreamerNode = struct {
+    streamer: Streamer,
+    node: std.DoublyLinkedList.Node = .{},
+
+    //pub fn new(streamer: Streamer, a: std.mem.Allocator) *StreamerNode {
+    //    const node = a.create(StreamerNode) catch unreachable;
+    //    node.streamer = streamer;
+    //    node.node = .{};
+    //    return node;
+    //}
+};
+
 var random = std.Random.Xoroshiro128.init(0);
 
+// TODO: use an arena allocator?
+pub fn make_streamer(note: Eval.Note, volume: f32, a: std.mem.Allocator) Zynth.Streamer {
+    const create = Zynth.Audio.create;
+    switch (note.inst) {
+        .guitar => {
+            const string = create(a, Zynth.Waveform.StringNoise.init(note.amp * 0.5 * volume, note.freq, random.random(), note.duration));
+            return string.streamer();
+        },
+        .sine => {
+            const sine = create(a, Zynth.Waveform.Simple.init(note.amp * 0.5 * volume, note.freq, .Sine));
+            const envelop = create(a, Zynth.Envelop.Envelop.init(
+                    a.dupe(f32, &.{0.05, note.duration - 0.1, 0.05}) catch unreachable,
+                    a.dupe(f32, &.{0, 1, 1, 0}) catch unreachable,
+                    sine.streamer()
+            ));
+            return envelop.streamer();
+        },
+        .triangle => {
+            const sine = create(a, Zynth.Waveform.Simple.init(note.amp * 0.5 * volume, note.freq, .Triangle));
+            const envelop = create(a, Zynth.Envelop.Envelop.init(
+                    a.dupe(f32, &.{0.05, note.duration - 0.1, 0.05}) catch unreachable,
+                    a.dupe(f32, &.{0, 1, 1, 0}) catch unreachable,
+                    sine.streamer()
+            ));
+            return envelop.streamer();
+        }
+    }
+}
 
 fn read(ptr: *anyopaque, frames: []f32) struct { u32, Streamer.Status } {
-    const create = Zynth.Audio.create;
     const self: *Player = @alignCast(@ptrCast(ptr));
   
     const frame_len: u32 = @intCast(frames.len);
@@ -28,15 +68,12 @@ fn read(ptr: *anyopaque, frames: []f32) struct { u32, Streamer.Status } {
         if (self.frame_ct == 0) {
             if (self.peak) |note| {
                 if (note.is_eof()) return .{ off, .Stop };
-                const sine = create(self.a, Zynth.Waveform.StringNoise.init(note.amp * 0.5 * self.volume, note.freq, random.random()));
-                //const envelop = create(self.a, Zynth.Envelop.Envelop.init(
-                //        self.a.dupe(f32, &.{0.05, note.duration - 0.1, 0.05}) catch unreachable,
-                //        self.a.dupe(f32, &.{0, 1, 1, 0}) catch unreachable,
-                //        sine.streamer()
-                //));
-                self.mixer.play(sine.streamer());
+                const node = self.a.create(StreamerNode) catch unreachable;
+                node.streamer = make_streamer(note, self.volume, self.a);
+                node.node = .{};
+                self.streamers.prepend(&node.node);
             }
-            self.peak = self.evaluator.get();
+            self.peak = self.evaluator.eval();
             self.frame_ct = @as(u32, @intFromFloat(self.peak.?.gap * Config.SAMPLE_RATE));
         }
         var end: u32 = frame_len;
@@ -46,19 +83,36 @@ fn read(ptr: *anyopaque, frames: []f32) struct { u32, Streamer.Status } {
             end = off + self.frame_ct;
             self.frame_ct = 0;
         }
-        _ = self.mixer.streamer().read(frames[off..end]);
+        self.mixer_read(frames[off..end]);
         off = end;
     }
      
     return .{ frame_len, .Continue };
 }
 
+fn mixer_read(self: *Player, frames: []f32) void {
+    var it = self.streamers.first;
+    while (it) |node| : (it = node.next) {
+        const sn: *StreamerNode = @fieldParentPtr("node", node);
+        var tmp = [_]f32 {0} ** 4096;
+        const len, const status = sn.streamer.read(tmp[0..frames.len]);
+        for (0..len) |frame_i|
+            frames[frame_i] += tmp[frame_i];
+        if (status == .Stop) {
+            it = node.prev;
+            self.streamers.remove(node);
+            self.a.destroy(sn);
+        }
+    }
+
+} 
+
 fn reset(ptr: *anyopaque) bool {
     const self: *Player = @alignCast(@ptrCast(ptr));
     self.frame_ct = 0;
     self.peak = null;
-    const mixer_stream = self.mixer.streamer();
-    return mixer_stream.reset();
+    self.evaluator.reset();
+    return true;
 }
 
 pub fn streamer(self: *Player) Streamer {

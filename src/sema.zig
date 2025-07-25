@@ -18,28 +18,43 @@ config_tys: std.AutoHashMapUnmanaged(Symbol, Type) = .{},
 sec_envs: std.AutoHashMapUnmanaged(*Ast.Expr.Section, SectionEnv) = .{},
 global_env: SectionEnv = .{},
 active_sec_env: ?*SectionEnv = null,
+
+anno_extra_index: u32 = 0,
+
+expr_extras: std.ArrayListUnmanaged(ExprAnnotation) = .{},
+
 a: std.mem.Allocator,
 
 pub const SectionEnv = std.AutoHashMapUnmanaged(Symbol, *Ast.Formal);
+
+pub const ExprAnnotation = struct {
+    ty: Type,
+};
 
 pub const Annotations = struct {
     main_formal: *Ast.Formal,
     builtin_vars: std.AutoHashMapUnmanaged(Symbol, struct {Type, u32}),
     config_tys: std.AutoHashMapUnmanaged(Symbol, Type),
     sec_envs: std.AutoHashMapUnmanaged(*Ast.Expr.Section, SectionEnv),
+    expr_extras: []ExprAnnotation,
 
     pub fn deinit(self: *Annotations, a: std.mem.Allocator) void {
        self.builtin_vars.deinit(a); 
     }
 };
 
-const Error = error {
+pub const Error = error {
     TypeMismatched,
     Undefined,
     Redefined,
     UnknownConfig,
     InsufficientInference,
 };
+
+fn new_anno(self: *Sema, anno: ExprAnnotation) u32 {
+    self.expr_extras.append(anno) catch unreachable; 
+    return self.expr_extras.items.len - 1;
+}
 
 pub fn sema(self: *Sema) Error!Annotations {
     // initialize builtin variables
@@ -60,9 +75,13 @@ pub fn sema(self: *Sema) Error!Annotations {
     self.config_tys.putNoClobber(a, self.lexer.intern("tonic"), Type.pitch) catch unreachable;
     self.config_tys.putNoClobber(a, self.lexer.intern("bpm"), Type.int) catch unreachable;
     self.config_tys.putNoClobber(a, self.lexer.intern("tempo"), Type.fraction) catch unreachable;
+    self.config_tys.putNoClobber(a, self.lexer.intern("instrument"), Type.int) catch unreachable;
+    self.config_tys.putNoClobber(a, self.lexer.intern("volume"), Type.int) catch unreachable;
     // typecheck each toplevel declaration
     for (self.ast.toplevels) |formal| {
         try self.sema_formal(formal);
+        if (formal.ident == Lexer.BuiltinSymbols.main)
+            self.main_formal = formal;
     }
     if (self.main_formal == null) {
         self.lexer.report_err(0, "main is undefiend", .{});
@@ -74,6 +93,7 @@ pub fn sema(self: *Sema) Error!Annotations {
         .builtin_vars = self.builtin_vars,
         .config_tys = self.config_tys,
         .sec_envs = self.sec_envs,
+        .expr_extras = self.expr_extras.toOwnedSlice(self.a) catch unreachable,
     };
 
 }
@@ -87,8 +107,7 @@ pub fn sema_formal(self: *Sema, formal: *Ast.Formal) Error!void {
         self.lexer.report_line(shadowed.value.first_off());
         return Error.Redefined;
     }
-    if (formal.ident == Lexer.BuiltinSymbols.main)
-        self.main_formal = formal;
+    
 }
 
 pub fn sema_config(self: *Sema, formal: *Ast.Formal) Error!void {
@@ -101,8 +120,11 @@ pub fn sema_config(self: *Sema, formal: *Ast.Formal) Error!void {
 }
 
 pub fn sema_expr(self: *Sema, expr: *Ast.Expr, infer: ?Type) Error!Type {
-    expr.ty = try self.sema_expr_impl(expr, infer);
-    return expr.ty;
+    const anno = ExprAnnotation {.ty = try self.sema_expr_impl(expr, infer)};
+    expr.anno_extra = self.anno_extra_index;
+    self.anno_extra_index += 1;
+    self.expr_extras.append(self.a, anno) catch unreachable;
+    return anno.ty;
 }
 
 pub fn expect_type(self: *Sema, expected: Type, got: Type, off: u32) !void {
@@ -150,7 +172,8 @@ pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: ?Type) !Type {
             if (self.builtin_vars.get(ident.sym)) |builtin|
                 return builtin[0];
             if (self.global_env.get(ident.sym)) |formal| {
-               return self.sema_expr(formal.expr, infer); 
+                ident.sema_expr = formal.expr;
+                return self.sema_expr(formal.expr, infer); 
             }
             self.lexer.report_err(expr.off, "undefined variable `{s}`", .{self.lexer.lookup(ident.sym)});
             self.lexer.report_line(expr.off);

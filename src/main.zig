@@ -15,10 +15,6 @@ const Zynth = @import("zynth");
 const Cli = @import("cli.zig");
 
 
-fn usage(prog_name: []const u8) void {
-    std.debug.print("Usage: {s} <input_file> -o <output_file>\n", .{prog_name});
-}
-
 pub const ErrorReturnCode = enum(u8) {
     success = 0,
     cli,
@@ -27,6 +23,22 @@ pub const ErrorReturnCode = enum(u8) {
     sema,
     eval,
     unexpected,
+
+    pub fn from_err(e: anyerror) ErrorReturnCode {
+        if (is_err_from_set(Cli.Error, e)) return .cli;
+        if (is_err_from_set(Lexer.Error, e)) return .lex;
+        if (is_err_from_set(Parser.Error, e)) return .parse;
+        if (is_err_from_set(Sema.Error, e)) return .sema;
+        //if (is_err_from_set(e, Eval.Error)) return .lex;S
+        return .unexpected;
+    }
+
+    pub fn is_err_from_set(comptime T: type, e: anyerror) bool {
+        const err_info = @typeInfo(T).error_set.?;
+        return inline for (err_info) |err| {
+            if (@field(T, err.name) == e) break true;
+        } else false;
+    }
 };
 
 pub const CompileStage = enum {
@@ -41,13 +53,14 @@ const Options = struct {
     volume: f32,
     repeat: bool,
     compile_stage: CompileStage,
+    debug: bool,
 };
 
 var debug_dump_trace = false;
 
-pub fn exit_or_dump_trace(exit_code: ErrorReturnCode, e: anyerror) noreturn {
+pub fn exit_or_dump_trace(e: anyerror) noreturn {
     //const builtin = @import("builtin");
-    if (debug_dump_trace) std.process.exit(@intFromEnum(exit_code));
+    if (!debug_dump_trace) std.process.exit(@intFromEnum(ErrorReturnCode.from_err(e)));
     std.log.err("{}", .{e});
     unreachable;
 }
@@ -65,10 +78,11 @@ pub fn main() !void  {
     //args_parser.add_opt([]const u8, &opts.output_path, &"-", .{.prefix = "-o"}, "<output-path>");
     args_parser.add_opt(CompileStage, &opts.compile_stage, &CompileStage.play, .{.prefix = "--stage"}, "<compile-stage>");
     args_parser.add_opt(bool, &opts.repeat, &false, .{.prefix = "--repeat"}, "");
-    args_parser.add_opt(bool, &debug_dump_trace, &true, .{.prefix = "--debug"}, "");
+    args_parser.add_opt(bool, &debug_dump_trace, &false, .{.prefix = "--debug"}, "");
     args_parser.add_opt(f32, &opts.volume, &1.0, .{.prefix = "--volume"}, "<volume>");
+    args_parser.add_opt(bool, &opts.debug, &false, .{.prefix = "-g"}, "");
     
-    args_parser.parse(&args) catch |e| exit_or_dump_trace(.cli, e);
+    args_parser.parse(&args) catch |e| exit_or_dump_trace(e);
 
     const stdout_raw = std.io.getStdOut();
     const stdout_writer = stdout_raw.writer();
@@ -85,7 +99,7 @@ pub fn main() !void  {
     var lexer = Lexer.init(buf, opts.input_path, alloc);
     if (opts.compile_stage == .lex) {
         while (true) {
-            const tk = lexer.next() catch |e| exit_or_dump_trace(.lex, e);
+            const tk = lexer.next() catch |e| exit_or_dump_trace(e);
             if (tk.tag == .eof) break;
             const loc = lexer.to_loc(tk.off);
             try stdout_writer.print("{s} {}:{}\n", .{lexer.stringify_token(tk), loc.row, loc.col});
@@ -94,7 +108,7 @@ pub fn main() !void  {
     }
     // ----- Parsing -----
     var parser = Parser { .lexer = &lexer, .a = alloc };
-    var ast = parser.parse() catch |e| exit_or_dump_trace(.parse, e);
+    var ast = parser.parse() catch |e| exit_or_dump_trace(e);
     if (opts.compile_stage == .parse) {
         ast.dump(stdout_writer, lexer);
         return;
@@ -102,23 +116,35 @@ pub fn main() !void  {
     // ----- Sema -----
     TypePool.init(alloc);
     var sema = Sema {.lexer = &lexer, .ast = &ast, .a = alloc };
-    var anno = sema.sema() catch |e| exit_or_dump_trace(.sema, e);
+    var anno = sema.sema() catch |e| exit_or_dump_trace(e);
     defer anno.deinit(alloc);
     if (opts.compile_stage == .sema) {
         return;
     }
     // ----- Compile -----
-    if (opts.repeat) @panic("TODO");
     var eval = Eval.Evaluator.init(&ast, &anno, alloc);
-    eval.start();
-
+    if (opts.debug) {
+        while (true) {
+            const note = eval.eval();
+            try stdout_writer.print("{}\n", .{note});
+            if (note.is_eof()) return;
+        }
+    }
     var player = Player {.evaluator = &eval, .a = alloc, .volume = opts.volume };
+
+    var streamer: Zynth.Streamer = undefined;
     var silence = Zynth.Waveform.Simple.silence;
     var cutoff = Zynth.Envelop.SimpleCutoff {.cutoff_sec = 0.5, .sub_stream = silence.streamer()};
     var and_then = Zynth.Delay.AndThen {.lhs = player.streamer(), .rhs = cutoff.streamer()};
-
+    var repeat = Zynth.Replay.RepeatAfterStop.init(null, player.streamer());
+    if (opts.repeat) {
+        streamer = repeat.streamer();            
+    } else {
+        streamer = and_then.streamer();
+    }
+    
     var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
-    try audio_ctx.init(and_then.streamer());
+    try audio_ctx.init(streamer);
     try audio_ctx.start();
 
     

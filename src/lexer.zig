@@ -146,6 +146,8 @@ pub const BuiltinSymbols = struct {
     pub var octave: Symbol = undefined;
     pub var bpm: Symbol = undefined;
     pub var tempo: Symbol = undefined;
+    pub var instrument: Symbol = undefined;
+    pub var volume: Symbol = undefined;
 
     pub var C: Symbol = undefined;
     pub var D: Symbol = undefined;

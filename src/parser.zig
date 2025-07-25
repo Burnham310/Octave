@@ -19,16 +19,18 @@ lexer: *Lexer,
 
 a: std.mem.Allocator,
 
-const Error = error {
+pub const Error = error {
     UnexpectedToken,
     EndOfStream,
-} || Lexer.Error;
+};
+
+const ErrorBoth = Error || Lexer.Error;
 
 //pub fn init(a: std.mem.Allocator) Parser {
 //    return 
 //}
 
-pub fn parse(self: *Parser) Error!Ast {
+pub fn parse(self: *Parser) ErrorBoth!Ast {
     var toplevels = std.ArrayListUnmanaged(*Formal) {};
 
     while (true) {
@@ -53,7 +55,7 @@ pub inline fn create(self: *Parser, el: anytype) *@TypeOf(el)  {
     return list.uncheckedAt(list.count()-1);
 }
 
-pub fn parse_list_of(self: *Parser, comptime T: type, f: fn (*Parser) Error!?T) Error![]T {
+pub fn parse_list_of(self: *Parser, comptime T: type, f: fn (*Parser) ErrorBoth!?T) ErrorBoth![]T {
     var list = std.ArrayListUnmanaged(T) {};
     defer list.deinit(self.a);
     const first = try f(self) orelse return (list.toOwnedSlice(self.a) catch unreachable);
@@ -65,7 +67,7 @@ pub fn parse_list_of(self: *Parser, comptime T: type, f: fn (*Parser) Error!?T) 
                 self.lexer.consume();
                 const item = try f(self) orelse {
                     self.lexer.report_err(tk.off, "Expect item after comma", .{});
-                    return Error.UnexpectedToken;
+                    return ErrorBoth.UnexpectedToken;
                 };
                 list.append(self.a, item) catch unreachable;
             },
@@ -75,18 +77,18 @@ pub fn parse_list_of(self: *Parser, comptime T: type, f: fn (*Parser) Error!?T) 
     return list.toOwnedSlice(self.a) catch unreachable;
 }
 
-pub fn parse_formal(self: *Parser) Error!?*Formal {
+pub fn parse_formal(self: *Parser) ErrorBoth!?*Formal {
     const ident = try self.expect_token(.ident) orelse return null;
     const eq = try self.expect_token_crit(.eq, ident);
     const expr = try self.parse_expr() orelse {
         self.lexer.report_err(eq.off, "Expect expression after `{}`", .{eq.tag});
-        return Error.UnexpectedToken;
+        return ErrorBoth.UnexpectedToken;
     };
     
     return self.create(Ast.Formal {.ident_off = ident.off, .eq_off = eq.off, .ident = self.lexer.re_ident(ident.off), .expr = expr } );
 }
 
-pub fn parse_atomic_expr(self: *Parser) Error!?*Expr {
+pub fn parse_atomic_expr(self: *Parser) ErrorBoth!?*Expr {
     const tok = try self.lexer.peek();
     switch (tok.tag) {
         .ident => {
@@ -102,7 +104,7 @@ pub fn parse_atomic_expr(self: *Parser) Error!?*Expr {
             const expr = try self.parse_expr() orelse {
                 self.lexer.report_err(tok.off, "Expect expression after `(`.", .{});
                 self.lexer.report_line(tok.off);
-                return Error.UnexpectedToken;
+                return ErrorBoth.UnexpectedToken;
             };
             _ = self.expect_token_crit_off(.rparen, expr.off, "expression") catch |e| {
                 self.lexer.report_note(tok.off, "left parenthesis `(` is here", .{});
@@ -116,20 +118,20 @@ pub fn parse_atomic_expr(self: *Parser) Error!?*Expr {
     }
 }
 
-pub fn parse_expr(self: *Parser) Error!?*Expr {
+pub fn parse_expr(self: *Parser) ErrorBoth!?*Expr {
     return self.parse_expr_climb(0);
 }
 
 
 
-pub fn parse_prefix(self: *Parser) Error!?*Expr {
+pub fn parse_prefix(self: *Parser) ErrorBoth!?*Expr {
     const tok = try self.lexer.peek();
     if (prefix_bp(tok.tag)) |bp| {
         self.lexer.consume();
         const rhs = try self.parse_expr_climb(bp) orelse {
             self.lexer.report_err(tok.off, "Expect expression after prefix operator `{s}`", .{self.lexer.stringify_token(tok)});
             self.lexer.report_line(tok.off);
-            return Error.UnexpectedToken;
+            return ErrorBoth.UnexpectedToken;
         };
         if (tok.tag == .slash) {
             const lhs = self.create(Expr {.off = tok.off, .data = .{.num = 1 }});
@@ -210,7 +212,7 @@ fn postfix_bp(tt: TokenType) ?u32 {
     };
 }
 
-pub fn parse_expr_climb(self: *Parser, min_bp: u32) Error!?*Expr {
+pub fn parse_expr_climb(self: *Parser, min_bp: u32) ErrorBoth!?*Expr {
     var lhs = try self.parse_prefix() orelse try self.parse_atomic_expr() orelse return null; // TODO parse prefix expr
    
     while (true) {
