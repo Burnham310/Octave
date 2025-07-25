@@ -1,1 +1,0 @@
-main = |:scale=/C 4 MAJ/: 1.. 2.. (if true then 3.. else 1..) [4 if false then 1 else s'4].. | // the parenthesis is optional
