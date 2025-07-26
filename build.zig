@@ -10,11 +10,15 @@ pub fn build(b: *Build) void {
     const zynth = b.dependency("zynth", .{});
     const zynth_mod = zynth.module("zynth");
 
-    const octave_compiler = b.addExecutable(.{
-        .name = "octc",
+    const root_module = b.addModule("octc", .{
+        .root_source_file = b.path("src/main.zig"),
         .target = target,
         .optimize = opt,
-        .root_source_file = b.path("src/main.zig"),
+    });
+
+    const octave_compiler = b.addExecutable(.{
+        .name = "octc",
+        .root_module = root_module,
     });
     octave_compiler.root_module.addImport("zynth", zynth_mod);
     octave_compiler.addIncludePath(b.path("src"));
@@ -24,17 +28,21 @@ pub fn build(b: *Build) void {
 
     const test_step = b.step("test", "invoke the integrated test system");
     const install_test_step = b.step("install-test", "install the test executable");
-    
+
+    const test_module = b.addModule("test", .{
+        .root_source_file = b.path("src/test.zig"),
+        .target = target,
+        .optimize = opt,
+    });
     const test_system = b.addExecutable(.{
         .name = "test",
-        .target = target,
-        .optimize = .Debug,
-        .root_source_file = b.path("src/test.zig"),
+        .root_module = test_module,
     });
 
     const run_test = b.addRunArtifact(test_system);
     run_test.addArtifactArg(octave_compiler);
     run_test.addFileArg(b.path("test"));
+
     run_test.step.dependOn(&octave_compiler.step);
     test_step.dependOn(&run_test.step);
 

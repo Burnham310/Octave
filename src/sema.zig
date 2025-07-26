@@ -131,7 +131,7 @@ pub fn expect_type(self: *Sema, expected: Type, got: Type, off: u32) !void {
     if (expected == got) {
         return;
     }
-    self.lexer.report_err(off, "Expect Type `{}`, got `{}`", .{TypePool.lookup(expected), TypePool.lookup(got)}); 
+    self.lexer.report_err(off, "Expect Type `{f}`, got `{f}`", .{TypePool.lookup(expected), TypePool.lookup(got)}); 
     self.lexer.report_line(off);
     return Error.TypeMismatched;
 }
@@ -145,7 +145,7 @@ pub fn expect_type_mappable(self: *Sema, expected: Type, got: Type, off: u32) !v
         .list => |el_ty| if (el_ty == expected) return,
         else => {},
     }
-    self.lexer.report_err(off, "Expect Type `{}` or `[{}]`, got `{}`", .{TypePool.lookup(expected), TypePool.lookup(expected), TypePool.lookup(got)}); 
+    self.lexer.report_err(off, "Expect Type `{f}` or `[{f}]`, got `{f}`", .{TypePool.lookup(expected), TypePool.lookup(expected), TypePool.lookup(got)}); 
     self.lexer.report_line(off);
     return Error.TypeMismatched;
 }
@@ -197,7 +197,7 @@ pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: ?Type) !Type {
                 for (allowed_tys) |allowed| {
                     if (allowed == note_ty) break;
                 } else {
-                    self.lexer.report_err(note.off, "expect one of Type note, chord, or num, got {}", .{TypePool.lookup(note_ty)});
+                    self.lexer.report_err(note.off, "expect one of Type note, chord, or num, got {f}", .{TypePool.lookup(note_ty)});
                     self.lexer.report_line(note.off);
                     return Error.TypeMismatched;
                 }
@@ -236,7 +236,7 @@ pub fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: ?Type) !Type {
             for (list.els[1..], 2..) |el, i| {
                 const other_ty = try self.sema_expr(el, infer);
                 if (el_ty != other_ty) {
-                    self.lexer.report_err(el.off, "exprssions in list must have the same type; 1th is {}, {}th is {}", 
+                    self.lexer.report_err(el.off, "exprssions in list must have the same type; 1th is {f}, {}th is {f}", 
                         .{TypePool.lookup(el_ty), i, TypePool.lookup(other_ty)});
                     self.lexer.report_line(el.off);
                     self.lexer.report_note(list.els[0].off, "first expression is here", .{});

@@ -1,10 +1,9 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
-const main_mod = @import("main.zig");
-const Cli = @import("Cli.zig");
-const CompileStage = main_mod.CompileStage;
-const ErrorReturnCode = main_mod.ErrorReturnCode;
+const Cli = @import("cli.zig");
+const CompileStage = Cli.CompileStage;
+const ErrorReturnCode = Cli.ErrorReturnCode;
 
 const TestResult = struct {
     path: []const u8,  
@@ -84,10 +83,11 @@ pub fn main() !void {
     run_tests_on_dir(alloc, .parse, "test/parser", opts.compiler_path, &test_results);
     run_tests_on_dir(alloc, .lex, "test/lexer", opts.compiler_path, &test_results);
 
-    const stdout_raw = std.io.getStdOut();
-    var bufferd = std.io.bufferedWriter(stdout_raw.writer());
-    const stdout = bufferd.writer();
-    defer bufferd.flush() catch unreachable;
+    const stdout_raw = std.fs.File.stdout();
+    var buf: [256]u8 = undefined;
+    var stdout_writer = stdout_raw.writer(&buf);
+    var stdout = &stdout_writer.interface;
+    defer stdout.flush() catch unreachable;
 
     enable_color = opts.color and stdout_raw.getOrEnableAnsiEscapeSupport();
 

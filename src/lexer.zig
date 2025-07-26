@@ -19,7 +19,7 @@ pub const Loc = struct {
     row: u32,
     col: u32,
     path: []const u8,
-    pub fn format(value: Loc, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(value: Loc, writer: anytype) !void {
         return writer.print("{s}:{}:{}", .{ value.path, value.row, value.col });
     }
 };
@@ -415,7 +415,7 @@ pub fn intern(self: Lexer, str: []const u8) Symbol {
 
 // ---------- Error Reporting Utilities ----------
 pub fn report(self: Lexer, prefix: []const u8, off: u32, comptime fmt: []const u8, args: anytype) void {
-    std.debug.print("{s}: {} ", .{prefix, self.to_loc(off)});
+    std.debug.print("{s}: {f} ", .{prefix, self.to_loc(off)});
     std.debug.print(fmt++"\n", args);
 }
 

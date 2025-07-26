@@ -15,44 +15,11 @@ const Zynth = @import("zynth");
 const Cli = @import("cli.zig");
 
 
-pub const ErrorReturnCode = enum(u8) {
-    success = 0,
-    cli,
-    lex,
-    parse,
-    sema,
-    eval,
-    unexpected,
-
-    pub fn from_err(e: anyerror) ErrorReturnCode {
-        if (is_err_from_set(Cli.Error, e)) return .cli;
-        if (is_err_from_set(Lexer.Error, e)) return .lex;
-        if (is_err_from_set(Parser.Error, e)) return .parse;
-        if (is_err_from_set(Sema.Error, e)) return .sema;
-        //if (is_err_from_set(e, Eval.Error)) return .lex;S
-        return .unexpected;
-    }
-
-    pub fn is_err_from_set(comptime T: type, e: anyerror) bool {
-        const err_info = @typeInfo(T).error_set.?;
-        return inline for (err_info) |err| {
-            if (@field(T, err.name) == e) break true;
-        } else false;
-    }
-};
-
-pub const CompileStage = enum {
-    lex,
-    parse,
-    sema,
-    play,
-};
-
 const Options = struct {
     input_path: []const u8,
     volume: f32,
     repeat: bool,
-    compile_stage: CompileStage,
+    compile_stage: Cli.CompileStage,
     debug: bool,
 };
 
@@ -60,7 +27,7 @@ var debug_dump_trace = false;
 
 pub fn exit_or_dump_trace(e: anyerror) noreturn {
     //const builtin = @import("builtin");
-    if (!debug_dump_trace) std.process.exit(@intFromEnum(ErrorReturnCode.from_err(e)));
+    if (!debug_dump_trace) std.process.exit(@intFromEnum(Cli.ErrorReturnCode.from_err(e)));
     std.log.err("{}", .{e});
     unreachable;
 }
@@ -76,7 +43,7 @@ pub fn main() !void  {
     var args_parser = Cli.ArgParser {.a = alloc}; 
     args_parser.add_opt([]const u8, &opts.input_path, null, .positional, "<input-path>");
     //args_parser.add_opt([]const u8, &opts.output_path, &"-", .{.prefix = "-o"}, "<output-path>");
-    args_parser.add_opt(CompileStage, &opts.compile_stage, &CompileStage.play, .{.prefix = "--stage"}, "<compile-stage>");
+    args_parser.add_opt(Cli.CompileStage, &opts.compile_stage, &Cli.CompileStage.play, .{.prefix = "--stage"}, "<compile-stage>");
     args_parser.add_opt(bool, &opts.repeat, &false, .{.prefix = "--repeat"}, "");
     args_parser.add_opt(bool, &debug_dump_trace, &false, .{.prefix = "--debug"}, "");
     args_parser.add_opt(f32, &opts.volume, &1.0, .{.prefix = "--volume"}, "<volume>");
@@ -84,8 +51,10 @@ pub fn main() !void  {
     
     args_parser.parse(&args) catch |e| exit_or_dump_trace(e);
 
-    const stdout_raw = std.io.getStdOut();
-    const stdout_writer = stdout_raw.writer();
+    const stdout_raw = std.fs.File.stdout();
+    var stdout_buf: [1024]u8 = undefined;
+    const stdout_writer = stdout_raw.writer(&stdout_buf);
+    var stdout = stdout_writer.interface;
     //var stdout_buffered = std.io.bufferedWriter(stdout_reader);
     //const stdout = stdout_buffered.writer();
     //defer stdout_buffered.flush() catch unreachable;
@@ -102,7 +71,7 @@ pub fn main() !void  {
             const tk = lexer.next() catch |e| exit_or_dump_trace(e);
             if (tk.tag == .eof) break;
             const loc = lexer.to_loc(tk.off);
-            try stdout_writer.print("{s} {}:{}\n", .{lexer.stringify_token(tk), loc.row, loc.col});
+            try stdout.print("{s} {}:{}\n", .{lexer.stringify_token(tk), loc.row, loc.col});
         }
         return;
     }
@@ -110,7 +79,7 @@ pub fn main() !void  {
     var parser = Parser { .lexer = &lexer, .a = alloc };
     var ast = parser.parse() catch |e| exit_or_dump_trace(e);
     if (opts.compile_stage == .parse) {
-        ast.dump(stdout_writer, lexer);
+        ast.dump(&stdout, lexer);
         return;
     }
     // ----- Sema -----
@@ -126,7 +95,7 @@ pub fn main() !void  {
     if (opts.debug) {
         while (true) {
             const note = eval.eval();
-            try stdout_writer.print("{}\n", .{note});
+            try stdout.print("{}\n", .{note});
             if (note.is_eof()) return;
         }
     }

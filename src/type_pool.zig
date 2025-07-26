@@ -85,7 +85,7 @@ pub const TypeFull = union(Kind) {
                 .pitch,
                 .fraction,
                 .note,
-                .section => std.hash.uint32(@intFromEnum(a)),
+                .section => std.hash.int(@intFromEnum(a)),
                 .list => |el_ty| @truncate(std.hash.Wyhash.hash(0, std.mem.asBytes(&el_ty))),
                 //inline .ptr, .array => |x| @truncate(std.hash.Wyhash.hash(0, std.mem.asBytes(&x))),
                 //.tuple => |tuple| blk: {
@@ -118,7 +118,7 @@ pub const TypeFull = union(Kind) {
             };
         }
     };
-    pub fn format(value: TypeFull, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+    pub fn format(value: TypeFull, writer: anytype) !void {
         switch (value) {
             .void,
             .int,
@@ -128,7 +128,7 @@ pub const TypeFull = union(Kind) {
             .note,
             .section => _ = try writer.write(@tagName(value)),
             .list => |el_ty| {
-                _ = try writer.print("[{}]", .{lookup(el_ty)});
+                _ = try writer.print("[{f}]", .{lookup(el_ty)});
             },
         }
     }

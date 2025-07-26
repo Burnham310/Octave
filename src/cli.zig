@@ -1,5 +1,10 @@
 const std = @import("std");
 
+const Lexer = @import("lexer.zig");
+const Parser = @import("parser.zig");
+const Sema = @import("sema.zig");
+
+
 pub const Error = error {
     ExpectMoreArg,
     DuplicateArg,
@@ -146,4 +151,38 @@ pub const ArgParser = struct {
             }
         }
     }
+};
+
+pub const ErrorReturnCode = enum(u8) {
+    success = 0,
+    cli,
+    lex,
+    parse,
+    sema,
+    eval,
+    unexpected,
+
+    pub fn from_err(e: anyerror) ErrorReturnCode {
+        if (is_err_from_set(Error, e)) return .cli;
+        if (is_err_from_set(Lexer.Error, e)) return .lex;
+        if (is_err_from_set(Parser.Error, e)) return .parse;
+        if (is_err_from_set(Sema.Error, e)) return .sema;
+        //if (is_err_from_set(e, Eval.Error)) return .lex;S
+        return .unexpected;
+    }
+
+    pub fn is_err_from_set(comptime T: type, e: anyerror) bool {
+        const err_info = @typeInfo(T).error_set.?;
+        return inline for (err_info) |err| {
+            if (@field(T, err.name) == e) break true;
+        } else false;
+    }
+};
+
+
+pub const CompileStage = enum {
+    lex,
+    parse,
+    sema,
+    play,
 };
