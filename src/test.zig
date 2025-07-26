@@ -49,13 +49,13 @@ const Color = enum {
     green,
     reset,
 
-    pub fn to_code(self: Color) []const u8 {
-        if (!enable_color) return "";
-        return switch (self) {
-            .red => "\x1b[31m",
-            .blue => "\x1b[34m",
-            .green => "\x1b[32m",
-            .reset => "\x1b[0m",
+    pub fn format(self: Color, writer: anytype) !void {
+        if (!enable_color) return;
+        _ = switch (self) {
+            .red => try writer.write("\x1b[31m"),
+            .blue => try writer.write("\x1b[34m"),
+            .green => try writer.write("\x1b[32m"),
+            .reset => try writer.write("\x1b[0m"),
         };
     }
 };
@@ -69,13 +69,16 @@ pub fn main() !void {
     const alloc = gpa.allocator();
 
     var args = try std.process.argsWithAllocator(alloc);
-    _ = args.next().?;
+    const pgm_name = args.next().?;
 
     var opts: Options = undefined;
-    var args_parser = Cli.ArgParser {.a = alloc};
-    args_parser.add_opt([]const u8, &opts.compiler_path, null, .positional, "<compiler-path>");
-    args_parser.add_opt([]const u8, &opts.test_root, null, .positional, "<test_root>");
-    args_parser.add_opt(bool, &opts.color, &false, .{.prefix = "--color"}, "");
+    var args_parser = Cli.ArgParser {.a = alloc, .pgm_name = pgm_name, .overview = "The Octave Test System"};
+    args_parser.add_opt([]const u8, &opts.compiler_path, null, .positional, "<compiler-path>",
+        "the path to the octave compiler");
+    args_parser.add_opt([]const u8, &opts.test_root, null, .positional, "<test_root>",
+        "the path to the test root directory");
+    args_parser.add_opt(bool, &opts.color, &true, .{.prefix = "--color"}, "",
+        "enable colorful output if tty is attached");
     try args_parser.parse(&args);
 
     var test_results = TestResults {};
@@ -94,9 +97,9 @@ pub fn main() !void {
     for (test_results.items) |result| {
         stdout.print("{s: <40}", .{result.path}) catch unreachable;
         if (result.return_code == .success) {
-            stdout.print("{s}success{s}", .{Color.green.to_code(), Color.reset.to_code()}) catch unreachable;
+            stdout.print("{f}success{f}", .{Color.green, Color.reset}) catch unreachable;
         } else {
-            stdout.print("{s}{s}{s}", .{Color.red.to_code(), @tagName(result.return_code), Color.reset.to_code()}) catch unreachable;
+            stdout.print("{f}{s}{f}", .{Color.red, @tagName(result.return_code), Color.reset}) catch unreachable;
         }
         stdout.writeByte('\n') catch unreachable;
     }

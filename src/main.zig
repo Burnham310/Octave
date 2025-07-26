@@ -38,16 +38,22 @@ pub fn main() !void  {
     defer args.deinit(); 
 
     const program_name = args.next().?;
-    _ = program_name;
     var opts: Options = undefined;
-    var args_parser = Cli.ArgParser {.a = alloc}; 
-    args_parser.add_opt([]const u8, &opts.input_path, null, .positional, "<input-path>");
+    var args_parser = Cli.ArgParser {.a = alloc, .pgm_name = program_name, .overview = "The Octave Compiler"}; 
+    args_parser.add_opt([]const u8, &opts.input_path, null, .positional, "<input-path>",
+        "the path to the input .oct file");
     //args_parser.add_opt([]const u8, &opts.output_path, &"-", .{.prefix = "-o"}, "<output-path>");
-    args_parser.add_opt(Cli.CompileStage, &opts.compile_stage, &Cli.CompileStage.play, .{.prefix = "--stage"}, "<compile-stage>");
-    args_parser.add_opt(bool, &opts.repeat, &false, .{.prefix = "--repeat"}, "");
-    args_parser.add_opt(bool, &debug_dump_trace, &false, .{.prefix = "--debug"}, "");
-    args_parser.add_opt(f32, &opts.volume, &1.0, .{.prefix = "--volume"}, "<volume>");
-    args_parser.add_opt(bool, &opts.debug, &false, .{.prefix = "-g"}, "");
+    args_parser.add_opt(
+        Cli.CompileStage, &opts.compile_stage, &Cli.CompileStage.play, .{.prefix = "--stage"}, "<compile-stage>",
+        "the stage of compilaton, must be one of " ++ comptime Cli.enum_desc(Cli.CompileStage));
+    args_parser.add_opt(bool, &opts.repeat, &false, .{.prefix = "--repeat"}, "",
+        "repeat indefinetly; only make sense in the playing stage");
+    args_parser.add_opt(bool, &debug_dump_trace, &false, .{.prefix = "--debug"}, "",
+        "dump trace in case of error, needs to be compiled with trace");
+    args_parser.add_opt(f32, &opts.volume, &1.0, .{.prefix = "--volume"}, "<volume>",
+        "a floating point number representing the master volume of the player");
+    args_parser.add_opt(bool, &opts.debug, &false, .{.prefix = "-g"}, "",
+        "print all the notes to stdout instead of playing them");
     
     args_parser.parse(&args) catch |e| exit_or_dump_trace(e);
 
