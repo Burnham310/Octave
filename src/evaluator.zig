@@ -32,6 +32,8 @@ const Fraction = struct {
     numerator: i32,
     dominator: i32,
 
+    pub const zero = Fraction {.numerator = 0, .dominator = 1 };
+
     pub fn to_float(self: Fraction) f32 {
         return @as(f32, @floatFromInt(self.numerator)) / @as(f32, @floatFromInt(self.dominator));
     }
@@ -135,14 +137,15 @@ pub const SectionEvaluator = struct {
     const PreNote = struct {
         pitch: NotePitch,
         duration: Fraction,
+        gap: Fraction,
     };
-
-    
 
     const NotePitch = struct {
         deg: i32,
         shift: i32,
         amp: f32 = 1,
+        parallel: bool,
+        pub const zero = NotePitch {.deg = 1, .shift = 0, .amp = 0, .parallel = false};
     };
 
     const Val = union(enum) {
@@ -164,7 +167,7 @@ pub const SectionEvaluator = struct {
                 const rhs = self.eval_expr_strict(infix.rhs);
                 switch (infix.op) {
                     .single_quote => {
-                        return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs.frac}};
+                        return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs.frac, .gap = @panic("TODO")}};
                     },
                     .slash => {
                         return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
@@ -175,9 +178,10 @@ pub const SectionEvaluator = struct {
             },
             .list => unreachable,
             .ident => |ident| {
-                return Val {.num = self.anno.builtin_vars.get(ident.sym).?[1]};
+                return Val {.num = @intCast(self.anno.builtin_vars.get(ident.sym).?[1])};
             },
             .sec => unreachable,
+            .@"for" => @panic("TODO"),
         }  
     }
 
@@ -193,6 +197,7 @@ pub const SectionEvaluator = struct {
                 self.reset(infix.rhs);
             },
             .list => |list| for (list.els) |el| self.reset(el),
+            .@"for" => |@"for"| for (@"for".body) |el| self.reset(el),
         }
     }
 
@@ -206,7 +211,8 @@ pub const SectionEvaluator = struct {
                 if (it.* > 0) return null;
                 it.* += 1;
                 if (ty == Type.int) return Val {.num = @intCast(i)};
-                if (ty == Type.pitch) return Val {.pitch = .{.deg = @intCast(i), .shift = 0}}
+                if (ty == Type.pitch or ty == Type.note) return Val {.pitch = .{.deg = @intCast(i), .shift = 0, .parallel = false} }
+                // if (ty == Type.note) return Val {.note = .{.deg = @intCast(i), .shift = 0}}
                 else unreachable;
             },
             .prefix => |prefix| {
@@ -226,17 +232,18 @@ pub const SectionEvaluator = struct {
             },
             .infix => |infix| {
                 if (it.* > 0) return null;
+                const rhs = self.eval_expr_strict(infix.rhs);
                 const lhs = self.eval_expr(infix.lhs) orelse {
                     it.* += 1;
                     return null;
                 };
-                const rhs = self.eval_expr_strict(infix.rhs);
                 switch (infix.op) {
                     .single_quote => {
-                        return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs.frac}};
+                        return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs.frac, .gap = if (lhs.pitch.parallel) .zero else rhs.frac }};
                     },
                     .slash => {
-                        return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
+                        @panic("unreachable");
+                        // return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
                     },
                     else => unreachable,
                 }
@@ -245,10 +252,12 @@ pub const SectionEvaluator = struct {
             .list => |list| {
                 if (list.els.len == 0 and it.* == 0) {
                     it.* += 1;
-                    return Val {.pitch = .{.deg = 1, .shift = 0, .amp = 0}};
+                    return Val {.pitch = .{.deg = 1, .shift = 0, .amp = 0, .parallel = false}};
                 }
                 while (it.* < list.els.len): (it.* += 1) {
-                    return self.eval_expr(list.els[it.*]) orelse continue;
+                    var val = self.eval_expr(list.els[it.*]) orelse continue;
+                    val.pitch.parallel = it.* < list.els.len - 1;
+                    return val;
                 }
                 return null;
             },
@@ -259,6 +268,21 @@ pub const SectionEvaluator = struct {
                 };
             },
             .sec => unreachable,
+            .@"for" => |@"for"| {
+                const lhs = self.eval_expr_strict(@"for".lhs).num;
+                const rhs = self.eval_expr_strict(@"for".rhs).num;
+                const times = rhs - lhs;
+                if (times < 0) @panic("for loop rhs < lhs");
+                while (it.* < @"for".body.len * @as(usize, @intCast(times))): (it.* += 1) {
+                    const body_expr = @"for".body[it.* % @"for".body.len];
+                    const val = self.eval_expr(body_expr) orelse {
+                        self.reset(body_expr);
+                        continue;
+                    }; 
+                    return val;
+                }
+                return null;
+            },
         }  
     } 
 
@@ -295,11 +319,16 @@ pub const SectionEvaluator = struct {
         
         const default_dura = Fraction {.numerator = 1, .dominator = config.tempo.dominator};
         const it = &self.its[self.sec.anno_extra]; 
+        // const ty = self.anno.expr_extras[note_exprs[it.*].anno_extra].ty;
         while (it.* < note_exprs.len): (it.* += 1) {
             while (self.eval_expr(note_exprs[it.*])) |val| {
                 const pre_note = switch (val) {
-                    .pitch => |pitch| PreNote  {.pitch = pitch, .duration = default_dura},
-                    .note => val.note,
+                    .pitch => |pitch| blk: {
+                        break :blk PreNote  {.pitch = pitch, .duration = default_dura, .gap = if (pitch.parallel) .zero else default_dura};
+                    },
+                    .note => blk: {
+                        break :blk val.note;
+                    },
                     else => |t| @panic(@tagName(t)),
                 };
 
@@ -308,7 +337,7 @@ pub const SectionEvaluator = struct {
                 const note = Note {
                     .freq = freq,
                     .duration = pre_note.duration.to_sec(config.bpm),
-                    .gap = if (self.first_in_expr) self.gap else 0,
+                    .gap = pre_note.gap.to_sec(config.bpm),
                     .amp = pre_note.pitch.amp * config.volume,
                     .inst = config.inst,
                 };
@@ -318,7 +347,7 @@ pub const SectionEvaluator = struct {
             }
             self.first_in_expr = true;
         }
-        return Note.eof(self.gap);
+        return Note.eof(0);
     }
 };
 
@@ -337,9 +366,9 @@ pub const Evaluator = struct {
             .list => |list| {
                 sec_evals = a.alloc(SectionProgress, list.els.len) catch unreachable;
                 for (list.els, 0..) |expr, i| {
-                    std.debug.assert(expr.data == .ident);
+                    assert(expr.data == .ident);
                     const sema_expr = expr.data.ident.sema_expr;
-                    std.debug.assert(sema_expr.data == .sec);
+                    assert(sema_expr.data == .sec);
                     sec_evals[i] = .{.eval = SectionEvaluator.init(ast, anno, sema_expr, a)};
                     sec_evals[i].eval.eval_config();
                 }
@@ -353,10 +382,8 @@ pub const Evaluator = struct {
         }
         return Evaluator {.sec_evals = sec_evals};
     }
-    
-    pub fn eval(self: *Evaluator) Note {
-        if (self.sec_evals.len == 0) return self.sec_evals[0].eval.eval();
 
+    fn peek(self: *Evaluator) struct {f32, usize} {
         var latest_next = std.math.floatMax(f32); 
         var latest_next_index: usize = std.math.maxInt(usize);
 
@@ -366,20 +393,26 @@ pub const Evaluator = struct {
                 self.last_eof = note;
                 continue;
             }
-            const t = note.gap + prog.t;
-            if (t < latest_next) {
-                latest_next = t;
+            if (prog.t < latest_next) {
+                latest_next = prog.t;
                 latest_next_index = i;
             }
         }
+        return .{latest_next, latest_next_index};
+    }
+    
+    pub fn eval(self: *Evaluator) Note {
+        if (self.sec_evals.len == 1) return self.sec_evals[0].eval.eval();
 
+        const latest_next, const latest_next_index = self.peek(); 
         if (latest_next_index == std.math.maxInt(usize)) return self.last_eof;
+        var latest_note = self.sec_evals[latest_next_index].eval.eval();
+        self.sec_evals[latest_next_index].t += latest_note.gap;
 
-        var res = self.sec_evals[latest_next_index].eval.eval();
-        self.sec_evals[latest_next_index].t = latest_next;
-        res.gap = latest_next - self.t;
-        self.t = latest_next;
-        return res;
+        const latest_next2, const latest_next_index2 = self.peek(); 
+        if (latest_next_index2 != std.math.maxInt(usize))
+            latest_note.gap = latest_next2 - latest_next;
+        return latest_note;
     }
 
     pub fn reset(self: *Evaluator) void {

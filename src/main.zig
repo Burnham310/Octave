@@ -32,6 +32,8 @@ pub fn exit_or_dump_trace(e: anyerror) noreturn {
     unreachable;
 }
 
+pub const std_options = Zynth.std_options;
+
 pub fn main() !void  {
     const alloc = std.heap.c_allocator;
     var args = try std.process.argsWithAllocator(alloc);

@@ -16,6 +16,9 @@ streamers: std.DoublyLinkedList = .{},
 
 a: std.mem.Allocator,
 
+
+tmp: [4096]f32 = undefined,
+
 const StreamerNode = struct {
     streamer: Streamer,
     node: std.DoublyLinkedList.Node = .{},
@@ -72,9 +75,11 @@ fn read(ptr: *anyopaque, frames: []f32) struct { u32, Streamer.Status } {
                 node.streamer = make_streamer(note, self.volume, self.a);
                 node.node = .{};
                 self.streamers.prepend(&node.node);
+                self.frame_ct = @as(u32, @intFromFloat(self.peak.?.gap * Config.SAMPLE_RATE));
+                self.peak = self.evaluator.eval();
+            } else {
+                self.peak = self.evaluator.eval();
             }
-            self.peak = self.evaluator.eval();
-            self.frame_ct = @as(u32, @intFromFloat(self.peak.?.gap * Config.SAMPLE_RATE));
         }
         var end: u32 = frame_len;
         if (self.frame_ct > frame_len - off) { // read as much as possible
@@ -94,10 +99,10 @@ fn mixer_read(self: *Player, frames: []f32) void {
     var it = self.streamers.first;
     while (it) |node| : (it = node.next) {
         const sn: *StreamerNode = @fieldParentPtr("node", node);
-        var tmp = [_]f32 {0} ** 4096;
-        const len, const status = sn.streamer.read(tmp[0..frames.len]);
+        std.debug.assert(self.tmp.len >= frames.len);
+        const len, const status = sn.streamer.read(self.tmp[0..frames.len]);
         for (0..len) |frame_i|
-            frames[frame_i] += tmp[frame_i];
+            frames[frame_i] += self.tmp[frame_i];
         if (status == .Stop) {
             it = node.prev;
             self.streamers.remove(node);

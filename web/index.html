@@ -6,8 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Octave Music Editor</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap">
-    <script
-        src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/focus-visible@5,npm/html-midi-player@1.5.0"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.29.1/min/vs/loader.min.js"></script>
     <style>
         body {
@@ -122,7 +120,7 @@
             Welcome to Octave Music Programming Language!!!
         </p>
 
-        <button id="compile-btn" onclick="compileBtnCallback()">Compile</button>
+        <button id="compile-btn">Compile</button>
 
         <midi-player sound-font visualizer="#myVisualizer"></midi-player>
 
@@ -133,10 +131,13 @@
 
     </div>
 
-    <script src="octc.js"></script>
-    <script>
+    <script type="module">
+	import Module from "./octc.mjs";
+	let octc = await Module({noInitialRun: true, err: err, out: out});
         let editor;
         let first_use = true;
+
+	// console.log(octc.FS);
 
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.29.1/min/vs' } });
         require(['vs/editor/editor.main'], function () {
@@ -204,25 +205,15 @@
         function compileOctave() {
             const input = editor.getValue();
             const inputFile = 'tmp.oct';  // Virtual input file
-            const outputFile = 'tmp.mid'; // Virtual output file
+            // const outputFile = 'tmp.mid'; // Virtual output file
 
-            FS.writeFile(inputFile, input);
+            octc.FS.writeFile(inputFile, input);
 
             try {
-                Module.callMain([inputFile, '-o', outputFile]);
+                octc.callMain([inputFile]);
             } catch {
                 return false
             }
-
-            if (FS.readFile(outputFile).byteLength === 0) {
-                return false
-            }
-
-            const midiData = FS.readFile(outputFile, { encoding: 'binary' });
-            const blob = new Blob([midiData], { type: 'audio/midi' });
-            const url = URL.createObjectURL(blob);
-            const midiPlayer = document.querySelector('midi-player');
-            midiPlayer.src = url;
 
             return true;
         }
@@ -230,6 +221,7 @@
         async function compileBtnCallback() {
             document.getElementById("out").innerText = ""
             const compile_ret = compileOctave();
+	    console.log("compiler return: ", compile_ret);
 
             const code = editor.getValue();
             localStorage.setItem('octaveCode', code);
@@ -250,6 +242,8 @@
                 document.getElementById("compile-btn").style.background = "#007bff"
             }
         }
+
+	document.getElementById("compile-btn").addEventListener('click', compileBtnCallback);
 
     </script>
 

@@ -67,6 +67,30 @@ head $ f <$> [0 1 2]
 ```
 
 type inference
+
+
+### Note
+There is three attributes in a note: pitch, duration, and gap. Let's use Note(pitch, duration, gap) to denotes this.
+Duration defines how long the note lingers, whereas gap defines how long to wait until the NEXT note is played. 
+
+For example:
+```
+{[1 2]'/4 3'/2}
+```
+
+The duration of the first two notes is a quarter, and the third one is half. 
+However, the gap of the first one is zero, and second one a quarter, and the third one is half.
+
+The pitch and the duration can be resolved by looking at the note itself. But the gap has to depends on the evaluation context.
+
+At the end of the evaluation, we should get something like this:
+
+Note(1, 1/4, 0); Note(2, 1/4, 1/4), Note(3, 1/2, 1/2);
+
+```
+{ for 0~<2 loop [1 2 3] end [2 4 5] }
+
+```
  
 ## Other
 ### Ast Internals

@@ -1,14 +1,31 @@
 const std = @import("std");
+const zynth_build = @import("zynth");
 
 const Build = std.Build;
 const Step = Build.Step;
 
 pub fn build(b: *Build) void {
-    const target = b.resolveTargetQuery(.{});
+    const target = b.standardTargetOptions(.{});
     const opt = b.standardOptimizeOption(.{});
 
-    const zynth = b.dependency("zynth", .{});
+    const zynth = b.dependency("zynth", .{.target = target, .optimize = opt});
     const zynth_mod = zynth.module("zynth");
+    
+    if (target.result.cpu.arch.isWasm()) {
+        const root_module = zynth_build.create_wasm_mod(b, opt, "octc", b.path("src/main.zig"));
+        root_module.addImport("zynth", zynth_mod);
+        const libc_include = zynth_build.get_wasm_include_from_sysroot(b);
+        root_module.addIncludePath(libc_include);
+        const wasm_step = zynth_build.compile_to_wasm(b, root_module, "octc");
+        b.getInstallStep().dependOn(wasm_step);
+
+        b.installDirectory(.{
+            .source_dir = b.path("web"),
+            .install_dir = .{ .custom = "web" },
+            .install_subdir = ".",
+        });
+        return;
+    }
 
     const root_module = b.addModule("octc", .{
         .root_source_file = b.path("src/main.zig"),

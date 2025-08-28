@@ -107,3 +107,4 @@ web/octc.js
 web/octc.wasm
 web/tutorial.html
 .zig-cache
+zig-out

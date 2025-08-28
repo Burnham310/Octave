@@ -1,0 +1,3 @@
+[submodule "zynth"]
+	path = zynth
+	url = git@github.com:Tesseract22/zynth.git

@@ -13,6 +13,19 @@ pub const Type = packed struct {
     pub var note:       Type = undefined;
     pub var chord:      Type = undefined;
     pub var section:    Type = undefined;
+
+
+    pub fn format(value: Type, writer: *std.io.Writer) !void {
+        return writer.print("{f}", .{lookup(value)});
+    }
+
+    pub fn take_for_inner(self: Type) Type {
+        const full = lookup(self);
+        switch (full) {
+            .@"for" => |@"for"| return @"for".take_for_inner(),
+            else => return self,
+        }
+    }
 };
 pub const Decl = u32;
 
@@ -30,6 +43,7 @@ pub const Kind = enum(u8) {
     note,
     section,
     list,
+    @"for",
 };
 pub const TypeFull = union(Kind) {
     void,
@@ -40,6 +54,7 @@ pub const TypeFull = union(Kind) {
     note,
     section,
     list: Type,
+    @"for": Type,
   
     //pub const Ptr = struct {
     //    el: Type
@@ -60,7 +75,7 @@ pub const TypeFull = union(Kind) {
     //    ret: Type,
     //};
     pub const Adapter = struct {
-        extras: *std.ArrayList(u32),
+        extras: *std.array_list.Managed(u32),
         pub fn eql(ctx: Adapter, a: TypeFull, b: TypeStorage, b_idx: usize) bool {
             _ = b_idx;
             if (std.meta.activeTag(a) != b.kind) return false;
@@ -73,20 +88,25 @@ pub const TypeFull = union(Kind) {
                 .fraction,
                 .note,
                 .section => return true,
-                .list => |el_ty| return el_ty.t == extras[b.more],
+                .list, .@"for", => |el_ty| return el_ty.t == extras[b.more],
             }
         }
         pub fn hash(ctx: Adapter, a: TypeFull) u32 {
             _ = ctx;
-            return switch (a) {
+            switch (a) {
                 .void,
                 .int,
                 .mode,
                 .pitch,
                 .fraction,
                 .note,
-                .section => std.hash.int(@intFromEnum(a)),
-                .list => |el_ty| @truncate(std.hash.Wyhash.hash(0, std.mem.asBytes(&el_ty))),
+                .section => return std.hash.int(@intFromEnum(a)),
+                .list, .@"for" => |el_ty| {
+                    var hasher = std.hash.Wyhash.init(0);
+                    hasher.update(std.mem.asBytes(&el_ty));
+                    hasher.update(std.mem.asBytes(&@intFromEnum(a)));
+                    return @truncate(hasher.final());
+                },
                 //inline .ptr, .array => |x| @truncate(std.hash.Wyhash.hash(0, std.mem.asBytes(&x))),
                 //.tuple => |tuple| blk: {
                 //    var hasher = std.hash.Wyhash.init(0);
@@ -115,10 +135,10 @@ pub const TypeFull = union(Kind) {
                 //    }
                 //    break :blk @truncate(hasher.final());
                 //},
-            };
+            }
         }
     };
-    pub fn format(value: TypeFull, writer: anytype) !void {
+    pub fn format(value: TypeFull, writer: *std.io.Writer) !void {
         switch (value) {
             .void,
             .int,
@@ -130,18 +150,21 @@ pub const TypeFull = union(Kind) {
             .list => |el_ty| {
                 _ = try writer.print("[{f}]", .{lookup(el_ty)});
             },
+            .@"for" => |el_ty| {
+                _ = try writer.print("for<{f}>", .{lookup(el_ty)});
+            }
         }
     }
 };
 pub const TypeIntern = struct {
     const Self = @This();
     map: std.AutoArrayHashMap(TypeStorage, void),
-    extras: std.ArrayList(u32),
+    extras: std.array_list.Managed(u32),
     pub fn get_new_extra(self: TypeIntern) u32 {
         return @intCast(self.extras.items.len);
     }
     pub fn init(a: Allocator) Self {
-        return TypeIntern { .map = std.AutoArrayHashMap(TypeStorage, void).init(a), .extras = std.ArrayList(u32).init(a) };
+        return TypeIntern { .map = std.AutoArrayHashMap(TypeStorage, void).init(a), .extras = std.array_list.Managed(u32).init(a) };
     }
     pub fn deinit(self: *Self) void {
         self.map.deinit();
@@ -157,7 +180,7 @@ pub const TypeIntern = struct {
             .note,
             .fraction,
             .section => undefined,
-            .list => |el_ty| blk: {
+            .list, .@"for" => |el_ty| blk: {
                 const extra_idx = self.get_new_extra();
                 self.extras.append(el_ty.t) catch unreachable;
                 break :blk extra_idx;
@@ -195,7 +218,8 @@ pub const TypeIntern = struct {
             .fraction => return .fraction,
             .note => return .note,
             .section => return .section,
-            .list => return .{.list = Type {.t=extras[more]}},
+            .list  => return .{.list = Type {.t=extras[more]}},
+            .@"for" => return .{.@"for" = Type {.t=extras[more]}},
         }
     }
     pub fn len(self: Self) usize {

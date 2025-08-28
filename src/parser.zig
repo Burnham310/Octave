@@ -181,6 +181,30 @@ pub fn parse_prefix(self: *Parser) ErrorBoth!?*Expr {
             return self.create(Expr {.off = tok.off, .data = .{.list = list}});
 
         },
+        .@"for" => {
+            self.lexer.consume();
+            const lhs = try self.parse_expr() orelse {
+                self.lexer.report_err(tok.off, "expect expression after `for`", .{});
+                self.lexer.report_line(tok.off);
+                return Error.UnexpectedToken;
+            };
+            const tilde = try self.expect_token_crit_off(.tilde, lhs.last_off(self.lexer.*), "expr");
+            const le = try self.expect_token_crit(.le, tilde);
+            const rhs = try self.parse_expr() orelse {
+                self.lexer.report_err(le.off, "expect expression after `<`", .{});
+                self.lexer.report_line(le.off);
+                return Error.UnexpectedToken;
+            };
+            const loop = try self.expect_token_crit_off(.loop, rhs.last_off(self.lexer.*), "expr");
+            var expr_list = std.ArrayListUnmanaged(*Expr) {};
+            while (try self.parse_expr()) |expr| {
+                expr_list.append(self.a, expr) catch unreachable;
+            }
+            const last_expr, const last_expr_name = self.get_last_or_tok(expr_list, loop);
+            const end = try self.expect_token_crit_off(.end, last_expr, last_expr_name);
+            const @"for" = Expr.For {.lhs = lhs, .rhs = rhs, .body = expr_list.toOwnedSlice(self.a) catch unreachable, .end_off = end.off};
+            return self.create(Expr {.off = tok.off, .data = .{.@"for" = @"for"}});
+        },
         else => return null,
     } 
 }
