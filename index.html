@@ -152,7 +152,7 @@
 
                 brackets: [
                     { open: '[', close: ']', token: 'delimiter.bracket' },
-                    { open: '{', close: '}', token: 'delimiter.bracket' },
+                    { open: '{', close: '}', token: 'delimiter.bracket:b ' },
                     { open: '(', close: ')', token: 'delimiter.parenthesis' }
                 ]
             });
@@ -161,7 +161,9 @@
             const savedCode = localStorage.getItem('octaveCode');
             if (savedCode) {
                 editor.setValue(savedCode); // Set the value from localStorage
-            }
+	    } else {
+		editor.setValue("main = {;; 1 1 5 5 6 6 5'/2 4 4 3 3 2 2 1'/2}")
+	    }
         });
 
         // override error message output
