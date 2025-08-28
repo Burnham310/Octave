@@ -16,7 +16,7 @@ pub fn build(b: *Build) void {
         root_module.addImport("zynth", zynth_mod);
         const libc_include = zynth_build.get_wasm_include_from_sysroot(b);
         root_module.addIncludePath(libc_include);
-        const wasm_step = zynth_build.compile_to_wasm(b, root_module, "octc");
+        const wasm_step = zynth_build.compile_to_wasm(b, opt, root_module, "octc");
         b.getInstallStep().dependOn(wasm_step);
 
         b.installDirectory(.{

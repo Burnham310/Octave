@@ -121,11 +121,14 @@ pub fn main() !void  {
     }
     
     var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
+    defer audio_ctx.deinit();
     try audio_ctx.init(streamer);
+    std.log.info("starting...", .{});
     try audio_ctx.start();
 
     
     audio_ctx.drain();
+    std.log.info("done.", .{});
 }
 
 

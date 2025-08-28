@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.29.1/min/vs/loader.min.js"></script>
     <style>
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Roboto', monospace;
             background-color: #f4f4f9;
             margin: 0;
             padding: 0;
@@ -80,25 +80,11 @@
             text-decoration: underline;
         }
 
-        midi-player {
-            display: block;
-            width: 100%;
-            margin-bottom: 30px;
-        }
-
-        .midi-visualizer-group {
-            display: block;
-            width: 100%;
-            min-height: 250px;
-            padding-top: 20px;
-            padding-bottom: 20px;
-            background-color: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-        }
 
         #out p {
             margin: 0px;
+	    font-size: 0.5rem
+	    font-family: "Lucida Console", Monaco, monospace;
         }
     </style>
 </head>
@@ -122,20 +108,11 @@
 
         <button id="compile-btn">Compile</button>
 
-        <midi-player sound-font visualizer="#myVisualizer"></midi-player>
-
-        <div class="midi-visualizer-group">
-            <midi-visualizer type="piano-roll" id="myVisualizer"></midi-visualizer>
-            <midi-visualizer type="staff" id="myVisualizer"></midi-visualizer>
-        </div>
-
     </div>
 
     <script type="module">
 	import Module from "./octc.mjs";
-	let octc = await Module({noInitialRun: true, err: err, out: out});
         let editor;
-        let first_use = true;
 
 	// console.log(octc.FS);
 
@@ -151,11 +128,10 @@
             monaco.languages.setMonarchTokensProvider('octave', {
                 tokenizer: {
                     root: [
-                        [/\b(volume|bpm|instrument|scale)\b/, 'keyword.control.octave'],
+                        [/\b(volume|bpm|instrument|mode|tonic|octave)\b/, 'keyword.control.octave'],
                         [/\b(linear|zoom)\b/, 'keyword.operator.octave'],
-                        [/<[a-zA-Z_][a-zA-Z0-9_]*>/, 'entity.name.tag.octave'],
                         [/\|/, 'keyword.operator.octave'],
-                        [/(((o|#|s|b)+)')?([1-9])(\\.+)/, {
+                        [/(((^|~|#|.)+)')?([1-9])(\\.+)/, {
                             cases: {
                                 '$2': 'constant.numeric.note.modifier.highlight.octave',
                                 '$4': 'keyword.operator.octave'
@@ -172,7 +148,6 @@
                         [/"/, { token: 'string.quote', bracket: '@close', next: '@pop' }]
                     ]
                 },
-
                 tokenPostfix: '.octave',
 
                 brackets: [
@@ -190,11 +165,8 @@
         });
 
         // override error message output
-        function err(msg) {
-            if (first_use) {
-                first_use = false;
-            } else
-                document.getElementById("out").innerHTML += `<p style="color: red">${msg}</p>`;
+	function err(msg) {
+            document.getElementById("out").innerHTML += `<p style="color: red; white-space: pre;">${msg}</p>`;
         }
 
         function out(msg) {
@@ -202,7 +174,8 @@
         }
 
 
-        function compileOctave() {
+        async function compileOctave() {
+	    let octc = await Module({noInitialRun: true, print: out, printErr: err });
             const input = editor.getValue();
             const inputFile = 'tmp.oct';  // Virtual input file
             // const outputFile = 'tmp.mid'; // Virtual output file
@@ -220,14 +193,14 @@
 
         async function compileBtnCallback() {
             document.getElementById("out").innerText = ""
-            const compile_ret = compileOctave();
+            const compile_ret = await compileOctave();
 	    console.log("compiler return: ", compile_ret);
 
             const code = editor.getValue();
             localStorage.setItem('octaveCode', code);
 
             if (compile_ret) {
-                document.getElementById("out").innerText = "compile succeed! save code to local storage"
+                // document.getElementById("out").innerText = "compile succeed! save code to local storage"
                 document.getElementById("compile-btn").innerText = "OK!"
                 document.getElementById("compile-btn").style.background = "green"
 

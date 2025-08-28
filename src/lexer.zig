@@ -431,27 +431,29 @@ pub fn report_note(self: Lexer, off: u32, comptime fmt: []const u8, args: anytyp
 pub fn report_line(self: Lexer, off: u32) void {
     var start: u32 = off;
     var end: u32 = off;
+    var tab_ct: u32 = 0;
 
     while (start > 0): (start -= 1) {
         if (self.src[start] == '\n' and start != off) {
             start += 1;
             break;
-        }
+        } else if (self.src[start] == '\t') tab_ct += 1;
     }
 
     while (end < self.src.len): (end += 1) {
         if (self.src[end] == '\n') {
             break;
-        } 
+        } else if (self.src[end] == '\t') tab_ct += 1;
     }
     std.debug.print("\t{s}\n", .{self.src[start..end]});
-    self.highligh_off(off-start);
+    self.highligh_off(tab_ct, off-start);
 }
 
-pub fn highligh_off(self: Lexer, line_pos: u32) void {
+pub fn highligh_off(self: Lexer, tab_ct: u32, line_pos: u32) void {
     _ = self;
-    std.debug.print("\t", .{});
-    for (0..line_pos) |_| {
+    for (0..tab_ct+1) |_|
+        std.debug.print("\t", .{});
+    for (0..line_pos-tab_ct) |_| {
         std.debug.print(" ", .{});
     }
     std.debug.print("^\n", .{});

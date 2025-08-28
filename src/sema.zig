@@ -356,7 +356,7 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             for (@"for".body[1..], 2..) |el, i| {
                 const other_ty = (try self.sema_expr(el, infer)).take_for_inner();
                 if (el_ty != other_ty) {
-                    self.lexer.report_err(el.off, "exprssions in list must have the same type; 1th is {f}, {}th is {f}", 
+                    self.lexer.report_err(el.off, "exprssions in for loop must have the same type; 1th is {f}, {}th is {f}", 
                         .{TypePool.lookup(el_ty), i, TypePool.lookup(other_ty)});
                     self.lexer.report_line(el.off);
                     self.lexer.report_note(@"for".body[0].off, "first expression is here", .{});
