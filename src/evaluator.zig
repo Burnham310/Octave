@@ -250,14 +250,14 @@ pub const SectionEvaluator = struct {
                 
             },
             .list => |list| {
-                if (list.els.len == 0 and it.* == 0) {
-                    it.* += 1;
-                    return Val {.pitch = .{.deg = 1, .shift = 0, .amp = 0, .parallel = false}};
-                }
                 while (it.* < list.els.len): (it.* += 1) {
                     var val = self.eval_expr(list.els[it.*]) orelse continue;
-                    val.pitch.parallel = it.* < list.els.len - 1;
+                    val.pitch.parallel = true;
                     return val;
+                }
+                if (it.* == list.els.len) {
+                    it.* += 1;
+                    return Val {.pitch = .{.deg = 1, .shift = 0, .amp = 0, .parallel = false}};
                 }
                 return null;
             },
@@ -274,6 +274,9 @@ pub const SectionEvaluator = struct {
                 const times = rhs - lhs;
                 if (times < 0) @panic("for loop rhs < lhs");
                 while (it.* < @"for".body.len * @as(usize, @intCast(times))): (it.* += 1) {
+                    if (@"for".with) |with| {
+                        with.expr.data.num = @intCast(@as(isize, @intCast(it.* / @"for".body.len)) + lhs);
+                    }
                     const body_expr = @"for".body[it.* % @"for".body.len];
                     const val = self.eval_expr(body_expr) orelse {
                         self.reset(body_expr);

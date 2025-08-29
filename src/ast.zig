@@ -63,6 +63,7 @@ pub const Expr = struct {
         rhs: *Expr,
         body: []*Expr,
         end_off: u32,
+        with: ?*Formal,
     };
 
     pub fn first_off(self: Expr) u32 {

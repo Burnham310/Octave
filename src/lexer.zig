@@ -40,7 +40,8 @@ pub const TokenType = enum {
     @"for",
     loop,
     end,
-    @"void",
+    with,
+    // @"void",
 
     // single character
     eq,
@@ -265,6 +266,7 @@ fn match_ident(self: *Lexer) ?Token {
         .{"for", .@"for"},
         .{"loop", .loop},
         .{"end", .end},
+        .{"with", .with},
     });
     const off = self.off;
     const first = self.next_char() orelse return null;

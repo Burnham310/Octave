@@ -195,6 +195,22 @@ pub fn parse_prefix(self: *Parser) ErrorBoth!?*Expr {
                 self.lexer.report_line(le.off);
                 return Error.UnexpectedToken;
             };
+            const peek = try self.lexer.peek();
+            const ident: ?*Formal = switch (peek.tag) {
+               .with => blk: {
+                    self.lexer.consume();
+                    const ident = try self.expect_token_crit(.ident, peek);
+                    const expr = self.create(Expr {.off = peek.off, .data = .{.num = 0}});
+                    const sym =  self.lexer.re_ident(ident.off);
+                    break :blk self.create(Formal {.ident = sym, .expr = expr, .eq_off = peek.off, .ident_off = peek.off });
+                },
+                .loop => null,
+                else => |other| {
+                    self.lexer.report_err(rhs.last_off(self.lexer.*), "expect `with` or `for`, found {t}", .{other});
+                    self.lexer.report_line(rhs.last_off(self.lexer.*));
+                    return Error.UnexpectedToken;
+                }
+            };
             const loop = try self.expect_token_crit_off(.loop, rhs.last_off(self.lexer.*), "expr");
             var expr_list = std.ArrayListUnmanaged(*Expr) {};
             while (try self.parse_expr()) |expr| {
@@ -202,7 +218,12 @@ pub fn parse_prefix(self: *Parser) ErrorBoth!?*Expr {
             }
             const last_expr, const last_expr_name = self.get_last_or_tok(expr_list, loop);
             const end = try self.expect_token_crit_off(.end, last_expr, last_expr_name);
-            const @"for" = Expr.For {.lhs = lhs, .rhs = rhs, .body = expr_list.toOwnedSlice(self.a) catch unreachable, .end_off = end.off};
+            const @"for" = Expr.For {
+                .lhs = lhs, .rhs = rhs, 
+                .body = expr_list.toOwnedSlice(self.a) catch unreachable, 
+                .end_off = end.off, 
+                .with = ident
+            };
             return self.create(Expr {.off = tok.off, .data = .{.@"for" = @"for"}});
         },
         else => return null,

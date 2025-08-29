@@ -15,9 +15,8 @@ lexer: *Lexer,
 main_formal: ?*Ast.Formal = null,
 builtin_vars: std.AutoHashMapUnmanaged(Symbol, struct {Type, u32}) = .{},
 config_tys: std.AutoHashMapUnmanaged(Symbol, Type) = .{},
-sec_envs: std.AutoHashMapUnmanaged(*Ast.Expr.Section, SectionEnv) = .{},
-global_env: SectionEnv = .{},
-active_sec_env: ?*SectionEnv = null,
+scope: Scope = .{ .parent = null },
+active_scope: *Scope = undefined,
 
 anno_extra_index: u32 = 0,
 
@@ -25,7 +24,24 @@ expr_extras: std.ArrayListUnmanaged(ExprAnnotation) = .{},
 
 a: std.mem.Allocator,
 
-pub const SectionEnv = std.AutoHashMapUnmanaged(Symbol, *Ast.Formal);
+pub const Map = std.AutoHashMapUnmanaged(Symbol, *Ast.Formal);
+
+pub const Scope = struct {
+    pub const Entry = Map.Entry;
+    pub const KV = Map.KV;
+    defs: Map = .empty,
+    parent: ?*Scope,
+
+    pub fn get(self: Scope, sym: Symbol) ?Entry {
+        return self.defs.getEntry(sym) orelse if (self.parent) |parent| parent.get(sym) else null;
+    }
+
+    pub fn fetch_put(self: *Scope, a: std.mem.Allocator, sym: Symbol, formal: *Ast.Formal) ?Entry {
+        if (self.get(sym)) |entry| return entry;
+        self.defs.putNoClobber(a, sym, formal) catch unreachable;
+        return null;
+    }
+};
 
 pub const ExprAnnotation = struct {
     ty: Type,
@@ -35,7 +51,6 @@ pub const Annotations = struct {
     main_formal: *Ast.Formal,
     builtin_vars: std.AutoHashMapUnmanaged(Symbol, struct {Type, u32}),
     config_tys: std.AutoHashMapUnmanaged(Symbol, Type),
-    sec_envs: std.AutoHashMapUnmanaged(*Ast.Expr.Section, SectionEnv),
     expr_extras: []ExprAnnotation,
 
     pub fn deinit(self: *Annotations, a: std.mem.Allocator) void {
@@ -69,33 +84,15 @@ const TypeDesc = union(enum) {
                 if (conform_to(t, iter_inner)) |to| return to;
                 const full = TypePool.lookup(t);
                 switch (full) {
-                    // .list => |inner| return if (conform_to(inner, iter_inner)) |_| TypePool.intern(.{.list = iter_inner}) else null,
                     .@"for" => |inner| return if (conform_to(inner, iter_inner)) |_| TypePool.intern(.{.@"for" = iter_inner}) else null,
-
                     else => return null,
                 }
             },
             .either => |either| {
                 return either.@"0".validate(t) orelse either.@"1".validate(t);
             },
-            // .iterable_sec => {
-            //     if (t == Type.note or t == Type.chord) return t;
-            //     const full = TypePool.lookup(t);
-            //     switch (full) {
-            //         // .list => |inner| return if (conform_to(inner, iter_inner)) |_| TypePool.intern(.{.list = iter_inner}) else null,
-            //         .@"for" => |inner| 
-            //             return 
-            //             if (conform_to(inner, Type.note)) |_| TypePool.intern(.{.@"for" = Type.note}) else 
-            //             if (conform_to(inner, Type.chord)) |_| TypePool.intern(.{.@"for" = Type.chord}) else null,
-
-
-            //         else => return null,
-            //     }
-            // },
-            .none => {
-                // return t == Type.note or t == Type.pitch or t == Type.chord;
-                return t;
-            },
+            .none =>
+                return t,
         }
     }
 
@@ -122,13 +119,13 @@ const TypeDesc = union(enum) {
             .concrete => |concrete| {
                 const full = TypePool.lookup(concrete);
                 switch (full) {
-                    .list => |el| return TypeDesc {.concrete = el},
+                    .list => |el| return TypeDesc { .iterable = el },
                     else => {
                         return Error.InsufficientInference;
                     }
                 }
             },
-            .either => |either|{
+            .either => |either| {
                 return either.@"0".get_list_el() catch either.@"1".get_list_el();
             },
         }
@@ -156,6 +153,8 @@ pub fn sema(self: *Sema) Error!Annotations {
     self.config_tys.putNoClobber(a, self.lexer.intern("tempo"), Type.fraction) catch unreachable;
     self.config_tys.putNoClobber(a, self.lexer.intern("instrument"), Type.int) catch unreachable;
     self.config_tys.putNoClobber(a, self.lexer.intern("volume"), Type.int) catch unreachable;
+
+    self.active_scope = &self.scope;
     // typecheck each toplevel declaration
     for (self.ast.toplevels) |formal| {
         try self.sema_formal(formal);
@@ -174,19 +173,18 @@ pub fn sema(self: *Sema) Error!Annotations {
         .main_formal = self.main_formal.?,
         .builtin_vars = self.builtin_vars,
         .config_tys = self.config_tys,
-        .sec_envs = self.sec_envs,
+        // .sec_envs = self.sec_envs,
         .expr_extras = self.expr_extras.toOwnedSlice(self.a) catch unreachable,
     };
 
 }
 
 pub fn sema_formal(self: *Sema, formal: *Ast.Formal) Error!void {
-    const env = self.active_sec_env orelse &self.global_env;
-    if (env.fetchPut(self.a, formal.ident, formal) catch unreachable) |shadowed| {
+    if (self.active_scope.fetch_put(self.a, formal.ident, formal)) |shadowed| {
         self.lexer.report_err(formal.first_off(), "variable `{s}` is alread defined", .{self.lexer.lookup(formal.ident)});
         self.lexer.report_line(formal.first_off());
-        self.lexer.report_note(shadowed.value.first_off(), "previously defined here", .{});
-        self.lexer.report_line(shadowed.value.first_off());
+        self.lexer.report_note(shadowed.value_ptr.*.first_off(), "previously defined here", .{});
+        self.lexer.report_line(shadowed.value_ptr.*.first_off());
         return Error.Redefined;
     }
     
@@ -237,28 +235,20 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             // return Error.InsufficientInference;
         },
         .ident => |*ident| {
-            if (self.active_sec_env) |env| {
-                if (env.get(ident.sym)) |formal| {
-                    ident.sema_expr = formal.expr;
-                    return self.sema_expr(formal.expr, infer);
-                }
+            if (self.active_scope.get(ident.sym)) |entry| {
+                ident.sema_expr = entry.value_ptr.*.expr;
+                return self.sema_expr(entry.value_ptr.*.expr, infer);
             }
             if (self.builtin_vars.get(ident.sym)) |builtin|
                 return builtin[0];
-            if (self.global_env.get(ident.sym)) |formal| {
-                ident.sema_expr = formal.expr;
-                return self.sema_expr(formal.expr, infer); 
-            }
             self.lexer.report_err(expr.off, "undefined variable `{s}`", .{self.lexer.lookup(ident.sym)});
             self.lexer.report_line(expr.off);
             return Error.Undefined;
         },
         .sec => |sec| {
-            const gop = self.sec_envs.getOrPut(self.a, sec) catch unreachable;
-            std.debug.assert(!gop.found_existing);
-            gop.value_ptr.* = .{};
-            const env = gop.value_ptr;
-            self.active_sec_env = env;
+            var map = Scope { .parent = self.active_scope };
+            self.active_scope = &map;
+            defer self.active_scope = map.parent.?;
             for (sec.variable) |v| {
                 try self.sema_formal(v);
             }
@@ -266,7 +256,7 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
                 try self.sema_config(config);
             }
             var desc_note = TypeDesc {.iterable = Type.note};
-            var desc_notes = TypeDesc {.iterable = TypePool.intern(.{.list = Type.note})};
+            var desc_notes = TypeDesc {.iterable = TypePool.intern(.{.list = Type.pitch})};
             const desc_either = TypeDesc {.either = .{&desc_note, &desc_notes}};
             // const allowed_tys = [_]Type {Type.note, Type.pitch, Type.void, TypePool.intern(.{.list = Type.pitch})};
             for (sec.notes) |note| {
@@ -312,24 +302,22 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             }
         },
         .list => |list| {
-            if (list.els.len == 0) {
-                //if (infer) |infer_inner|
-                //    return TypePool.intern(.{.list = infer_inner});
-                //self.lexer.report_err(expr.off, "type of an empty list cannot be inferred", .{}); 
-                //return Error.InsufficientInference;
-                return Type.pitch;
-            }
-            
             const el_infer = infer.get_list_el() catch |e| {
                 self.lexer.report_err(expr.first_off(), "inference {f} cannot be matched onto list", .{infer});
                 self.lexer.report_line(expr.first_off());
                 return e;
             };
-            
-            
-            const el_ty = try self.sema_expr(list.els[0], el_infer); 
+            if (list.els.len == 0) {
+                return TypePool.intern(.{ .list = el_infer.iterable });
+                // self.lexer.report_err(expr.off, "type of an empty list cannot be inferred", .{}); 
+                // return Error.InsufficientInference;
+                // return Type.pitch;
+            }
+
+
+            const el_ty = (try self.sema_expr(list.els[0], el_infer)).take_for_inner(); 
             for (list.els[1..], 2..) |el, i| {
-                const other_ty = try self.sema_expr(el, el_infer);
+                const other_ty = (try self.sema_expr(el, el_infer)).take_for_inner();
                 if (el_ty != other_ty) {
                     self.lexer.report_err(el.off, "exprssions in list must have the same type; 1th is {f}, {}th is {f}", 
                         .{TypePool.lookup(el_ty), i, TypePool.lookup(other_ty)});
@@ -342,6 +330,23 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             return TypePool.intern(.{.list = el_ty});
         },
         .@"for" => |@"for"| {
+
+            if (@"for".with) |with| {
+                var map = Scope { .parent = self.active_scope };
+                self.active_scope = &map;
+                if (map.fetch_put(self.a, with.ident, with)) |shadowed| {
+                    self.lexer.report_err(with.first_off(), "variable `{s}` is alread defined", .{self.lexer.lookup(with.ident)});
+                    self.lexer.report_line(with.first_off());
+                    self.lexer.report_note(shadowed.value_ptr.*.first_off(), "previously defined here", .{});
+                    self.lexer.report_line(shadowed.value_ptr.*.first_off());
+                    return Error.Redefined;
+
+                }
+            }
+            defer {
+                if (@"for".with) |_| self.active_scope = self.active_scope.parent.?;
+            }
+
             _ = try self.sema_expr(@"for".lhs, .{ .concrete = Type.int });
             _ = try self.sema_expr(@"for".rhs, .{ .concrete = Type.int });
             if (@"for".body.len == 0) {
