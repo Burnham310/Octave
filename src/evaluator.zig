@@ -172,13 +172,19 @@ pub const SectionEvaluator = struct {
                     .slash => {
                         return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
                     },
+                    .plus => return Val { .num = lhs.num + rhs.num },
+                    .minus => return Val { .num = lhs.num - rhs.num },
                     else => unreachable,
                 }
                 
             },
             .list => unreachable,
             .ident => |ident| {
-                return Val {.num = @intCast(self.anno.builtin_vars.get(ident.sym).?[1])};
+                if (self.anno.builtin_vars.get(ident.sym)) |builtin| {
+                    return Val { .num = @intCast(builtin[1]) };
+                }
+                std.log.debug("ident {}", .{ident});
+                return self.eval_expr_strict(ident.sema_expr);
             },
             .sec => unreachable,
             .@"for" => @panic("TODO"),
@@ -206,6 +212,7 @@ pub const SectionEvaluator = struct {
         const t_full = TypePool.lookup(ty);
         _ = t_full;
         const it = &self.its[expr.anno_extra]; 
+        std.log.debug("expr {}", .{expr.data});
         switch (expr.data) {
             .num => |i| {
                 if (it.* > 0) return null;
@@ -232,6 +239,16 @@ pub const SectionEvaluator = struct {
             },
             .infix => |infix| {
                 if (it.* > 0) return null;
+                std.log.debug("infix {t}", .{infix.op});
+                switch (infix.op) {
+                    .plus, .minus => {
+                        it.* += 1;
+                        const i = self.eval_expr_strict(expr).num;
+                        if (ty == Type.int) return Val {.num = @intCast(i)};
+                        if (ty == Type.pitch or ty == Type.note) return Val {.pitch = .{.deg = @intCast(i), .shift = 0, .parallel = false} };
+                    },
+                    else => {},
+                }
                 const rhs = self.eval_expr_strict(infix.rhs);
                 const lhs = self.eval_expr(infix.lhs) orelse {
                     it.* += 1;
@@ -277,6 +294,7 @@ pub const SectionEvaluator = struct {
                     if (@"for".with) |with| {
                         with.expr.data.num = @intCast(@as(isize, @intCast(it.* / @"for".body.len)) + lhs);
                     }
+                    std.log.debug("for {}", .{it.*});
                     const body_expr = @"for".body[it.* % @"for".body.len];
                     const val = self.eval_expr(body_expr) orelse {
                         self.reset(body_expr);

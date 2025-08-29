@@ -298,7 +298,12 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
                     return Type.fraction; 
 
                 },
-               else => unreachable,
+                .plus, .minus => {
+                    _ = try self.sema_expr(infix.lhs, .{ .concrete = Type.int }); // TODO: degree?
+                    _ = try self.sema_expr(infix.rhs, .{ .concrete = Type.int }); // TODO: degree?
+                    return Type.int;
+                },
+                else => unreachable,
             }
         },
         .list => |list| {
