@@ -155,16 +155,42 @@ pub const SectionEvaluator = struct {
         note: PreNote,
     };
 
-    // only works on number
-    pub fn eval_expr_strict(self: *SectionEvaluator, expr: *Ast.Expr) Val {
+    pub fn expr_implicit_cast(val: Val, to: Type, duration_infer: Fraction) Val {
+        switch (val) {
+            .num => |i| {
+                if (to == Type.pitch) return Val {.pitch = .{.deg = @intCast(i), .shift = 0, .parallel = false} };
+                if (to == Type.note) 
+                    return Val {.note = 
+                        .{.pitch = .{.deg = @intCast(i), .shift = 0, .parallel = false}, 
+                        .duration = duration_infer, 
+                        .gap = duration_infer 
+                        }};
+
+            },
+            .pitch => |p| {
+                if (to == Type.note) 
+                    return Val {.note = .{.pitch = p, .duration = duration_infer, .gap = if (p.parallel) .zero else duration_infer }};
+            },
+            else => {},
+        }
+        return val;
+    }
+
+    pub fn eval_expr_strict(self: *SectionEvaluator, expr: *Ast.Expr, duration_infer: Fraction) Val {
+        const val = self.eval_expr_strict_impl(expr, duration_infer);
+        const ty = self.anno.expr_extras[expr.anno_extra].ty;
+        return expr_implicit_cast(val, ty, duration_infer);
+    }
+
+    pub fn eval_expr_strict_impl(self: *SectionEvaluator, expr: *Ast.Expr, duration_infer: Fraction) Val {
         const t_full = TypePool.lookup(self.anno.expr_extras[expr.anno_extra].ty);
         _ = t_full;
         switch (expr.data) {
             .num => |i| return Val {.num = i},
             .prefix => @panic("TODO"),
             .infix => |infix| {
-                const lhs = self.eval_expr_strict(infix.lhs);
-                const rhs = self.eval_expr_strict(infix.rhs);
+                const lhs = self.eval_expr_strict(infix.lhs, duration_infer);
+                const rhs = self.eval_expr_strict(infix.rhs, duration_infer);
                 switch (infix.op) {
                     .single_quote => {
                         return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs.frac, .gap = @panic("TODO")}};
@@ -172,13 +198,18 @@ pub const SectionEvaluator = struct {
                     .slash => {
                         return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
                     },
+                    .plus => return Val { .num = lhs.num + rhs.num },
+                    .minus => return Val { .num = lhs.num - rhs.num },
                     else => unreachable,
                 }
                 
             },
             .list => unreachable,
             .ident => |ident| {
-                return Val {.num = @intCast(self.anno.builtin_vars.get(ident.sym).?[1])};
+                if (self.anno.builtin_vars.get(ident.sym)) |builtin| {
+                    return Val { .num = @intCast(builtin[1]) };
+                }
+                return self.eval_expr_strict(ident.sema_expr, duration_infer);
             },
             .sec => unreachable,
             .@"for" => @panic("TODO"),
@@ -201,7 +232,13 @@ pub const SectionEvaluator = struct {
         }
     }
 
-    pub fn eval_expr(self: *SectionEvaluator, expr: *Ast.Expr) ?Val {
+    pub fn eval_expr(self: *SectionEvaluator, expr: *Ast.Expr, duration_infer: Fraction) ?Val {
+        const val = self.eval_expr_impl(expr, duration_infer) orelse return null;
+        const ty = self.anno.expr_extras[expr.anno_extra].ty;
+        return expr_implicit_cast(val, ty, duration_infer);
+    }
+
+    pub fn eval_expr_impl(self: *SectionEvaluator, expr: *Ast.Expr, duration_infer: Fraction) ?Val {
         const ty = self.anno.expr_extras[expr.anno_extra].ty;
         const t_full = TypePool.lookup(ty);
         _ = t_full;
@@ -210,14 +247,11 @@ pub const SectionEvaluator = struct {
             .num => |i| {
                 if (it.* > 0) return null;
                 it.* += 1;
-                if (ty == Type.int) return Val {.num = @intCast(i)};
-                if (ty == Type.pitch or ty == Type.note) return Val {.pitch = .{.deg = @intCast(i), .shift = 0, .parallel = false} }
-                // if (ty == Type.note) return Val {.note = .{.deg = @intCast(i), .shift = 0}}
-                else unreachable;
+                return Val {.num = @intCast(i)};
             },
             .prefix => |prefix| {
                 if (it.* > 0) return null;
-                var pitch = (self.eval_expr(prefix.rhs) orelse {
+                var pitch = (self.eval_expr(prefix.rhs, duration_infer) orelse {
                     it.* += 1;
                     return null;
                 }).pitch;
@@ -232,14 +266,21 @@ pub const SectionEvaluator = struct {
             },
             .infix => |infix| {
                 if (it.* > 0) return null;
-                const rhs = self.eval_expr_strict(infix.rhs);
-                const lhs = self.eval_expr(infix.lhs) orelse {
+                switch (infix.op) {
+                    .plus, .minus => {
+                        it.* += 1;
+                        return self.eval_expr_strict(expr, duration_infer);
+                    },
+                    else => {},
+                }
+                const rhs = self.eval_expr_strict(infix.rhs, .zero).frac;
+                const lhs = self.eval_expr(infix.lhs, rhs) orelse {
                     it.* += 1;
                     return null;
                 };
                 switch (infix.op) {
                     .single_quote => {
-                        return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs.frac, .gap = if (lhs.pitch.parallel) .zero else rhs.frac }};
+                        return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs, .gap = if (lhs.pitch.parallel) .zero else rhs }};
                     },
                     .slash => {
                         @panic("unreachable");
@@ -251,7 +292,7 @@ pub const SectionEvaluator = struct {
             },
             .list => |list| {
                 while (it.* < list.els.len): (it.* += 1) {
-                    var val = self.eval_expr(list.els[it.*]) orelse continue;
+                    var val = self.eval_expr(list.els[it.*], duration_infer) orelse continue;
                     val.pitch.parallel = true;
                     return val;
                 }
@@ -262,15 +303,15 @@ pub const SectionEvaluator = struct {
                 return null;
             },
             .ident => |ident| {
-                return self.eval_expr(ident.sema_expr) orelse {
+                return self.eval_expr(ident.sema_expr, duration_infer) orelse {
                     self.reset(ident.sema_expr);
                     return null;
                 };
             },
             .sec => unreachable,
             .@"for" => |@"for"| {
-                const lhs = self.eval_expr_strict(@"for".lhs).num;
-                const rhs = self.eval_expr_strict(@"for".rhs).num;
+                const lhs = self.eval_expr_strict(@"for".lhs, .zero).num;
+                const rhs = self.eval_expr_strict(@"for".rhs, .zero).num;
                 const times = rhs - lhs;
                 if (times < 0) @panic("for loop rhs < lhs");
                 while (it.* < @"for".body.len * @as(usize, @intCast(times))): (it.* += 1) {
@@ -278,7 +319,7 @@ pub const SectionEvaluator = struct {
                         with.expr.data.num = @intCast(@as(isize, @intCast(it.* / @"for".body.len)) + lhs);
                     }
                     const body_expr = @"for".body[it.* % @"for".body.len];
-                    const val = self.eval_expr(body_expr) orelse {
+                    const val = self.eval_expr(body_expr, duration_infer) orelse {
                         self.reset(body_expr);
                         continue;
                     }; 
@@ -292,14 +333,14 @@ pub const SectionEvaluator = struct {
     pub fn eval_config(self: *SectionEvaluator) void {
         const config = &self.config;
         for (self.sec.data.sec.config) |formal| {
-            if (formal.ident == BS.tonic) config.scale.tonic = @enumFromInt(self.eval_expr_strict(formal.expr).num)
-            else if (formal.ident == BS.octave) config.scale.octave = @intCast(self.eval_expr_strict(formal.expr).num)
-            else if (formal.ident == BS.mode) config.scale.mode = @enumFromInt(self.eval_expr_strict(formal.expr).num)
-            else if (formal.ident == BS.bpm) config.bpm = @floatFromInt(self.eval_expr_strict(formal.expr).num)
-            else if (formal.ident == BS.tempo) config.tempo = self.eval_expr_strict(formal.expr).frac
-            else if (formal.ident == BS.instrument) config.inst = std.enums.fromInt(Instrument, self.eval_expr_strict(formal.expr).num) 
+            if (formal.ident == BS.tonic) config.scale.tonic = @enumFromInt(self.eval_expr_strict(formal.expr, .zero).pitch.deg)
+            else if (formal.ident == BS.octave) config.scale.octave = @intCast(self.eval_expr_strict(formal.expr, .zero).num)
+            else if (formal.ident == BS.mode) config.scale.mode = @enumFromInt(self.eval_expr_strict(formal.expr, .zero).num)
+            else if (formal.ident == BS.bpm) config.bpm = @floatFromInt(self.eval_expr_strict(formal.expr, .zero).num)
+            else if (formal.ident == BS.tempo) config.tempo = self.eval_expr_strict(formal.expr, .zero).frac
+            else if (formal.ident == BS.instrument) config.inst = std.enums.fromInt(Instrument, self.eval_expr_strict(formal.expr, .zero).num) 
                 orelse @panic("TODO: handle error")
-            else if (formal.ident == BS.volume) config.volume = @as(f32, @floatFromInt(self.eval_expr_strict(formal.expr).num)) / 100.0
+            else if (formal.ident == BS.volume) config.volume = @as(f32, @floatFromInt(self.eval_expr_strict(formal.expr, .zero).num)) / 100.0
             else unreachable;
         }
     }
@@ -324,16 +365,17 @@ pub const SectionEvaluator = struct {
         const it = &self.its[self.sec.anno_extra]; 
         // const ty = self.anno.expr_extras[note_exprs[it.*].anno_extra].ty;
         while (it.* < note_exprs.len): (it.* += 1) {
-            while (self.eval_expr(note_exprs[it.*])) |val| {
-                const pre_note = switch (val) {
-                    .pitch => |pitch| blk: {
-                        break :blk PreNote  {.pitch = pitch, .duration = default_dura, .gap = if (pitch.parallel) .zero else default_dura};
-                    },
-                    .note => blk: {
-                        break :blk val.note;
-                    },
-                    else => |t| @panic(@tagName(t)),
-                };
+            while (self.eval_expr(note_exprs[it.*], default_dura)) |val| {
+                const pre_note = expr_implicit_cast(val, Type.note, default_dura).note;
+                // const pre_note = switch (val) {
+                //     //. .pitch => |pitch| blk: {
+                //     //.     break :blk PreNote  {.pitch = pitch, .duration = default_dura, .gap = if (pitch.parallel) .zero else default_dura};
+                //     //. },
+                //     .note => blk: {
+                //         break :blk val.note;
+                //     },
+                //     else => |t| @panic(@tagName(t)),
+                // };
 
                 const abspitch = config.scale.get_abspitch(@intCast(pre_note.pitch.deg)) + pre_note.pitch.shift;
                 const freq = Tonality.abspitch_to_freq(abspitch);
@@ -346,6 +388,7 @@ pub const SectionEvaluator = struct {
                 };
                 self.first_in_expr = false;
                 self.gap = note.duration;
+                // std.log.debug("{}", .{note});
                 return note;
             }
             self.first_in_expr = true;

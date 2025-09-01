@@ -276,7 +276,7 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
         },
         .prefix => |prefix| {
             var desc_pitch = TypeDesc {.concrete = Type.pitch};
-            var desc_chord = TypeDesc {.concrete = Type.chord};
+            var desc_chord = TypeDesc {.concrete = TypePool.intern(.{.list = Type.note})};
             const either = TypeDesc {.either = .{&desc_pitch, &desc_chord }};
 
             _ = try self.sema_expr(prefix.rhs, either);
@@ -298,7 +298,12 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
                     return Type.fraction; 
 
                 },
-               else => unreachable,
+                .plus, .minus => {
+                    _ = try self.sema_expr(infix.lhs, .{ .concrete = Type.int }); // TODO: degree?
+                    _ = try self.sema_expr(infix.rhs, .{ .concrete = Type.int }); // TODO: degree?
+                    return Type.int;
+                },
+                else => unreachable,
             }
         },
         .list => |list| {

@@ -241,7 +241,7 @@ pub fn init(a: std.mem.Allocator) void {
     Type.mode = intern(TypeFull.mode);
     Type.fraction = intern(TypeFull.fraction);
     Type.note = intern(TypeFull.note);
-    Type.chord = intern(TypeFull {.list = Type.note });
+    Type.chord = intern(TypeFull {.list = Type.pitch });
     Type.section = intern(TypeFull.section);
 }
 
