@@ -21,6 +21,7 @@ const Options = struct {
     repeat: bool,
     compile_stage: Cli.CompileStage,
     debug: bool,
+    json: bool,
 };
 
 var debug_dump_trace = false;
@@ -41,28 +42,33 @@ pub fn main() !void  {
 
     const program_name = args.next().?;
     var opts: Options = undefined;
-    var args_parser = Cli.ArgParser {.a = alloc, .pgm_name = program_name, .overview = "The Octave Compiler"}; 
-    args_parser.add_opt([]const u8, &opts.input_path, null, .positional, "<input-path>",
-        "the path to the input .oct file");
-    //args_parser.add_opt([]const u8, &opts.output_path, &"-", .{.prefix = "-o"}, "<output-path>");
-    args_parser.add_opt(
-        Cli.CompileStage, &opts.compile_stage, &Cli.CompileStage.play, .{.prefix = "--stage"}, "<compile-stage>",
-        "the stage of compilaton, must be one of " ++ comptime Cli.enum_desc(Cli.CompileStage));
-    args_parser.add_opt(bool, &opts.repeat, &false, .{.prefix = "--repeat"}, "",
-        "repeat indefinetly; only make sense in the playing stage");
-    args_parser.add_opt(bool, &debug_dump_trace, &false, .{.prefix = "--debug"}, "",
-        "dump trace in case of error, needs to be compiled with trace");
-    args_parser.add_opt(f32, &opts.volume, &1.0, .{.prefix = "--volume"}, "<volume>",
-        "a floating point number representing the master volume of the player");
-    args_parser.add_opt(bool, &opts.debug, &false, .{.prefix = "-g"}, "",
-        "print all the notes to stdout instead of playing them");
-    
-    args_parser.parse(&args) catch |e| exit_or_dump_trace(e);
+    var args_parser = Cli.ArgParser {}; 
+    args_parser.init(alloc, program_name, "Compiler/Interpreter for the Octave Programming Language");
+    args_parser
+        .add_opt([]const u8, &opts.input_path, .none, .positional, "<input-path>",
+            "the path to the input .oct file")
+        //args_parser.add_opt([]const u8, &opts.output_path, &"-", .{.prefix = "-o"}, "<output-path>");
+        .add_opt(
+            Cli.CompileStage, &opts.compile_stage, .{.just = &Cli.CompileStage.play}, .{.prefix = "--stage"}, "<compile-stage>",
+            "the stage of compilaton, must be one of " ++ comptime Cli.enum_desc(Cli.CompileStage))
+        .add_opt(bool, &opts.repeat, .{.just = &false}, .{.prefix = "--repeat"}, "",
+            "repeat indefinetly; only make sense in the playing stage")
+        .add_opt(bool, &debug_dump_trace, .{.just = &false}, .{.prefix = "--debug"}, "",
+            "dump trace in case of error, needs to be compiled with trace")
+        .add_opt(f32, &opts.volume, .{.just = &1.0}, .{.prefix = "--volume"}, "<volume>",
+            "a floating point number representing the master volume of the player")
+        .add_opt(bool, &opts.debug, .{.just = &false}, .{.prefix = "-g"}, "",
+            "print all the notes to stdout instead of playing them")
+        .add_opt(bool, &opts.json, .{.just = &false}, .{.prefix = "--json"}, "",
+            "when `stage` is play, output the notes as a json file instead of actually playing it")
+        
+        .parse(&args) catch |e| exit_or_dump_trace(e);
 
     const stdout_raw = std.fs.File.stdout();
-    var stdout_buf: [1024]u8 = undefined;
-    const stdout_writer = stdout_raw.writer(&stdout_buf);
-    var stdout = stdout_writer.interface;
+    var stdout_buf: [256]u8 = undefined;
+    var stdout_writer = stdout_raw.writer(&stdout_buf);
+    const stdout = &stdout_writer.interface;
+    defer stdout.flush() catch unreachable;
     //var stdout_buffered = std.io.bufferedWriter(stdout_reader);
     //const stdout = stdout_buffered.writer();
     //defer stdout_buffered.flush() catch unreachable;
@@ -87,7 +93,7 @@ pub fn main() !void  {
     var parser = Parser { .lexer = &lexer, .a = alloc };
     var ast = parser.parse() catch |e| exit_or_dump_trace(e);
     if (opts.compile_stage == .parse) {
-        ast.dump(&stdout, lexer);
+        ast.dump(stdout, lexer);
         return;
     }
     // ----- Sema -----
@@ -100,14 +106,20 @@ pub fn main() !void  {
     }
     // ----- Compile -----
     var eval = Eval.Evaluator.init(&ast, &anno, alloc);
+    try stdout.writeAll("[\n");
     if (opts.debug) {
         while (true) {
             const note = eval.eval();
-            try stdout.print("{}\n", .{note});
-            if (note.is_eof()) return;
+            try stdout.print("{f}\n", .{std.json.fmt(note, .{ .whitespace = .indent_2, })});
+            if (note.is_eof()) {
+                try stdout.writeAll("\n]");
+                return;
+            } else {
+                try stdout.writeAll(",\n");
+            }
         }
     }
-    var player = Player {.evaluator = &eval, .a = alloc, .volume = opts.volume };
+    var player = Player { .evaluator = &eval, .a = alloc, .volume = opts.volume };
 
     var streamer: Zynth.Streamer = undefined;
     var silence = Zynth.Waveform.Simple.silence;

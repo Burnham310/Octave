@@ -29,7 +29,7 @@ pub const Expr = struct {
         variable: []*Formal,
         config: []*Formal,
         notes: []*Expr,
-        pub fn dump(self: Section, writer: anytype, lexer: Lexer, level: u32) void {
+        pub fn dump(self: Section, writer: *std.io.Writer, lexer: Lexer, level: u32) void {
             for (self.variable) |formal| {
                 formal.dump(writer, lexer, level+1);
             }
@@ -85,7 +85,7 @@ pub const Expr = struct {
         }
     }
 
-    pub fn dump(self: Expr, writer: anytype, lexer: Lexer, level: u32) void {
+    pub fn dump(self: Expr, writer: *std.io.Writer, lexer: Lexer, level: u32) void {
         for (0..level) |_|
             writer.writeByte(' ') catch unreachable; 
         _ = writer.write("|-") catch unreachable;
@@ -143,7 +143,7 @@ pub const Formal = struct {
     ident: Symbol,
     expr: *Expr,
 
-    pub fn dump(self: Formal, writer: anytype, lexer: Lexer, level: u32) void {
+    pub fn dump(self: Formal, writer: *std.io.Writer, lexer: Lexer, level: u32) void {
         for (0..level) |_|
             writer.writeByte(' ') catch unreachable; 
 
@@ -169,7 +169,7 @@ formals: std.SegmentedList(Formal, 1),
 exprs: std.SegmentedList(Expr, 0),
 secs: std.SegmentedList(Expr.Section, 1),
 
-pub fn dump(self: Ast, writer: anytype, lexer: Lexer) void {
+pub fn dump(self: Ast, writer: *std.io.Writer, lexer: Lexer) void {
     for (self.toplevels) |toplevel| {
         toplevel.dump(writer, lexer, 0);
     }

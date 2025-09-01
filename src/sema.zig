@@ -276,11 +276,10 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
         },
         .prefix => |prefix| {
             var desc_pitch = TypeDesc {.concrete = Type.pitch};
-            var desc_chord = TypeDesc {.concrete = TypePool.intern(.{.list = Type.note})};
+            var desc_chord = TypeDesc {.concrete = Type.chord};
             const either = TypeDesc {.either = .{&desc_pitch, &desc_chord }};
 
-            _ = try self.sema_expr(prefix.rhs, either);
-            return Type.pitch;
+            return try self.sema_expr(prefix.rhs, either);
         },
         .infix => |infix| {
             switch (infix.op) {
