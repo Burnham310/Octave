@@ -55,10 +55,12 @@ pub fn build(b: *Build) void {
         .name = "test",
         .root_module = test_module,
     });
+    const record_opt = b.option(bool, "record", "tell the test system to record the output") orelse false;
 
     const run_test = b.addRunArtifact(test_system);
     run_test.addArtifactArg(octave_compiler);
     run_test.addFileArg(b.path("test"));
+    if (record_opt) run_test.addArg("--record");
 
     run_test.step.dependOn(&octave_compiler.step);
     test_step.dependOn(&run_test.step);

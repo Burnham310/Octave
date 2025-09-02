@@ -1,0 +1,82 @@
+[
+{
+  "freq": 130.80999755859375,
+  "duration": 0.5,
+  "gap": 0.5,
+  "amp": 1,
+  "inst": "sine"
+}
+,
+{
+  "freq": 174.6103973388672,
+  "duration": 0.5,
+  "gap": 0.5,
+  "amp": 1,
+  "inst": "sine"
+}
+,
+{
+  "freq": 246.93638610839844,
+  "duration": 0.5,
+  "gap": 0.5,
+  "amp": 1,
+  "inst": "sine"
+}
+,
+{
+  "freq": 146.82925415039062,
+  "duration": 0.5,
+  "gap": 0.5,
+  "amp": 1,
+  "inst": "sine"
+}
+,
+{
+  "freq": 164.81027221679688,
+  "duration": 0.5,
+  "gap": 0.5,
+  "amp": 1,
+  "inst": "sine"
+}
+,
+{
+  "freq": 246.93638610839844,
+  "duration": 0.5,
+  "gap": 0.5,
+  "amp": 1,
+  "inst": "sine"
+}
+,
+{
+  "freq": 164.81027221679688,
+  "duration": 0.5,
+  "gap": 0.5,
+  "amp": 1,
+  "inst": "sine"
+}
+,
+{
+  "freq": 146.82925415039062,
+  "duration": 0.5,
+  "gap": 0.5,
+  "amp": 1,
+  "inst": "sine"
+}
+,
+{
+  "freq": 246.93638610839844,
+  "duration": 0.5,
+  "gap": 0.5,
+  "amp": 1,
+  "inst": "sine"
+}
+,
+{
+  "freq": 0,
+  "duration": 0,
+  "gap": 0,
+  "amp": 0,
+  "inst": "guitar"
+}
+
+]

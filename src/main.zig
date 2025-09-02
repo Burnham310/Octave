@@ -8,6 +8,7 @@ const TypePool = @import("type_pool.zig");
 const Sema = @import("sema.zig");
 
 const Eval = @import("evaluator.zig");
+pub const Note = Eval.Note;
 const Player = @import("player.zig");
 
 const Zynth = @import("zynth");
