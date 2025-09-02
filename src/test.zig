@@ -285,12 +285,14 @@ pub fn main() !void {
     defer stdout.flush() catch unreachable;
 
     enable_color = opts.color and stdout_raw.getOrEnableAnsiEscapeSupport();
+    var all_success = true;
 
     for (test_results.items) |result| {
         stdout.print("{s: <40}", .{result.path}) catch unreachable;
         if (result.return_code == .success) {
             stdout.print("{f}success{f}", .{Color.green, Color.reset}) catch unreachable;
         } else {
+            all_success = false;
             stdout.print("{f}{s}{f}", .{Color.red, @tagName(result.return_code), Color.reset}) catch unreachable;
         }
         stdout.writeByte('\n') catch unreachable;
@@ -302,5 +304,7 @@ pub fn main() !void {
         stdout.print("{s}:\n", .{result.path}) catch unreachable;
         stdout.print("{s}\n", .{result.diagnostic}) catch unreachable;
     }
+
+    if (!all_success) return error.Failed;
 
 }
