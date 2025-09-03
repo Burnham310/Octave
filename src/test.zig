@@ -174,7 +174,7 @@ pub fn run_tests_on_dir(
         ) |entry| {
         if (entry.kind != .file) continue;
         const ext = std.fs.path.extension(entry.name);
-        if (!std.mem.eql(u8, ext, ".oct")) continue; 
+        if (!std.mem.eql(u8, ext, ".oct") and !std.mem.eql(u8, ext, ".test")) continue; 
         const full_path = std.fmt.allocPrint(a, "{s}/{s}", .{path, entry.name}) catch unreachable;
 
         var child = switch (stage) {
@@ -287,6 +287,8 @@ pub fn main() !void {
     enable_color = opts.color and stdout_raw.getOrEnableAnsiEscapeSupport();
     var all_success = true;
 
+    stdout.print("--- Overview ---\n\n", .{}) catch unreachable;
+    stdout.print("total test run: {}\n\n", .{test_results.items.len}) catch unreachable;
     for (test_results.items) |result| {
         stdout.print("{s: <40}", .{result.path}) catch unreachable;
         if (result.return_code == .success) {
