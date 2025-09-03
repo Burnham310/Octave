@@ -32,131 +32,94 @@
             color: #007acc;
             font-weight: bold;
         }
+
+	.copy-btn {
+	  width: 20px;
+	  height: 20px;
+	  border-radius: 50%;
+	  background-color: #f0f0f0;
+	  border: none;
+	  cursor: pointer;
+	  display: inline-block;
+	  align-items: center;
+	  justify-content: center;
+	  transition: all 0.3s ease;
+	  position: relative;
+	  margin-right: 10px;
+	}
+	
+	.copy-btn:hover {
+	  background-color: #e0e0e0;
+	  transform: scale(1.05);
+	}
+	
+	.copy-btn::before {
+	  content: "📋";
+	  font-size: 16px;
+	}
+	
+	.copy-btn.copied::before {
+	  content: "✓";
+	  color: #28a745;
+	}   
     </style>
+    <script type="module">
+	import Module from "./octc.mjs";
+
+	function copyToClipBoard(id) {
+	    const code_el = document.getElementById(id);
+	    navigator.clipboard.writeText(code_el.innerHTML);
+	}
+
+	async function compileOctave(id) {
+	    let octc = await Module({noInitialRun: true});
+	    const code_el = document.getElementById(id);
+	    const code = code_el.innerText;
+            const inputFile = 'tmp.oct';  // Virtual input file
+
+            octc.FS.writeFile(inputFile, code);
+
+            try {
+                octc.callMain([inputFile]);
+            } catch {
+                return false
+            }
+
+            return true;
+        }
+
+	import("./manifest.json", { with: { type: "json" } }).then(json => {
+	    const list = document.getElementById("list");
+	    json.default.sort().forEach(async (name) => {
+
+		const content = await (await fetch(`/${name}`)).text();
+
+		const title = document.createElement("h2");
+		title.innerHTML = name;
+		const copy_btn = document.createElement("button");
+		copy_btn.classList.add("copy-btn");
+		copy_btn.addEventListener("click", () => copyToClipBoard(name));
+		const pre = document.createElement("pre");
+		pre.innerHTML = `<code id="${name}">${content}</code>`;
+		const play_btn = document.createElement("button");
+		play_btn.innerHTML = "play";
+		play_btn.addEventListener("click", () => compileOctave(name));
+
+		list.appendChild(title);
+		list.appendChild(copy_btn);
+		list.appendChild(play_btn);
+		list.appendChild(pre);
+	    })
+	});
+
+	
+    </script>
 </head>
 
-<body>
-
-    <h2>Twinkle</h2>
-    <pre><code>
-main = |:: 1.. 1... 5.. 5... 6.. 6... 5... 4.. 4... 3.. 3... 2.. 2... 1..|
-    </code></pre>
-
-    <h2>Tchaikovsky</h2>
-    <pre><code>
-main = | :scale=/F 5 MIN/, bpm=90:
-
-  1..  [1 3 5]..  6...  5.... 
-  [3 5]..  4..  [4 6]...  3...
-
-  1..  [1 3 5]..  6...  5....
-  [2 4]..  3...  2...  1....
-
-  [5 7]..  [4 6]...  5....  [3 5]...
-  1..  [1 3 5]..  6...  5....
-
-  1...  [1 4 6]..  4....  [2 5]...
-  5..  4..  [3 5]...  2....
-
-|
-    </code></pre>
-
-    <h2>Spit Fountain</h2>
-    <pre><code>
-// Spit Fountain
-// Composer: Algernon Cadwallader 
-// Genra: Midwest Emo
-
-main = | :scale=/D 3 MAJ/, bpm=140, instrument=27:   // section configuration
-    1.. oo'2.. o'7.. o'5..
-    2... 3... 5... 6... o'2... o#'4... o'5..
-
-    1.. oo'2.. o'7.. o'5.. 
-    2... 3... 5... 6... o'2... o#'4... o'5... oo'2...
-
-    1.. oo'2.. o'7.. o'5.. 
-    2... 3... 5... 6... o'2... o#'4... o'5..
-    
-    1.. oo'2.. o'7.. []... 1.... 2....
-    3... 5... 6... 7... o'2... o'5... o'6... o'5...
-
-    5.. oo'2.. o'7.. o'[6 o#'4]... o'[7 o'5]...
-    []... oo'[2 1]... oo'3... oo'2... o'5... o'5... o'7... o'[5 7]...
-
-    1.. oo'2.. o'5.
-    o'6... o'7... o'5... oo#'4... oo'5... oo#'4... o'5... o'[7 o'2]...
-
-    5.. oo'2.. o'7... oo'1.. oo'5...
-    []... oo'2... oo'3... oo'5... oo'6... oo'7... o'[5 7 o'2]... o'[1 3]...
-
-    []... ooo'2... oo'5... oo'7.. o'5.. []...
-    o'1... o'6... o'7... o'5... oo'2.. oo'5... oo'2...
-|
-// END
-    </code></pre>
-
-    <h2>Guitar&Bass</h2>
-    <pre><code>
-// Spit Fountain
-// Composer: Algernon Cadwallader 
-// Genra: Midwest Emo
-
-guitar = | :scale=/D 3 MAJ/, bpm=140, instrument=27:   // section configuration
-
-@init_setting[volume=100 linear]
-
-    1.. oo'2.. o'7.. o'5..
-    2... 3... 5... 6... o'2... o#'4... o'5..
-
-@build_up[volume=10 linear]
-
-    1.. oo'2.. o'7.. o'5.. 
-    2... 3... 5... 6... o'2... o#'4... o'5... oo'2...
-
-    1.. oo'2.. o'7.. o'5.. 
-    2... 3... 5... 6... o'2... o#'4... o'5..
-
-@done[volume=100]
-| // Guitar END
-
-
-// Bass section configuration
-
-bass = | :scale=/D 2 MAJ/, bpm=140, instrument=34:  
-
-@init_setting[volume=50 linear]
-    1.. 3.. 5.. 6..
-    o'1... o'3... o'5... o'6...
-
-    1.. 3.. 5.. 6..
-    o'1... o'3... o'5... o'7... o'6...
-
-    1.. 3.. 5.. 6..
-    o'1... o'3... o'5... o'6...
-
-    1.. 3.. 5.. 6..
-    o'1... o'3... o'5... o'6...
-|
-
-main = guitar & bass
-
-// END
-    </code></pre>
-
-
-    <h2>Loop</h2>
-    <pre><code>
-main = |:scale=/A 3 MAJ/, instrument=27:
-for 0~&lt;5 loop
-    for 0~&lt;4 loop 2... [2 4 o'1]... end
-    for 0~&lt;4 loop 5... [5 7 o'2]... end
-    for 0~&lt;4 loop 1... [1 3 7]... end
-    for 0~&lt;4 loop s'6... [s'6 3 7]... end
-end
-|
-</code></pre>
-
-
+<body id="list">
+    <a href="/">
+	<h1>Home</h1>
+    </a>
 </body>
 
 </html>

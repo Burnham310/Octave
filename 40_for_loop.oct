@@ -1,0 +1,9 @@
+main = {
+    c1=[1 3 7], c2=[2 4 ^1], c6=[6 ^1 ^5], c4=[4 6 ^3], c5=[5 7 ^2];
+    tonic=A, octave=5, mode=major, tempo=8/8;
+    for 0~<5 loop
+	for 0~<4 loop [2] c2 end
+    	for 0~<4 loop [5] c5 end
+    	for 0~<8 loop [1] c1 end
+    end
+}
