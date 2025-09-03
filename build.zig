@@ -19,11 +19,36 @@ pub fn build(b: *Build) void {
         const wasm_step = zynth_build.compile_to_wasm(b, opt, root_module, "octc");
         b.getInstallStep().dependOn(wasm_step);
 
+        const test_path = b.path("test");
+        b.installDirectory(.{
+            .source_dir = test_path,
+            .install_dir = .{ .custom = "web" },
+            .install_subdir = ".",
+            .include_extensions = &.{".oct"},
+        });
+
         b.installDirectory(.{
             .source_dir = b.path("web"),
             .install_dir = .{ .custom = "web" },
             .install_subdir = ".",
         });
+
+        // collect the the .oct test files names into a json.
+        // They will be used to display on the website
+        var test_dir = test_path.getPath3(b, b.getInstallStep()).openDir(".", .{ .iterate = true }) catch unreachable;
+        var it = test_dir.iterate();
+        var examples = std.ArrayList([]const u8).empty;
+        while (it.next() catch unreachable) |entry| {
+            if (entry.kind != .file) continue;
+            const ext = std.fs.path.extension(entry.name);
+            if (!std.mem.eql(u8, ext, ".oct")) continue; 
+            examples.append(b.allocator, entry.name) catch unreachable;
+        }
+        const examples_json = std.fmt.allocPrint(b.allocator, "{f}", .{std.json.fmt(examples.items, .{.whitespace = .indent_2 })}) catch unreachable;
+        const wf = b.addWriteFiles();
+        const wf_json = wf.add("manfiest.json", examples_json);
+        const install_json = b.addInstallFile(wf_json, "web/manifest.json");
+        b.getInstallStep().dependOn(&install_json.step);
         return;
     }
 
