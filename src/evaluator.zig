@@ -200,6 +200,7 @@ pub const SectionEvaluator = struct {
                     },
                     .plus => return Val { .num = lhs.num + rhs.num },
                     .minus => return Val { .num = lhs.num - rhs.num },
+                    .times => return Val { .num = lhs.num * rhs.num },
                     else => unreachable,
                 }
                 
