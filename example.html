@@ -88,31 +88,27 @@
             return true;
         }
 
-	import("./manifest.json", { with: { type: "json" } }).then(json => {
-	    const list = document.getElementById("list");
-	    json.default.sort().forEach(async (name) => {
+	const list = document.getElementById("list");
+	const json = await import("./manifest.json", { with: { type: "json" } });
+	const contents = json.map(name => fetch(`./${name}`).then(resp => resp.text()));
+	for (let i = 0; i < json.length; ++i) {
+	    const content = await contents[i];
+	    const title = document.createElement("h2");
+	    title.innerHTML = name;
+	    const copy_btn = document.createElement("button");
+	    copy_btn.classList.add("copy-btn");
+	    copy_btn.addEventListener("click", () => copyToClipBoard(name));
+	    const pre = document.createElement("pre");
+	    pre.innerHTML = `<code id="${name}">${content}</code>`;
+	    const play_btn = document.createElement("button");
+	    play_btn.innerHTML = "play";
+	    play_btn.addEventListener("click", () => compileOctave(name));
 
-		const content = await (await fetch(`./${name}`)).text();
-
-		const title = document.createElement("h2");
-		title.innerHTML = name;
-		const copy_btn = document.createElement("button");
-		copy_btn.classList.add("copy-btn");
-		copy_btn.addEventListener("click", () => copyToClipBoard(name));
-		const pre = document.createElement("pre");
-		pre.innerHTML = `<code id="${name}">${content}</code>`;
-		const play_btn = document.createElement("button");
-		play_btn.innerHTML = "play";
-		play_btn.addEventListener("click", () => compileOctave(name));
-
-		list.appendChild(title);
-		list.appendChild(copy_btn);
-		list.appendChild(play_btn);
-		list.appendChild(pre);
-	    })
-	});
-
-	
+	    list.appendChild(title);
+	    list.appendChild(copy_btn);
+	    list.appendChild(play_btn);
+	    list.appendChild(pre);
+	}
     </script>
 </head>
 
