@@ -89,9 +89,10 @@
         }
 
 	const list = document.getElementById("list");
-	const json = await import("./manifest.json", { with: { type: "json" } });
-	const contents = json.map(name => fetch(`./${name}`).then(resp => resp.text()));
-	for (let i = 0; i < json.length; ++i) {
+	const manifest = (await import("./manifest.json", { with: { type: "json" } })).default.sort();
+	const contents = manifest.map(name => fetch(`./${name}`).then(resp => resp.text()));
+	for (let i = 0; i < manifest.length; ++i) {
+	    const name = manifest[i];
 	    const content = await contents[i];
 	    const title = document.createElement("h2");
 	    title.innerHTML = name;
