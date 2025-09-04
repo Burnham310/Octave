@@ -14,6 +14,6 @@ zig build
 
 To build for wasm,
 ```
-zig build  examples --sysroot ~/opt/emsdk/upstream/emscripten -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall
+zig build  --sysroot ~/opt/emsdk/upstream/emscripten -Dtarget=wasm32-emscripten -Doptimize=ReleaseSmall
 ```
 

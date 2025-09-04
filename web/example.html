@@ -92,7 +92,7 @@
 	    const list = document.getElementById("list");
 	    json.default.sort().forEach(async (name) => {
 
-		const content = await (await fetch(`/${name}`)).text();
+		const content = await (await fetch(`./${name}`)).text();
 
 		const title = document.createElement("h2");
 		title.innerHTML = name;
