@@ -7,6 +7,7 @@ pub const Type = packed struct {
     t: u32,
     pub var @"void":    Type = undefined;
     pub var int:        Type = undefined;
+    pub var @"bool":    Type = undefined;
     pub var mode:       Type = undefined;
     pub var pitch:      Type = undefined;
     pub var fraction:   Type = undefined;
@@ -22,7 +23,7 @@ pub const Type = packed struct {
     pub fn take_for_inner(self: Type) Type {
         const full = lookup(self);
         switch (full) {
-            .@"for" => |@"for"| return @"for".take_for_inner(),
+            .splat => |splat| return splat.take_for_inner(),
             else => return self,
         }
     }
@@ -37,24 +38,26 @@ pub const TypeStorage = struct {
 pub const Kind = enum(u8) {
     void,
     int,
+    bool,
     mode,
     pitch,
     fraction,
     note,
     section,
     list,
-    @"for",
+    splat,
 };
 pub const TypeFull = union(Kind) {
     void,
     int,
+    bool,
     mode,
     pitch,
     fraction,
     note,
     section,
     list: Type,
-    @"for": Type,
+    splat: Type,
   
     //pub const Ptr = struct {
     //    el: Type
@@ -83,12 +86,13 @@ pub const TypeFull = union(Kind) {
             switch (a) {
                 .void,
                 .int,
+                .bool,
                 .mode,
                 .pitch,
                 .fraction,
                 .note,
                 .section => return true,
-                .list, .@"for", => |el_ty| return el_ty.t == extras[b.more],
+                .list, .splat, => |el_ty| return el_ty.t == extras[b.more],
             }
         }
         pub fn hash(ctx: Adapter, a: TypeFull) u32 {
@@ -96,12 +100,13 @@ pub const TypeFull = union(Kind) {
             switch (a) {
                 .void,
                 .int,
+                .bool,
                 .mode,
                 .pitch,
                 .fraction,
                 .note,
                 .section => return std.hash.int(@intFromEnum(a)),
-                .list, .@"for" => |el_ty| {
+                .list, .splat => |el_ty| {
                     var hasher = std.hash.Wyhash.init(0);
                     hasher.update(std.mem.asBytes(&el_ty));
                     hasher.update(std.mem.asBytes(&@intFromEnum(a)));
@@ -142,6 +147,7 @@ pub const TypeFull = union(Kind) {
         switch (value) {
             .void,
             .int,
+            .bool,
             .mode,
             .pitch,
             .fraction,
@@ -150,7 +156,7 @@ pub const TypeFull = union(Kind) {
             .list => |el_ty| {
                 _ = try writer.print("[{f}]", .{lookup(el_ty)});
             },
-            .@"for" => |el_ty| {
+            .splat => |el_ty| {
                 _ = try writer.print("for<{f}>", .{lookup(el_ty)});
             }
         }
@@ -175,12 +181,13 @@ pub const TypeIntern = struct {
         const more = switch (s) {
             .void,
             .int,
+            .bool,
             .mode,
             .pitch,
             .note,
             .fraction,
             .section => undefined,
-            .list, .@"for" => |el_ty| blk: {
+            .list, .splat => |el_ty| blk: {
                 const extra_idx = self.get_new_extra();
                 self.extras.append(el_ty.t) catch unreachable;
                 break :blk extra_idx;
@@ -213,13 +220,14 @@ pub const TypeIntern = struct {
         switch (storage.kind) {
             .void => return .void,
             .int => return .int,
+            .bool => return .bool,
             .pitch => return .pitch,
             .mode => return .mode,
             .fraction => return .fraction,
             .note => return .note,
             .section => return .section,
             .list  => return .{.list = Type {.t=extras[more]}},
-            .@"for" => return .{.@"for" = Type {.t=extras[more]}},
+            .splat => return .{.splat = Type {.t=extras[more]}},
         }
     }
     pub fn len(self: Self) usize {
@@ -237,6 +245,7 @@ pub fn init(a: std.mem.Allocator) void {
     type_pool = TypeIntern.init(a);
     Type.@"void" = intern(TypeFull.void);
     Type.int = intern(TypeFull.int);
+    Type.bool = intern(TypeFull.bool);
     Type.pitch = intern(TypeFull.pitch);
     Type.mode = intern(TypeFull.mode);
     Type.fraction = intern(TypeFull.fraction);

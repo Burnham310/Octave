@@ -16,7 +16,9 @@ pub const Expr = struct {
         infix: Infix,
         prefix: Prefix,
         list: List,
+        sequence: List,
         @"for": For,
+        @"if": If,
     },
 
     pub const Ident = struct {
@@ -66,9 +68,16 @@ pub const Expr = struct {
         with: ?*Formal,
     };
 
+    pub const If = struct {
+        cond: *Expr,
+        then: *Expr,
+        @"else": *Expr,
+
+    };
+
     pub fn first_off(self: Expr) u32 {
         switch (self.data) {
-            .num, .ident, .sec, .list, .prefix, .@"for" => return self.off,
+            .num, .ident, .sec, .list, .sequence, .prefix, .@"for", .@"if" => return self.off,
             .infix => |infix| return infix.lhs.first_off(),
         }
     }
@@ -80,8 +89,9 @@ pub const Expr = struct {
            .infix => |infix| return infix.rhs.last_off(lexer),
            .prefix => |prefix| return prefix.rhs.last_off(lexer),
            .sec => |sec| return sec.rcurly_off,
-           .list => |list| return list.rbrac_off,
+           .list, .sequence => |list| return list.rbrac_off,
            .@"for" => |@"for"| return @"for".end_off,
+           .@"if" => |@"if"| return @"if".@"else".last_off(lexer),
         }
     }
 
@@ -121,6 +131,13 @@ pub const Expr = struct {
                     el.dump(writer, lexer, level+1);
                 }
             },
+            .sequence => |list| {
+                _ = writer.print("Sequence<{}>", .{list.els.len}) catch unreachable;
+                writer.writeByte('\n') catch unreachable; 
+                for (list.els) |el| {
+                    el.dump(writer, lexer, level+1);
+                }
+            },
             .@"for" => |@"for"| {
                 _ = writer.print("For", .{}) catch unreachable;
                 writer.writeByte('\n') catch unreachable; 
@@ -129,6 +146,12 @@ pub const Expr = struct {
                 for (@"for".body) |body| {
                     body.dump(writer, lexer, level+1);
                 }
+            },
+            .@"if" => |@"if"| {
+                _ = writer.print("If", .{}) catch unreachable;
+                @"if".cond.dump(writer, lexer, level+1);
+                @"if".then.dump(writer, lexer, level+1);
+                @"if".@"else".dump(writer, lexer, level+1);
             },
 
         }

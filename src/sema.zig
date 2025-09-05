@@ -84,7 +84,7 @@ const TypeDesc = union(enum) {
                 if (conform_to(t, iter_inner)) |to| return to;
                 const full = TypePool.lookup(t);
                 switch (full) {
-                    .@"for" => |inner| return if (conform_to(inner, iter_inner)) |_| TypePool.intern(.{.@"for" = iter_inner}) else null,
+                    .splat => |inner| return if (conform_to(inner, iter_inner)) |_| TypePool.intern(.{.splat = iter_inner}) else null,
                     else => return null,
                 }
             },
@@ -110,6 +110,15 @@ const TypeDesc = union(enum) {
         if (from == Type.pitch and to == Type.note) return to;
         if (from == Type.int and (to == Type.pitch or to == Type.note)) return to;
         return null;
+    }
+
+    pub fn get_iterable(self: TypeDesc) ?Type {
+        switch (self) {
+            .iterable => |t| return t,
+            .either => |either| 
+                return either.@"0".get_iterable() orelse either.@"1".get_iterable(),
+            else => return null,
+        }
     }
 
     pub fn get_list_el(self: TypeDesc) !TypeDesc {
@@ -141,6 +150,8 @@ pub fn sema(self: *Sema) Error!Annotations {
     }
     self.builtin_vars.putNoClobber(a, self.lexer.intern("major"), .{Type.mode, @intFromEnum(Tonality.Mode.major)}) catch unreachable;
     self.builtin_vars.putNoClobber(a, self.lexer.intern("minor"), .{Type.mode, @intFromEnum(Tonality.Mode.minor)}) catch unreachable;
+    self.builtin_vars.putNoClobber(a, self.lexer.intern("true"), .{Type.bool, 1}) catch unreachable;
+    self.builtin_vars.putNoClobber(a, self.lexer.intern("false"), .{Type.bool, 0}) catch unreachable;
     const pitches = @typeInfo(Tonality.Pitch).@"enum".fields;
     inline for (pitches) |pitch| {
         self.builtin_vars.putNoClobber(a, self.lexer.intern(pitch.name), .{Type.pitch, pitch.value}) catch unreachable;
@@ -181,10 +192,8 @@ pub fn sema(self: *Sema) Error!Annotations {
 
 pub fn sema_formal(self: *Sema, formal: *Ast.Formal) Error!void {
     if (self.active_scope.fetch_put(self.a, formal.ident, formal)) |shadowed| {
-        self.lexer.report_err(formal.first_off(), "variable `{s}` is alread defined", .{self.lexer.lookup(formal.ident)});
-        self.lexer.report_line(formal.first_off());
-        self.lexer.report_note(shadowed.value_ptr.*.first_off(), "previously defined here", .{});
-        self.lexer.report_line(shadowed.value_ptr.*.first_off());
+        self.lexer.report_err_line(formal.first_off(), "variable `{s}` is alread defined", .{self.lexer.lookup(formal.ident)});
+        self.lexer.report_note_line(shadowed.value_ptr.*.first_off(), "previously defined here", .{});
         return Error.Redefined;
     }
     
@@ -192,8 +201,7 @@ pub fn sema_formal(self: *Sema, formal: *Ast.Formal) Error!void {
 
 pub fn sema_config(self: *Sema, formal: *Ast.Formal) Error!void {
     const expected_ty = self.config_tys.get(formal.ident) orelse {
-        self.lexer.report_err(formal.first_off(), "unrecognized config name `{s}`", .{self.lexer.lookup(formal.ident)});   
-        self.lexer.report_line(formal.first_off());
+        self.lexer.report_err_line(formal.first_off(), "unrecognized config name `{s}`", .{self.lexer.lookup(formal.ident)});   
         return Error.UnknownConfig;
     };
     _ = try self.sema_expr(formal.expr, .{.concrete = expected_ty });
@@ -213,8 +221,7 @@ fn expect_type(self: *Sema, expected: TypeDesc, got: Type, off: u32) !Type {
     if (expected.validate(got)) |to| {
         return to;
     }
-    self.lexer.report_err(off, "Expect Type `{f}`, got `{f}`", .{expected, got}); 
-    self.lexer.report_line(off);
+    self.lexer.report_err_line(off, "Expect Type `{f}`, got `{f}`", .{expected, got}); 
     return Error.TypeMismatched;
 }
 
@@ -230,7 +237,7 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
     switch (expr.data) {
         .num => {
             return Type.int; 
-            // self.lexer.report_err(expr.off, "type of number literal cannot be inferred", .{});
+            // self.lexer.report_err_line(expr.off, "type of number literal cannot be inferred", .{});
             // self.lexer.report_line(expr.off);
             // return Error.InsufficientInference;
         },
@@ -241,8 +248,7 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             }
             if (self.builtin_vars.get(ident.sym)) |builtin|
                 return builtin[0];
-            self.lexer.report_err(expr.off, "undefined variable `{s}`", .{self.lexer.lookup(ident.sym)});
-            self.lexer.report_line(expr.off);
+            self.lexer.report_err_line(expr.off, "undefined variable `{s}`", .{self.lexer.lookup(ident.sym)});
             return Error.Undefined;
         },
         .sec => |sec| {
@@ -267,7 +273,7 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
                 // for (allowed_tys) |allowed| {
                 //     if (allowed == note_ty) break;
                 // } else {
-                //     self.lexer.report_err(note.off, "expect one of Type note, chord, or num, got {f}", .{TypePool.lookup(note_ty)});
+                //     self.lexer.report_err_line(note.off, "expect one of Type note, chord, or num, got {f}", .{TypePool.lookup(note_ty)});
                 //     self.lexer.report_line(note.off);
                 //     return Error.TypeMismatched;
                 // }
@@ -307,13 +313,12 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
         },
         .list => |list| {
             const el_infer = infer.get_list_el() catch |e| {
-                self.lexer.report_err(expr.first_off(), "inference {f} cannot be matched onto list", .{infer});
-                self.lexer.report_line(expr.first_off());
+                self.lexer.report_err_line(expr.first_off(), "inference {f} cannot be matched onto list", .{infer});
                 return e;
             };
             if (list.els.len == 0) {
                 return TypePool.intern(.{ .list = el_infer.iterable });
-                // self.lexer.report_err(expr.off, "type of an empty list cannot be inferred", .{}); 
+                // self.lexer.report_err_line(expr.off, "type of an empty list cannot be inferred", .{}); 
                 // return Error.InsufficientInference;
                 // return Type.pitch;
             }
@@ -323,15 +328,33 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             for (list.els[1..], 2..) |el, i| {
                 const other_ty = (try self.sema_expr(el, el_infer)).take_for_inner();
                 if (el_ty != other_ty) {
-                    self.lexer.report_err(el.off, "exprssions in list must have the same type; 1th is {f}, {}th is {f}", 
+                    self.lexer.report_err_line(el.off, "exprssions in list must have the same type; 1th is {f}, {}th is {f}", 
                         .{TypePool.lookup(el_ty), i, TypePool.lookup(other_ty)});
-                    self.lexer.report_line(el.off);
-                    self.lexer.report_note(list.els[0].off, "first expression is here", .{});
-                    self.lexer.report_line(list.els[0].off);
+                    self.lexer.report_note_line(list.els[0].off, "first expression is here", .{});
                     return Error.TypeMismatched;
                 }
             }
             return TypePool.intern(.{.list = el_ty});
+        },
+        .sequence => |seq| {
+            if (seq.els.len == 0) {
+                return infer.get_iterable() orelse {
+                    self.lexer.report_err_line(expr.off, "the type of an empty sequence cannot be inferred", .{});
+                    return Error.InsufficientInference;
+                };
+            }
+            const el_ty = (try self.sema_expr(seq.els[0], infer)).take_for_inner();
+
+            for (seq.els[1..], 2..) |el, i| {
+                const other_ty = (try self.sema_expr(el, infer)).take_for_inner();
+                if (el_ty != other_ty) {
+                    self.lexer.report_err_line(el.off, "exprssions in for loop must have the same type; 1th is {f}, {}th is {f}", 
+                        .{TypePool.lookup(el_ty), i, TypePool.lookup(other_ty)});
+                    self.lexer.report_note_line(seq.els[0].off, "first expression is here", .{});
+                    return Error.TypeMismatched;
+                }
+            }
+            return TypePool.intern(.{.splat = el_ty});
         },
         .@"for" => |@"for"| {
 
@@ -339,10 +362,8 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
                 var map = Scope { .parent = self.active_scope };
                 self.active_scope = &map;
                 if (map.fetch_put(self.a, with.ident, with)) |shadowed| {
-                    self.lexer.report_err(with.first_off(), "variable `{s}` is alread defined", .{self.lexer.lookup(with.ident)});
-                    self.lexer.report_line(with.first_off());
-                    self.lexer.report_note(shadowed.value_ptr.*.first_off(), "previously defined here", .{});
-                    self.lexer.report_line(shadowed.value_ptr.*.first_off());
+                    self.lexer.report_err_line(with.first_off(), "variable `{s}` is alread defined", .{self.lexer.lookup(with.ident)});
+                    self.lexer.report_note_line(shadowed.value_ptr.*.first_off(), "previously defined here", .{});
                     return Error.Redefined;
 
                 }
@@ -354,27 +375,35 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             _ = try self.sema_expr(@"for".lhs, .{ .concrete = Type.int });
             _ = try self.sema_expr(@"for".rhs, .{ .concrete = Type.int });
             if (@"for".body.len == 0) {
-                @panic("TODO");
-                // if (infer) |infer_inner|
-                //     return TypePool.intern(.{.list = infer_inner});
-                // self.lexer.report_err(expr.off, "body of a for loop cannot be empty", .{}); 
-                // return Error.InsufficientInference;
+                return infer.get_iterable() orelse {
+                    self.lexer.report_err_line(expr.off, "the type of an empty for loop cannot be inferred", .{});
+                    return Error.InsufficientInference;
+                };
             }
             const el_ty = (try self.sema_expr(@"for".body[0], infer)).take_for_inner();
              
             for (@"for".body[1..], 2..) |el, i| {
                 const other_ty = (try self.sema_expr(el, infer)).take_for_inner();
                 if (el_ty != other_ty) {
-                    self.lexer.report_err(el.off, "exprssions in for loop must have the same type; 1th is {f}, {}th is {f}", 
+                    self.lexer.report_err_line(el.off, "exprssions in for loop must have the same type; 1th is {f}, {}th is {f}", 
                         .{TypePool.lookup(el_ty), i, TypePool.lookup(other_ty)});
-                    self.lexer.report_line(el.off);
-                    self.lexer.report_note(@"for".body[0].off, "first expression is here", .{});
-                    self.lexer.report_line(@"for".body[0].off);
+                    self.lexer.report_note_line(@"for".body[0].off, "first expression is here", .{});
                     return Error.TypeMismatched;
                 }
             }
-            return TypePool.intern(.{.@"for" = el_ty});
+            return TypePool.intern(.{.splat = el_ty});
         },
+        .@"if" => |@"if"| {
+            _ = try self.sema_expr(@"if".cond, .{ .concrete = Type.bool });
+            const then_ty = try self.sema_expr(@"if".then, infer);
+            const else_ty = try self.sema_expr(@"if".@"else", infer);
+            if (then_ty != else_ty) {
+                self.lexer.report_err_line(@"if".then.first_off(), "the type of the else branch `{f}` != the type of the then branch `{f}`", .{then_ty, else_ty});
+                self.lexer.report_note_line(@"if".@"else".first_off(), "else branch is here", .{});
+                return Error.TypeMismatched;
+            }
+            return then_ty;
+        }
     }
 }
 

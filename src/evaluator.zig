@@ -205,7 +205,7 @@ pub const SectionEvaluator = struct {
                 }
                 
             },
-            .list => unreachable,
+            .list, .sequence => @panic("TODO"),
             .ident => |ident| {
                 if (self.anno.builtin_vars.get(ident.sym)) |builtin| {
                     return Val { .num = @intCast(builtin[1]) };
@@ -214,6 +214,11 @@ pub const SectionEvaluator = struct {
             },
             .sec => unreachable,
             .@"for" => @panic("TODO"),
+            .@"if" => |@"if"|{
+                const cond = self.eval_expr_strict(@"if".cond, .zero).num;
+                if (cond != 0) return self.eval_expr_strict(@"if".then, duration_infer)
+                else return self.eval_expr_strict(@"if".@"else", duration_infer);
+            }
         }  
     }
 
@@ -228,8 +233,12 @@ pub const SectionEvaluator = struct {
                 self.reset(infix.lhs);
                 self.reset(infix.rhs);
             },
-            .list => |list| for (list.els) |el| self.reset(el),
+            .list, .sequence => |list| for (list.els) |el| self.reset(el),
             .@"for" => |@"for"| for (@"for".body) |el| self.reset(el),
+            .@"if" => |@"if"| {
+                self.reset(@"if".then);
+                self.reset(@"if".@"else");
+            }
         }
     }
 
@@ -303,6 +312,18 @@ pub const SectionEvaluator = struct {
                 }
                 return null;
             },
+            .sequence => |seq| {
+                while (it.* < seq.els.len): (it.* += 1) {
+                    const body_expr = seq.els[it.*];
+                    const val = self.eval_expr(body_expr, duration_infer) orelse {
+                        self.reset(body_expr);
+                        continue;
+                    }; 
+                    return val;
+                }
+                return null;
+
+            },
             .ident => |ident| {
                 return self.eval_expr(ident.sema_expr, duration_infer) orelse {
                     self.reset(ident.sema_expr);
@@ -328,6 +349,11 @@ pub const SectionEvaluator = struct {
                 }
                 return null;
             },
+            .@"if" => |@"if"|{
+                const cond = self.eval_expr_strict(@"if".cond, .zero).num;
+                if (cond != 0) return self.eval_expr(@"if".then, duration_infer)
+                else return self.eval_expr(@"if".@"else", duration_infer);
+            }
         }  
     } 
 

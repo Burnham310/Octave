@@ -38,9 +38,8 @@ pub const TokenType = enum {
     then,
     @"else",
     @"for",
-    loop,
-    end,
     with,
+    section,
     // @"void",
 
     // single character
@@ -263,10 +262,10 @@ fn match_ident(self: *Lexer) ?Token {
     const keyword_map = std.StaticStringMap(TokenType).initComptime(&.{
         .{"if", .@"if"},
         .{"then", .then},
+        .{"else", .@"else"},
         .{"for", .@"for"},
-        .{"loop", .loop},
-        .{"end", .end},
         .{"with", .with},
+        .{"Section", .section}
     });
     const off = self.off;
     const first = self.next_char() orelse return null;
@@ -425,8 +424,18 @@ pub fn report_err(self: Lexer, off: u32, comptime fmt: []const u8, args: anytype
     return self.report("error", off, fmt, args);
 }
 
+pub fn report_err_line(self: Lexer, off: u32, comptime fmt: []const u8, args: anytype) void {
+    self.report_err(off, fmt, args);
+    self.report_line(off);
+}
+
 pub fn report_note(self: Lexer, off: u32, comptime fmt: []const u8, args: anytype) void {
     return self.report("note", off, fmt, args);
+}
+
+pub fn report_note_line(self: Lexer, off: u32, comptime fmt: []const u8, args: anytype) void {
+    self.report_note(off, fmt, args);
+    self.report_line(off);
 }
 
 // print the line that the offset is in
