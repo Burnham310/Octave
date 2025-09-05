@@ -1,0 +1,3 @@
+main = Section ;; {
+    if true then 5 else 0
+}
