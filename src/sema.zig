@@ -96,7 +96,7 @@ const TypeDesc = union(enum) {
         }
     }
 
-    pub fn format(value: TypeDesc, writer: *std.io.Writer) !void {
+    pub fn format(value: TypeDesc, writer: *std.Io.Writer) !void {
         switch (value) {
             .concrete => |concrete_t| return writer.print("{f}", .{TypePool.lookup(concrete_t)}),
             .iterable => |iter_inner| return writer.print("{[t]f} | for<{[t]f}>", .{.t = TypePool.lookup(iter_inner)}),
@@ -399,11 +399,4 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             return then_ty;
         }
     }
-}
-
-test "packed struct equality" {
-    const S = packed struct {t:u32};
-    const s1 = S {.t = 0};
-    const s2 = S {.t = 1};
-    return std.testing.expect(s1 != s2);
 }

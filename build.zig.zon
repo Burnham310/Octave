@@ -7,4 +7,5 @@
         },
     }, 
     .fingerprint = 0x78abc9fc67ccb72e, 
-    .paths = .{ "src", "test", "doc", "tutorial", "build.zig", "build.zig.zon" } }
+    .paths = .{ "src", "test", "doc", "tutorial", "build.zig", "build.zig.zon" }
+}

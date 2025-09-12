@@ -1,4 +1,5 @@
 const std = @import("std");
+const Allocator = std.mem.Allocator;
 
 const Zynth = @import("zynth");
 const Streamer = Zynth.Streamer;
@@ -31,34 +32,23 @@ const StreamerNode = struct {
     //}
 };
 
-var random = std.Random.Xoroshiro128.init(0);
+pub fn init(eval: *Eval.Evaluator, volume: f32, a: Allocator) Player {
+    var player = Player { .evaluator = eval, .volume = volume, .a = a };
+    for (eval.sec_evals) |sec_prog| {
+        const inst_streamer = sec_prog.eval.instrument.streamer;
+        player.add_streamer(inst_streamer);
+    }
+    return player;
+}
 
-// TODO: use an arena allocator?
-pub fn make_streamer(note: Eval.Note, volume: f32, a: std.mem.Allocator) Zynth.Streamer {
-    const create = Zynth.Audio.create;
-    switch (note.inst) {
-        .guitar => {
-            const string = create(a, Zynth.Waveform.StringNoise.init(note.amp * 0.5 * volume, note.freq, random.random(), note.duration));
-            return string.streamer();
-        },
-        .sine => {
-            const sine = create(a, Zynth.Waveform.Simple.init(note.amp * 0.5 * volume, note.freq, .Sine));
-            const envelop = create(a, Zynth.Envelop.Envelop.init(
-                    a.dupe(f32, &.{0.05, note.duration - 0.1, 0.05}) catch unreachable,
-                    a.dupe(f32, &.{0, 1, 1, 0}) catch unreachable,
-                    sine.streamer()
-            ));
-            return envelop.streamer();
-        },
-        .triangle => {
-            const sine = create(a, Zynth.Waveform.Simple.init(note.amp * 0.5 * volume, note.freq, .Triangle));
-            const envelop = create(a, Zynth.Envelop.Envelop.init(
-                    a.dupe(f32, &.{0.05, note.duration - 0.1, 0.05}) catch unreachable,
-                    a.dupe(f32, &.{0, 1, 1, 0}) catch unreachable,
-                    sine.streamer()
-            ));
-            return envelop.streamer();
-        }
+pub fn deinit(self: *Player) void {
+    var it = self.streamers.first;
+    while (it) |node| {
+        const next = node.next;
+        const sn: *StreamerNode = @fieldParentPtr("node", node);
+        self.a.destroy(sn);
+
+        it = next;
     }
 }
 
@@ -71,11 +61,8 @@ fn read(ptr: *anyopaque, frames: []f32) struct { u32, Streamer.Status } {
         if (self.frame_ct == 0) {
             if (self.peak) |note| {
                 if (note.is_eof()) return .{ off, .Stop };
-                const node = self.a.create(StreamerNode) catch unreachable;
-                node.streamer = make_streamer(note, self.volume, self.a);
-                node.node = .{};
-                self.streamers.prepend(&node.node);
-                self.frame_ct = @as(u32, @intFromFloat(self.peak.?.gap * Config.SAMPLE_RATE));
+                note.inst.play(note);
+                                self.frame_ct = @as(u32, @intFromFloat(self.peak.?.gap * Config.SAMPLE_RATE));
                 self.peak = self.evaluator.eval();
             } else {
                 self.peak = self.evaluator.eval();
@@ -95,11 +82,19 @@ fn read(ptr: *anyopaque, frames: []f32) struct { u32, Streamer.Status } {
     return .{ frame_len, .Continue };
 }
 
+fn add_streamer(self: *Player, new_streamer: Streamer) void {
+    const node = self.a.create(StreamerNode) catch unreachable;
+    node.streamer = new_streamer;
+    node.node = .{};
+    self.streamers.prepend(&node.node);
+}
+
 fn mixer_read(self: *Player, frames: []f32) void {
     var it = self.streamers.first;
     while (it) |node| : (it = node.next) {
         const sn: *StreamerNode = @fieldParentPtr("node", node);
         std.debug.assert(self.tmp.len >= frames.len);
+        @memset(self.tmp[0..frames.len], 0);
         const len, const status = sn.streamer.read(self.tmp[0..frames.len]);
         for (0..len) |frame_i|
             frames[frame_i] += self.tmp[frame_i];

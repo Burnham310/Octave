@@ -4,7 +4,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -12,7 +12,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -20,7 +20,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -28,7 +28,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -36,7 +36,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -44,7 +44,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -52,7 +52,7 @@
   "duration": 0.8571428656578064,
   "gap": 0.8571428656578064,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -60,7 +60,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -68,7 +68,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -76,7 +76,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -84,7 +84,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -92,7 +92,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -100,7 +100,7 @@
   "duration": 0.4285714328289032,
   "gap": 0.4285714328289032,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -108,7 +108,7 @@
   "duration": 0.8571428656578064,
   "gap": 0.8571428656578064,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -116,7 +116,7 @@
   "duration": 0,
   "gap": 0,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "dummy"
 }
 
 ]

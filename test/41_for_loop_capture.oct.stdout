@@ -4,7 +4,7 @@
   "duration": 0.5,
   "gap": 0.5,
   "amp": 1,
-  "inst": "sine"
+  "instrument": "sine-midikeyboard"
 }
 ,
 {
@@ -12,7 +12,7 @@
   "duration": 0.5,
   "gap": 0.5,
   "amp": 1,
-  "inst": "sine"
+  "instrument": "sine-midikeyboard"
 }
 ,
 {
@@ -20,7 +20,7 @@
   "duration": 0.5,
   "gap": 0.5,
   "amp": 1,
-  "inst": "sine"
+  "instrument": "sine-midikeyboard"
 }
 ,
 {
@@ -28,7 +28,7 @@
   "duration": 0.5,
   "gap": 0.5,
   "amp": 1,
-  "inst": "sine"
+  "instrument": "sine-midikeyboard"
 }
 ,
 {
@@ -36,7 +36,7 @@
   "duration": 0.5,
   "gap": 0.5,
   "amp": 1,
-  "inst": "sine"
+  "instrument": "sine-midikeyboard"
 }
 ,
 {
@@ -44,7 +44,7 @@
   "duration": 0.5,
   "gap": 0.5,
   "amp": 1,
-  "inst": "sine"
+  "instrument": "sine-midikeyboard"
 }
 ,
 {
@@ -52,7 +52,7 @@
   "duration": 0.5,
   "gap": 0.5,
   "amp": 1,
-  "inst": "sine"
+  "instrument": "sine-midikeyboard"
 }
 ,
 {
@@ -60,7 +60,7 @@
   "duration": 0.5,
   "gap": 0.5,
   "amp": 1,
-  "inst": "sine"
+  "instrument": "sine-midikeyboard"
 }
 ,
 {
@@ -68,7 +68,7 @@
   "duration": 0.5,
   "gap": 0.5,
   "amp": 1,
-  "inst": "sine"
+  "instrument": "sine-midikeyboard"
 }
 ,
 {
@@ -76,7 +76,7 @@
   "duration": 0,
   "gap": 0,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "dummy"
 }
 
 ]

@@ -16,7 +16,7 @@ pub const Type = packed struct {
     pub var section:    Type = undefined;
 
 
-    pub fn format(value: Type, writer: *std.io.Writer) !void {
+    pub fn format(value: Type, writer: *std.Io.Writer) !void {
         return writer.print("{f}", .{lookup(value)});
     }
 
@@ -143,7 +143,7 @@ pub const TypeFull = union(Kind) {
             }
         }
     };
-    pub fn format(value: TypeFull, writer: *std.io.Writer) !void {
+    pub fn format(value: TypeFull, writer: *std.Io.Writer) !void {
         switch (value) {
             .void,
             .int,

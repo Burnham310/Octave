@@ -9,22 +9,24 @@ const Type = TypePool.Type;
 const Tonality = @import("tonality.zig");
 const ThreadSafeQueue = @import("thread_safe_queue.zig").ThreadSafeQueue;
 const BS = @import("lexer.zig").BuiltinSymbols;
+const Instrument = @import("instrument.zig");
 
 const Zynth = @import("zynth");
 
 pub const Note = struct {
-    freq: f32,
+    // freq: f32,
+    note_num: i32,
     duration: f32,
     gap: f32, // gap since last note
     amp: f32,
-    inst: SectionEvaluator.Instrument,
+    inst: Instrument,
 
     pub fn is_eof(self: Note) bool {
-        return self.freq == 0 and self.duration == 0;
+        return self.note_num == 0 and self.duration == 0;
     }
 
     pub fn eof(gap: f32) Note {
-        return .{ .freq = 0,. duration = 0, .gap = gap, .amp = 0, .inst = .guitar };
+        return .{ .note_num = 0,. duration = 0, .gap = gap, .amp = 0, .inst = Instrument.dummy };
     }
 };
 
@@ -95,6 +97,8 @@ pub const SectionEvaluator = struct {
 
     peek_buf: ?Note = null,
 
+    instrument: Instrument,
+
     pub fn reset_all(self: *SectionEvaluator) void {
         @memset(self.its, 0);
         self.gap = 0;
@@ -110,10 +114,11 @@ pub const SectionEvaluator = struct {
             .anno = anno,
             .sec = sec,
             .its = its,
+            .instrument = Instrument.dummy,
         };
     }
 
-    pub const Instrument = enum(u8) {
+    pub const InstrumentNo = enum(u8) {
         guitar,
         sine,
         triangle,
@@ -124,7 +129,7 @@ pub const SectionEvaluator = struct {
         bpm: f32 = 120,
         tempo: Fraction = .{.numerator = 4, .dominator = 4},
         volume: f32 = 1,
-        inst: Instrument = .guitar,
+        inst: InstrumentNo = .guitar,
     };
 
     const PreNote = struct {
@@ -137,8 +142,7 @@ pub const SectionEvaluator = struct {
         deg: i32,
         shift: i32,
         amp: f32 = 1,
-        parallel: bool,
-        pub const zero = NotePitch {.deg = 1, .shift = 0, .amp = 0, .parallel = false};
+        parallel: bool, pub const zero = NotePitch {.deg = 1, .shift = 0, .amp = 0, .parallel = false};
     };
 
     const Val = union(enum) {
@@ -309,7 +313,7 @@ pub const SectionEvaluator = struct {
                 }
                 if (it.* == list.els.len) {
                     it.* += 1;
-                    return Val {.pitch = .{.deg = 1, .shift = 0, .amp = 0, .parallel = false}};
+                    return Val {.pitch = .{.deg = 1, .shift = -999, .amp = 0, .parallel = false}};
                 }
                 return null;
             },
@@ -358,7 +362,7 @@ pub const SectionEvaluator = struct {
         }  
     } 
 
-    pub fn eval_config(self: *SectionEvaluator) void {
+    pub fn eval_config(self: *SectionEvaluator, a: Allocator) void {
         const config = &self.config;
         for (self.sec.data.sec.config) |formal| {
             if (formal.ident == BS.tonic) config.scale.tonic = @enumFromInt(self.eval_expr_strict(formal.expr, .zero).pitch.deg)
@@ -366,10 +370,34 @@ pub const SectionEvaluator = struct {
             else if (formal.ident == BS.mode) config.scale.mode = @enumFromInt(self.eval_expr_strict(formal.expr, .zero).num)
             else if (formal.ident == BS.bpm) config.bpm = @floatFromInt(self.eval_expr_strict(formal.expr, .zero).num)
             else if (formal.ident == BS.tempo) config.tempo = self.eval_expr_strict(formal.expr, .zero).frac
-            else if (formal.ident == BS.instrument) config.inst = std.enums.fromInt(Instrument, self.eval_expr_strict(formal.expr, .zero).num) 
-                orelse @panic("TODO: handle error")
+            else if (formal.ident == BS.instrument) {
+                config.inst = std.enums.fromInt(InstrumentNo, self.eval_expr_strict(formal.expr, .zero).num) 
+                    orelse @panic("TODO: handle error");
+           
+            }
+            else if (formal.ident == BS.instrument) {} 
             else if (formal.ident == BS.volume) config.volume = @as(f32, @floatFromInt(self.eval_expr_strict(formal.expr, .zero).num)) / 100.0
             else unreachable;
+        }
+        switch (config.inst) {
+            .guitar => {
+                const guitar = a.create(Instrument.AcousticGuitar) catch unreachable;
+                const random = a.create(std.Random.Xoroshiro128) catch unreachable;
+                random.* = .init(0);
+                guitar.* = Instrument.AcousticGuitar { .random = random.random() };
+                self.instrument = Instrument.make(Instrument.AcousticGuitar, guitar);
+            },
+            .sine => {
+                const midi_keyboard = a.create(Instrument.MidiKeyboard) catch unreachable;
+                midi_keyboard.* = Instrument.MidiKeyboard { .shape = .Sine };
+                self.instrument = Instrument.make(Instrument.MidiKeyboard, midi_keyboard);
+
+            },
+            .triangle => {
+                const midi_keyboard = a.create(Instrument.MidiKeyboard) catch unreachable;
+                midi_keyboard.* = Instrument.MidiKeyboard { .shape = .Triangle };
+                self.instrument = Instrument.make(Instrument.MidiKeyboard, midi_keyboard);
+            },
         }
     }
 
@@ -396,13 +424,13 @@ pub const SectionEvaluator = struct {
             while (self.eval_expr(note_exprs[it.*], default_dura)) |val| {
                 const pre_note = expr_implicit_cast(val, Type.note, default_dura).note;
                 const abspitch = config.scale.get_abspitch(@intCast(pre_note.pitch.deg)) + pre_note.pitch.shift;
-                const freq = Tonality.abspitch_to_freq(abspitch);
+                // const freq = Tonality.abspitch_to_freq(abspitch);
                 const note = Note {
-                    .freq = freq,
+                    .note_num = @intCast(abspitch),
                     .duration = pre_note.duration.to_sec(config.bpm),
                     .gap = pre_note.gap.to_sec(config.bpm),
                     .amp = pre_note.pitch.amp * config.volume,
-                    .inst = config.inst,
+                    .inst = self.instrument,
                 };
                 self.first_in_expr = false;
                 self.gap = note.duration;
@@ -434,13 +462,13 @@ pub const Evaluator = struct {
                     const sema_expr = expr.data.ident.sema_expr;
                     assert(sema_expr.data == .sec);
                     sec_evals[i] = .{.eval = SectionEvaluator.init(ast, anno, sema_expr, a)};
-                    sec_evals[i].eval.eval_config();
+                    sec_evals[i].eval.eval_config(a);
                 }
             },
             .sec => {
                 sec_evals = a.alloc(SectionProgress, 1) catch unreachable;
                 sec_evals[0] = SectionProgress {.eval = SectionEvaluator .init(ast, anno, anno.main_formal.expr, a)};
-                sec_evals[0].eval.eval_config();
+                sec_evals[0].eval.eval_config(a);
             },
             else => unreachable,
         }

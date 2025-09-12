@@ -6,7 +6,7 @@ const Cli = @import("cli.zig");
 const CompileStage = Cli.CompileStage;
 const ErrorReturnCode = Cli.ErrorReturnCode;
 
-const Note = @import("main.zig").Note;
+const Note = @import("main.zig").TestNote;
 
 const TestResult = struct {
     path: []const u8,  
@@ -44,12 +44,14 @@ const NoteContext = struct {
             a.freq == b.freq and 
             a.duration == b.duration and 
             a.gap == b.gap and
-            a.amp == b.amp and
-            a.inst == b.inst;
+            a.amp == b.amp;
     }
     
     fn auto_hash(hasher: anytype, key: anytype) void {
         const Key = @TypeOf(key);
+        if (Key == []const u8 or Key == []u8) {
+           return hasher.update(key);
+        }
         switch (@typeInfo(Key)) {
             .float => |info| {
                 if (key == 0.0)
@@ -61,7 +63,6 @@ const NoteContext = struct {
                     auto_hash(hasher, @field(key, field.name));
                 }
             },
-
             else => return std.hash.autoHash(hasher, key),
         }
     }
@@ -73,7 +74,7 @@ const NoteContext = struct {
 // for the next note to be played, after this note is played. The `gap` can be different from its `duration`.
 // When a note has `gap = 0`, it means that this note would be played concurrently with the next note.
 // Such notes to be played concurrently is called the staging sequences.
-fn check_stdout(stdout_file: std.fs.File, expected_file: std.fs.File, record_playing: bool, diagnostic: *std.io.Writer, a: Allocator) bool {
+fn check_stdout(stdout_file: std.fs.File, expected_file: std.fs.File, record_playing: bool, diagnostic: *std.Io.Writer, a: Allocator) bool {
     var buf1: [256]u8 = undefined;
     var stdout_reader = stdout_file.reader(&buf1);
     const stdout = &stdout_reader.interface;
@@ -161,6 +162,7 @@ fn check_stdout(stdout_file: std.fs.File, expected_file: std.fs.File, record_pla
     return true;
 }
 
+// TODO: on windows, the Io.Reader/Writier does not really work
 pub fn run_tests_on_dir(
     a: Allocator, 
     stage: CompileStage, path: []const u8, compiler_path: []const u8, 
@@ -187,7 +189,7 @@ pub fn run_tests_on_dir(
         child.stderr_behavior = .Pipe;
         child.spawn() catch unreachable;
 
-        var diagnostic_storage = std.io.Writer.Allocating.init(a);
+        var diagnostic_storage = std.Io.Writer.Allocating.init(a);
         defer diagnostic_storage.deinit();
         const diagnostic = &diagnostic_storage.writer;
        

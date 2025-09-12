@@ -91,6 +91,18 @@ Note(1, 1/4, 0); Note(2, 1/4, 1/4), Note(3, 1/2, 1/2);
 { for 0~<2 loop [1 2 3] end [2 4 5] }
 
 ```
+
+### Instruments
+
+So far we have base our language around notes, which consist of pitch. The final output of the language is a stream of pitches.
+
+An instrument module then take this stream, and generate sounds. 
+However, the notion of "pitch" is not natural to all instruments, such as drums and other percussion instruments.
+Defining instruments as part the implementation of the compiler is not that hard, but how do we support user-defined instrument?
+
+Note that many instruments is "stateful". For example, a piano only has one key for a pitch. 
+Playing the same pitch twice would cause the second note to overwrite the first one.
+
  
 ## Other
 ### Ast Internals

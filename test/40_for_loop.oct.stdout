@@ -4,15 +4,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -20,7 +20,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -28,7 +28,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -36,15 +36,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -52,15 +52,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -68,7 +68,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -76,7 +76,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -84,15 +84,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -100,15 +100,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -116,7 +116,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -124,7 +124,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -132,15 +132,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -148,15 +148,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -164,7 +164,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -172,7 +172,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -180,31 +180,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -212,47 +196,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -260,7 +212,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -268,7 +220,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -276,31 +228,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -308,47 +244,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -356,7 +260,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -364,7 +268,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -372,47 +276,39 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -420,47 +316,47 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -468,15 +364,23 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -484,15 +388,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -500,7 +404,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -508,7 +412,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -516,15 +420,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -532,15 +436,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -548,7 +452,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -556,7 +460,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -564,15 +468,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -580,15 +484,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -596,7 +500,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -604,7 +508,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -612,15 +516,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -628,15 +532,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -644,7 +548,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -652,7 +556,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -660,15 +564,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -676,15 +580,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -692,7 +596,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -700,7 +604,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -708,15 +612,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -724,15 +628,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -740,7 +644,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -748,7 +652,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -756,15 +660,111 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
   "freq": 219.9953155517578,
   "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -772,15 +772,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -788,7 +788,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -796,7 +796,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -804,15 +804,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -820,15 +820,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -836,7 +836,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -844,7 +844,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -852,15 +852,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -868,15 +868,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -884,7 +884,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -892,7 +892,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -900,15 +900,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -916,15 +916,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -932,7 +932,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -940,7 +940,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -948,31 +948,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -980,47 +964,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1028,7 +980,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1036,7 +988,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1044,31 +996,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1076,47 +1012,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1124,7 +1028,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1132,7 +1036,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1140,47 +1044,39 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1188,47 +1084,47 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1236,15 +1132,23 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1252,15 +1156,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1268,7 +1172,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1276,7 +1180,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1284,15 +1188,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1300,15 +1204,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1316,7 +1220,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1324,7 +1228,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1332,15 +1236,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1348,15 +1252,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1364,7 +1268,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1372,7 +1276,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1380,15 +1284,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1396,15 +1300,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1412,7 +1316,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1420,7 +1324,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1428,15 +1332,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1444,15 +1348,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1460,7 +1364,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1468,7 +1372,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1476,15 +1380,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1492,15 +1396,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1508,7 +1412,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1516,7 +1420,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1524,15 +1428,111 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
   "freq": 219.9953155517578,
   "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1540,15 +1540,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1556,7 +1556,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1564,7 +1564,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1572,15 +1572,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1588,15 +1588,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1604,7 +1604,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1612,7 +1612,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1620,15 +1620,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1636,15 +1636,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1652,7 +1652,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1660,7 +1660,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1668,15 +1668,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1684,15 +1684,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1700,7 +1700,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1708,7 +1708,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1716,31 +1716,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1748,47 +1732,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1796,7 +1748,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1804,7 +1756,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1812,31 +1764,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1844,47 +1780,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1892,7 +1796,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1900,7 +1804,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1908,47 +1812,39 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -1956,47 +1852,47 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2004,15 +1900,23 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2020,15 +1924,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2036,7 +1940,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2044,7 +1948,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2052,15 +1956,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2068,15 +1972,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2084,7 +1988,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2092,7 +1996,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2100,15 +2004,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2116,15 +2020,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2132,7 +2036,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2140,7 +2044,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2148,15 +2052,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2164,15 +2068,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2180,7 +2084,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2188,7 +2092,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2196,15 +2100,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2212,15 +2116,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2228,7 +2132,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2236,7 +2140,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2244,15 +2148,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2260,15 +2164,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2276,7 +2180,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2284,7 +2188,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2292,15 +2196,111 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
   "freq": 219.9953155517578,
   "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2308,15 +2308,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2324,7 +2324,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2332,7 +2332,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2340,15 +2340,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2356,15 +2356,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2372,7 +2372,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2380,7 +2380,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2388,15 +2388,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2404,15 +2404,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2420,7 +2420,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2428,7 +2428,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2436,15 +2436,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2452,15 +2452,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2468,7 +2468,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2476,7 +2476,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2484,31 +2484,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2516,47 +2500,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2564,7 +2516,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2572,7 +2524,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2580,31 +2532,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2612,47 +2548,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2660,7 +2564,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2668,7 +2572,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2676,47 +2580,39 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2724,47 +2620,47 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2772,15 +2668,23 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2788,15 +2692,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2804,7 +2708,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2812,7 +2716,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2820,15 +2724,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2836,15 +2740,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2852,7 +2756,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2860,7 +2764,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2868,15 +2772,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2884,15 +2788,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2900,7 +2804,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2908,7 +2812,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2916,15 +2820,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2932,15 +2836,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2948,7 +2852,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2956,7 +2860,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2964,15 +2868,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2980,15 +2884,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -2996,7 +2900,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3004,7 +2908,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3012,15 +2916,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3028,15 +2932,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3044,7 +2948,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3052,7 +2956,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3060,15 +2964,111 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
   "freq": 219.9953155517578,
   "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3076,15 +3076,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3092,7 +3092,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3100,7 +3100,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3108,15 +3108,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3124,15 +3124,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3140,7 +3140,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3148,7 +3148,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3156,15 +3156,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3172,15 +3172,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3188,7 +3188,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3196,7 +3196,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3204,15 +3204,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3220,15 +3220,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3236,7 +3236,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3244,7 +3244,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3252,31 +3252,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3284,47 +3268,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3332,7 +3284,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3340,7 +3292,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3348,31 +3300,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3380,47 +3316,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 415.29583740234375,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 493.8727722167969,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 219.9953155517578,
-  "duration": 0.25,
-  "gap": 0.25,
-  "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3428,7 +3332,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3436,7 +3340,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3444,47 +3348,39 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3492,47 +3388,47 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 329.62054443359375,
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
-}
-,
-{
-  "freq": 277.1767272949219,
-  "duration": 0.25,
-  "gap": 0,
-  "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3540,15 +3436,23 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 493.8727722167969,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3556,15 +3460,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3572,7 +3476,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3580,7 +3484,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3588,15 +3492,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3604,15 +3508,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3620,7 +3524,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3628,7 +3532,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3636,15 +3540,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3652,15 +3556,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3668,7 +3572,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3676,7 +3580,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3684,15 +3588,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3700,15 +3604,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3716,7 +3620,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3724,7 +3628,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3732,15 +3636,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3748,15 +3652,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3764,7 +3668,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3772,7 +3676,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3780,15 +3684,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3796,15 +3700,15 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
-  "freq": 219.9953155517578,
+  "freq": 0.00000000000000000000001912785588997036,
   "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3812,7 +3716,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3820,7 +3724,7 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3828,15 +3732,111 @@
   "duration": 0.25,
   "gap": 0,
   "amp": 1,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
   "freq": 219.9953155517578,
   "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
   "gap": 0.25,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 219.9953155517578,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 277.1767272949219,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 415.29583740234375,
+  "duration": 0.25,
+  "gap": 0,
+  "amp": 1,
+  "instrument": "acoustic-guitar"
+}
+,
+{
+  "freq": 0.00000000000000000000001912785588997036,
+  "duration": 0.25,
+  "gap": 0.25,
+  "amp": 0,
+  "instrument": "acoustic-guitar"
 }
 ,
 {
@@ -3844,7 +3844,7 @@
   "duration": 0,
   "gap": 0,
   "amp": 0,
-  "inst": "guitar"
+  "instrument": "dummy"
 }
 
 ]

@@ -331,6 +331,7 @@ pub const ErrorReturnCode = enum(u8) {
     parse,
     sema,
     eval,
+    mem_leak,
     unexpected,
 
     pub fn from_err(e: anyerror) ErrorReturnCode {
