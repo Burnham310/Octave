@@ -6,7 +6,7 @@ const Cli = @import("cli.zig");
 const CompileStage = Cli.CompileStage;
 const ErrorReturnCode = Cli.ErrorReturnCode;
 
-const Note = @import("main.zig").Note;
+const Note = @import("main.zig").TestNote;
 
 const TestResult = struct {
     path: []const u8,  
@@ -44,8 +44,7 @@ const NoteContext = struct {
             a.freq == b.freq and 
             a.duration == b.duration and 
             a.gap == b.gap and
-            a.amp == b.amp and
-            a.inst == b.inst;
+            a.amp == b.amp;
     }
     
     fn auto_hash(hasher: anytype, key: anytype) void {
@@ -161,6 +160,7 @@ fn check_stdout(stdout_file: std.fs.File, expected_file: std.fs.File, record_pla
     return true;
 }
 
+// TODO: on windows, the Io.Reader/Writier does not really work
 pub fn run_tests_on_dir(
     a: Allocator, 
     stage: CompileStage, path: []const u8, compiler_path: []const u8, 
@@ -193,7 +193,7 @@ pub fn run_tests_on_dir(
        
         var stderr_buf: [256]u8 = undefined;
         var stderr_reader = child.stderr.?.reader(&stderr_buf);
-        _ = diagnostic.sendFileReadingAll(&stderr_reader, .unlimited) catch unreachable;
+        _ = diagnostic.sendFileAll(&stderr_reader, .unlimited) catch unreachable;
 
         // std.log.debug("running {s}", .{entry.name});
         const stdout_equality: bool = if (child.stdout) |stdout| blk: {

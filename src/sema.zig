@@ -400,10 +400,3 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
         }
     }
 }
-
-test "packed struct equality" {
-    const S = packed struct {t:u32};
-    const s1 = S {.t = 0};
-    const s2 = S {.t = 1};
-    return std.testing.expect(s1 != s2);
-}

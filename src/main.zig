@@ -15,6 +15,12 @@ const Zynth = @import("zynth");
 
 const Cli = @import("cli.zig");
 
+pub const TestNote = struct {
+    freq: f32,
+    amp: f32,
+    duration: f32,
+    gap: f32,
+};
 
 const Options = struct {
     input_path: []const u8,
@@ -35,8 +41,44 @@ pub fn exit_or_dump_trace(e: anyerror) noreturn {
 
 pub const std_options = Zynth.std_options;
 
+const Recording = struct {
+    file: std.fs.File,
+    sub_streamer: Zynth.Streamer,
+
+    pub fn read(self: *Recording, frames: []f32) struct { u32, Zynth.Streamer.Status } {
+        const len, const status = self.sub_streamer.read(frames);
+        self.file.writeAll(std.mem.sliceAsBytes(frames[0..len])) catch unreachable;
+        if (status == .Stop) {
+            self.file.close();
+        }
+        return .{ len, status };
+    }
+
+    pub fn reset(self: *Recording) bool {
+        return self.sub_streamer.reset();
+    }
+
+    pub fn stop(self: *Recording) bool {
+        return self.sub_streamer.stop();
+    }
+
+    pub fn init(path: []const u8, streamer: Zynth.Streamer) Recording {
+       return .{
+            .file = std.fs.cwd().createFile(path, .{}) catch unreachable, 
+            .sub_streamer = streamer,
+       };
+    }
+};
+
 pub fn main() !void  {
     const alloc = std.heap.c_allocator;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
+    defer {
+        if (gpa.deinit() != .ok) {
+            std.process.exit(@intFromEnum(Cli.ErrorReturnCode.mem_leak));
+        }
+    }
+    const check_alloc = gpa.allocator();
     var args = try std.process.argsWithAllocator(alloc);
     defer args.deinit(); 
 
@@ -108,9 +150,16 @@ pub fn main() !void  {
     var eval = Eval.Evaluator.init(&ast, &anno, alloc);
     try stdout.writeAll("[\n");
     if (opts.debug) {
+        const Tonality = @import("tonality.zig");
         while (true) {
             const note = eval.eval();
-            try stdout.print("{f}\n", .{std.json.fmt(note, .{ .whitespace = .indent_2, })});
+            const test_note = TestNote {
+                .freq = Tonality.abspitch_to_freq(@intCast(note.note_num)),
+                .amp = note.amp,
+                .duration = note.duration,
+                .gap = note.gap,
+            };
+            try stdout.print("{f}\n", .{std.json.fmt(test_note, .{ .whitespace = .indent_2, })});
             if (note.is_eof()) {
                 try stdout.writeAll("\n]");
                 return;
@@ -119,17 +168,19 @@ pub fn main() !void  {
             }
         }
     }
-    var player = Player { .evaluator = &eval, .a = alloc, .volume = opts.volume };
+    var player = Player.init(&eval, opts.volume, check_alloc);
+    defer player.deinit();
 
     var streamer: Zynth.Streamer = undefined;
     var silence = Zynth.Waveform.Simple.silence;
     var cutoff = Zynth.Envelop.SimpleCutoff {.cutoff_sec = 0.5, .sub_stream = silence.streamer()};
     var and_then = Zynth.Delay.AndThen {.lhs = player.streamer(), .rhs = cutoff.streamer()};
+    var recording = Recording.init("recording.pcm", and_then.streamer());
     var repeat = Zynth.Replay.RepeatAfterStop.init(null, player.streamer());
     if (opts.repeat) {
         streamer = repeat.streamer();            
     } else {
-        streamer = and_then.streamer();
+        streamer = Zynth.Streamer.make(Recording, &recording);
     }
     
     var audio_ctx = Zynth.Audio.SimpleAudioCtx {};
