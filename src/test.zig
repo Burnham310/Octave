@@ -205,6 +205,7 @@ pub fn run_tests_on_dir(
             };
             break :blk check_stdout(stdout, expected_f, record_playing, diagnostic, a);  
         } else true;
+
         const term = child.wait() catch {
             test_results.append(a, .{ .path = full_path, .return_code = .unexpected, .diagnostic = "" }) catch unreachable;
             continue;

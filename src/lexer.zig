@@ -29,9 +29,6 @@ pub const TokenType = enum {
     int,
     true,
     false,
-    //neq,
-    //geq,
-    //leq,
 
     // keyword
     @"if",
@@ -41,9 +38,14 @@ pub const TokenType = enum {
     with,
     section,
     // @"void",
-
-    // single character
+ 
+    // multi character punctuation
     eq,
+    geq,
+    leq,
+
+    // single character punctuation
+    assign,
     lbrac,
     rbrac,
     comma,
@@ -59,7 +61,8 @@ pub const TokenType = enum {
     power,
     period,
     le,
-    //ge,
+    ge,
+
     //ampersand,
     lparen,
     rparen,
@@ -69,37 +72,6 @@ pub const TokenType = enum {
     times,
 
     eof,
-
-    //pub fn format(
-    //    self: TokenType,
-    //    comptime fmt: []const u8,
-    //    options: std.fmt.FormatOptions,
-    //    writer: anytype) !void {
-
-    //    _ = fmt;
-    //    _ = options;
-
-    //    switch (self) {
-    //        // single character
-    //        .eq => _ = try writer.write("="),
-    //        .lbrac => _ = try writer.write("["),
-    //        .rbrac => _ = try writer.write("]"),
-    //        .comma => _ = try writer.write(","),
-    //        .bar => _ = try writer.write("|"),
-    //        .colon => _ = try writer.write(":"),
-    //        .semi_colon => _ = try writer.write(";"),
-    //        .slash => _ = try writer.write("/"),
-    //        .lparen => _ = try writer.write("("),
-    //        .rparen => _ = try writer.write(")"),
-    //        .lcurly => _ = try writer.write("{"),
-    //        .rcurly => _ = try writer.write("}"),
-    //        .single_quote => _ = try writer.write("'"),
-    //        .plus => _ = try writer.write("+"),
-    //        .minus => _ = try writer.write("-"),
-    //        .times => _ = try writer.write("*"),
-    //        else => _ = try writer.write(@tagName(self)),
-    //    }
-    //}
 };
 
 const single_char_tokens = [_]struct {TokenType, u8} {
@@ -107,12 +79,11 @@ const single_char_tokens = [_]struct {TokenType, u8} {
     .{.rbrac, ']'},
     .{.comma, ','},
     .{.bar, '|'},
-    .{.eq, '='},
+    .{.assign, '='},
     .{.colon, ':'},
     .{.semi_colon, ';'},
-    .{.slash, '/'},
     .{.le, '<'},
-    //.{.ge, '>'},
+    .{.ge, '>'},
     //.{.ampersand, '&'},
     .{.lcurly, '{'},
     .{.rcurly, '}'},
@@ -128,6 +99,13 @@ const single_char_tokens = [_]struct {TokenType, u8} {
     .{.plus, '+'},
     .{.minus, '-'},
     .{.times, '*'},
+    .{.slash, '/'},
+};
+
+const multi_char_tokens = [_]struct {TokenType, []const u8} {
+    .{.eq, "=="},
+    .{.geq, ">="},
+    .{.leq, "<="},
 };
 
 src: []const u8,
@@ -135,7 +113,7 @@ off: u32,
 path: []const u8, // for error reporting
 peek_buf: ?Token,
 string_pool: *InternPool.StringInternPool = &InternPool.string_pool,
-token_char_map: std.AutoHashMapUnmanaged(TokenType, u8),
+punc_str_map: std.AutoHashMapUnmanaged(TokenType, []const u8),
 char_token_map: std.AutoHashMapUnmanaged(u8, TokenType),
 
 
@@ -179,13 +157,20 @@ pub fn init(src: []const u8, path: []const u8, a: std.mem.Allocator) Lexer {
         .path = path,
         .peek_buf = null,
         .string_pool = &InternPool.string_pool,
-        .token_char_map = std.AutoHashMapUnmanaged(TokenType, u8) {},
+        .punc_str_map = std.AutoHashMapUnmanaged(TokenType, []const u8) {},
         .char_token_map = std.AutoHashMapUnmanaged(u8, TokenType) {},
     };
-    for (single_char_tokens) |tk_char| {
-        lexer.token_char_map.putNoClobber(a, tk_char[0], tk_char[1]) catch unreachable;
+
+    // This is inlined, because we need to make sure the compiler statically generate the memory for each of &.{ tk_char[1] }
+    inline for (single_char_tokens) |tk_char| {
+        lexer.punc_str_map.putNoClobber(a, tk_char[0], &.{ tk_char[1] }) catch unreachable;
         lexer.char_token_map.putNoClobber(a, tk_char[1], tk_char[0]) catch unreachable;
     }
+    
+    for (multi_char_tokens) |tk_str| {
+        lexer.punc_str_map.putNoClobber(a, tk_str[0], tk_str[1]) catch unreachable;
+    }
+
     return lexer;
 }
 pub fn deinit(self: *Lexer) void {
@@ -256,6 +241,18 @@ fn match_single(self: *Lexer) ?Token {
         },
         .off = self.off - 1,
     };
+}
+
+fn match_multi(self: *Lexer) ?Token {
+    for (multi_char_tokens) |tk_str| {
+        if (self.src.len - self.off < tk_str.@"1".len) continue;
+        if (std.mem.eql(u8, self.src[self.off .. self.off + tk_str.@"1".len], tk_str.@"1")) {
+            const tok = Token { .tag = tk_str.@"0", .off = self.off };
+            self.off += @intCast(tk_str.@"1".len);
+            return tok;
+        }
+    }
+    return null;
 }
 
 fn match_ident(self: *Lexer) ?Token {
@@ -336,7 +333,11 @@ pub fn next(self: *Lexer) Error!Token {
     while (self.skip_ws() or self.skip_comment()) {}
     if (self.off >= self.src.len) return Token {.tag = .eof, .off = @intCast(self.src.len-1)};
 
-    const tk = try self.match_num() orelse self.match_single() orelse self.match_ident() orelse {
+    const tk = try self.match_num() orelse 
+        self.match_multi() orelse
+        self.match_single() orelse 
+        self.match_ident() orelse {
+
         self.report_err(self.off, "unrecognized token: `{c}`", .{self.src[self.off]});
         self.report_line(self.off);
         return Error.Unrecognized;
@@ -395,8 +396,8 @@ pub fn re_ident_impl(self: Lexer, off: u32) []const u8 {
 }
 
 pub fn stringify_token(self: Lexer, tk: Token) []const u8 {
-    if (self.token_char_map.get(tk.tag)) |char| {
-        return &.{char};
+    if (self.punc_str_map.get(tk.tag)) |str| {
+        return str;
     }
     switch (tk.tag) {
         .ident => return self.re_ident_impl(tk.off),

@@ -79,7 +79,7 @@ pub fn parse_list_of(self: *Parser, comptime T: type, f: fn (*Parser) ErrorBoth!
 
 pub fn parse_formal(self: *Parser) ErrorBoth!?*Formal {
     const ident = try self.expect_token(.ident) orelse return null;
-    const eq = try self.expect_token_crit(.eq, ident);
+    const eq = try self.expect_token_crit(.assign, ident);
     const expr = try self.parse_expr() orelse {
         self.lexer.report_err_line(eq.off, "Expect expression after `{}`", .{eq.tag});
         return ErrorBoth.UnexpectedToken;
@@ -275,6 +275,7 @@ fn infix_bp(tt: TokenType) ?struct {u32, u32} {
         .times => .{7, 6},
         .single_quote => .{19, 20},
         .slash => .{29, 30},
+        .le, .ge, .leq, .geq, .eq => .{100, 100},
         else => null,
     };
 }

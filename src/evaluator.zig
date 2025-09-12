@@ -96,13 +96,6 @@ pub const SectionEvaluator = struct {
     peek_buf: ?Note = null,
 
     pub fn reset_all(self: *SectionEvaluator) void {
-        //its: []u32,
-        //gap: f32 = 0,
-        //first_in_expr: bool = true,
-        //config: SectionConfig = .{},
-
-        //peek_buf: ?Note = null,
-
         @memset(self.its, 0);
         self.gap = 0;
         self.first_in_expr = true;
@@ -160,11 +153,14 @@ pub const SectionEvaluator = struct {
             .num => |i| {
                 if (to == Type.pitch) return Val {.pitch = .{.deg = @intCast(i), .shift = 0, .parallel = false} };
                 if (to == Type.note) 
-                    return Val {.note = 
-                        .{.pitch = .{.deg = @intCast(i), .shift = 0, .parallel = false}, 
-                        .duration = duration_infer, 
-                        .gap = duration_infer 
-                        }};
+                    return Val { 
+                        .note = 
+                        .{ 
+                            .pitch = .{ .deg = @intCast(i), .shift = 0, .parallel = false }, 
+                            .duration = duration_infer, 
+                            .gap = duration_infer 
+                        }
+                    };
 
             },
             .pitch => |p| {
@@ -193,14 +189,19 @@ pub const SectionEvaluator = struct {
                 const rhs = self.eval_expr_strict(infix.rhs, duration_infer);
                 switch (infix.op) {
                     .single_quote => {
-                        return Val {.note = PreNote {.pitch = lhs.pitch, .duration = rhs.frac, .gap = @panic("TODO")}};
+                        return Val { .note = PreNote { .pitch = lhs.pitch, .duration = rhs.frac, .gap = @panic("TODO") } };
                     },
                     .slash => {
-                        return Val {.frac = .{.numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) }};  
+                        return Val { .frac = .{ .numerator = @intCast(lhs.num), .dominator = @intCast(rhs.num) } };  
                     },
                     .plus => return Val { .num = lhs.num + rhs.num },
                     .minus => return Val { .num = lhs.num - rhs.num },
                     .times => return Val { .num = lhs.num * rhs.num },
+                    .le => return Val { .num = @intFromBool(lhs.num < rhs.num) },
+                    .ge => return Val { .num = @intFromBool(lhs.num > rhs.num) },
+                    .geq => return Val { .num = @intFromBool(lhs.num >= rhs.num) },
+                    .leq => return Val { .num = @intFromBool(lhs.num <= rhs.num) },
+                    .eq => return Val { .num = @intFromBool(lhs.num == rhs.num) },
                     else => unreachable,
                 }
                 
@@ -394,16 +395,6 @@ pub const SectionEvaluator = struct {
         while (it.* < note_exprs.len): (it.* += 1) {
             while (self.eval_expr(note_exprs[it.*], default_dura)) |val| {
                 const pre_note = expr_implicit_cast(val, Type.note, default_dura).note;
-                // const pre_note = switch (val) {
-                //     //. .pitch => |pitch| blk: {
-                //     //.     break :blk PreNote  {.pitch = pitch, .duration = default_dura, .gap = if (pitch.parallel) .zero else default_dura};
-                //     //. },
-                //     .note => blk: {
-                //         break :blk val.note;
-                //     },
-                //     else => |t| @panic(@tagName(t)),
-                // };
-
                 const abspitch = config.scale.get_abspitch(@intCast(pre_note.pitch.deg)) + pre_note.pitch.shift;
                 const freq = Tonality.abspitch_to_freq(abspitch);
                 const note = Note {

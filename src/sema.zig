@@ -261,23 +261,15 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             for (sec.config) |config| {
                 try self.sema_config(config);
             }
-            var desc_note = TypeDesc {.iterable = Type.note};
-            var desc_notes = TypeDesc {.iterable = TypePool.intern(.{.list = Type.pitch})};
-            const desc_either = TypeDesc {.either = .{&desc_note, &desc_notes}};
-            // const allowed_tys = [_]Type {Type.note, Type.pitch, Type.void, TypePool.intern(.{.list = Type.pitch})};
+
+            var desc_note = TypeDesc { .iterable = Type.note} ;
+            var desc_notes = TypeDesc { .iterable = TypePool.intern(.{ .list = Type.pitch }) };
+            const desc_either = TypeDesc { .either = .{ &desc_note, &desc_notes } };
             for (sec.notes) |note| {
                 const ty = try self.sema_expr(note, desc_either);
                 _ = ty;
-                // std.log.debug("sec {f}", .{ty});
-                
-                // for (allowed_tys) |allowed| {
-                //     if (allowed == note_ty) break;
-                // } else {
-                //     self.lexer.report_err_line(note.off, "expect one of Type note, chord, or num, got {f}", .{TypePool.lookup(note_ty)});
-                //     self.lexer.report_line(note.off);
-                //     return Error.TypeMismatched;
-                // }
             }
+
             return Type.section;
         },
         .prefix => |prefix| {
@@ -308,6 +300,12 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
                     _ = try self.sema_expr(infix.rhs, .{ .concrete = Type.int }); // TODO: degree?
                     return Type.int;
                 },
+                .le, .ge, .leq, .geq, .eq => {
+                    _ = try self.sema_expr(infix.lhs, .{ .concrete = Type.int }); // TODO: degree?
+                    _ = try self.sema_expr(infix.rhs, .{ .concrete = Type.int }); // TODO: degree?
+                    return Type.bool;
+
+                },
                 else => unreachable,
             }
         },
@@ -318,11 +316,7 @@ fn sema_expr_impl(self: *Sema, expr: *Ast.Expr, infer: TypeDesc) !Type {
             };
             if (list.els.len == 0) {
                 return TypePool.intern(.{ .list = el_infer.iterable });
-                // self.lexer.report_err_line(expr.off, "type of an empty list cannot be inferred", .{}); 
-                // return Error.InsufficientInference;
-                // return Type.pitch;
             }
-
 
             const el_ty = (try self.sema_expr(list.els[0], el_infer)).take_for_inner(); 
             for (list.els[1..], 2..) |el, i| {

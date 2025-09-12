@@ -28,7 +28,6 @@ const Options = struct {
 var debug_dump_trace = false;
 
 pub fn exit_or_dump_trace(e: anyerror) noreturn {
-    //const builtin = @import("builtin");
     if (!debug_dump_trace) std.process.exit(@intFromEnum(Cli.ErrorReturnCode.from_err(e)));
     std.log.err("{}", .{e});
     unreachable;
