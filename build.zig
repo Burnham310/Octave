@@ -42,7 +42,7 @@ pub fn build(b: *Build) void {
             if (entry.kind != .file) continue;
             const ext = std.fs.path.extension(entry.name);
             if (!std.mem.eql(u8, ext, ".oct")) continue; 
-            examples.append(b.allocator, entry.name) catch unreachable;
+            examples.append(b.allocator, b.allocator.dupe(u8, entry.name) catch unreachable) catch unreachable;
         }
         const examples_json = std.fmt.allocPrint(b.allocator, "{f}", .{std.json.fmt(examples.items, .{.whitespace = .indent_2 })}) catch unreachable;
         const wf = b.addWriteFiles();
