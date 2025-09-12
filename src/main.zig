@@ -37,6 +37,13 @@ pub const std_options = Zynth.std_options;
 
 pub fn main() !void  {
     const alloc = std.heap.c_allocator;
+    var gpa = std.heap.GeneralPurposeAllocator(.{}) {};
+    defer {
+        if (gpa.deinit() != .ok) {
+            std.process.exit(@intFromEnum(Cli.ErrorReturnCode.mem_leak));
+        }
+    }
+    const check_alloc = gpa.allocator();
     var args = try std.process.argsWithAllocator(alloc);
     defer args.deinit(); 
 
@@ -119,7 +126,7 @@ pub fn main() !void  {
             }
         }
     }
-    var player = Player { .evaluator = &eval, .a = alloc, .volume = opts.volume };
+    var player = Player { .evaluator = &eval, .a = check_alloc, .volume = opts.volume };
 
     var streamer: Zynth.Streamer = undefined;
     var silence = Zynth.Waveform.Simple.silence;

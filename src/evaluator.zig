@@ -13,7 +13,8 @@ const BS = @import("lexer.zig").BuiltinSymbols;
 const Zynth = @import("zynth");
 
 pub const Note = struct {
-    freq: f32,
+    // freq: f32,
+    note_num: i32,
     duration: f32,
     gap: f32, // gap since last note
     amp: f32,
