@@ -10,10 +10,12 @@ pub fn build(b: *Build) void {
 
     const zynth = b.dependency("zynth", .{.target = target, .optimize = opt});
     const zynth_mod = zynth.module("zynth");
+    const zynth_preset_mod = zynth.module("preset");
     
     if (target.result.cpu.arch.isWasm()) {
         const root_module = zynth_build.create_wasm_mod(b, opt, "octc", b.path("src/main.zig"));
         root_module.addImport("zynth", zynth_mod);
+        root_module.addImport("zynth_preset", zynth_preset_mod);
         const libc_include = zynth_build.get_wasm_include_from_sysroot(b);
         root_module.addIncludePath(libc_include);
         const wasm_step = zynth_build.compile_to_wasm(b, opt, root_module, "octc", 65536 * 10);
@@ -61,8 +63,10 @@ pub fn build(b: *Build) void {
     const octave_compiler = b.addExecutable(.{
         .name = "octc",
         .root_module = root_module,
+        // .use_llvm = true,
     });
     octave_compiler.root_module.addImport("zynth", zynth_mod);
+    octave_compiler.root_module.addImport("zynth_preset", zynth_preset_mod);
     octave_compiler.addIncludePath(b.path("src"));
     octave_compiler.linkLibC();
 

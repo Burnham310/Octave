@@ -55,6 +55,8 @@ pub const TokenType = enum {
     slash,
     lcurly,
     rcurly,
+    exclamation,
+    at,
 
     hash,
     tilde,
@@ -100,6 +102,8 @@ const single_char_tokens = [_]struct {TokenType, u8} {
     .{.minus, '-'},
     .{.times, '*'},
     .{.slash, '/'},
+    .{.exclamation, '!'},
+    .{.at, '@'},
 };
 
 const multi_char_tokens = [_]struct {TokenType, []const u8} {

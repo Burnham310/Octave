@@ -32,6 +32,9 @@ pub var string_pool: StringInternPool = undefined;
 pub fn init_global_string_pool(a: Allocator) void {
     string_pool = StringInternPool.init(a);
 }
+pub fn deinit_global_string_pool() void {
+    string_pool.deinit();
+}
 
 pub fn InternPool(comptime T: type) type {
     return struct {

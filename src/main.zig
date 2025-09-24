@@ -146,7 +146,7 @@ pub fn main() !void  {
         return;
     }
     // ----- Sema -----
-    TypePool.init(alloc);
+    TypePool.init_global_type_pool(alloc);
     var sema = Sema {.lexer = &lexer, .ast = &ast, .a = alloc };
     var anno = sema.sema() catch |e| exit_or_dump_trace(e);
     defer anno.deinit(alloc);
@@ -161,7 +161,7 @@ pub fn main() !void  {
         while (true) {
             const note = eval.eval();
             const test_note = TestNote {
-                .freq = if (note.is_eof()) 0 else Tonality.abspitch_to_freq(@intCast(note.note_num)),
+                .freq = if (note.is_eof()) 0 else Tonality.abspitch_to_freq(@intCast(note.content.i)),
                 .amp = note.amp,
                 .duration = note.duration,
                 .gap = note.gap,
