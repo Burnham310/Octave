@@ -3,6 +3,8 @@ const std = @import("std");
 const Lexer = @import("lexer.zig");
 const Symbol = Lexer.Symbol;
 const Allocator = std.mem.Allocator;
+const InternPool = @import("intern_pool.zig");
+
 pub const Type = packed struct {
     t: u32,
     pub var @"void":    Type = undefined;
@@ -11,9 +13,9 @@ pub const Type = packed struct {
     pub var mode:       Type = undefined;
     pub var pitch:      Type = undefined;
     pub var fraction:   Type = undefined;
-    pub var note:       Type = undefined;
+    pub var pitch_note: Type = undefined;
     pub var chord:      Type = undefined;
-    pub var section:    Type = undefined;
+    pub var pitch_section: Type = undefined;
 
 
     pub fn format(value: Type, writer: *std.Io.Writer) !void {
@@ -27,8 +29,44 @@ pub const Type = packed struct {
             else => return self,
         }
     }
+
+    pub fn take_list_inner(self: Type) ?Type {
+        const full = lookup(self);
+        switch (full) {
+            .list => |el| return el,
+            .note => |el| {
+                const note_el_full = lookup(el);
+                switch (note_el_full) {
+                    .list => |el_el| return el_el,
+                    else => return null,
+                }
+            },
+            else => return null,
+        }
+    }
 };
-pub const Decl = u32;
+
+pub fn Span(comptime T: type) type {
+    return struct {
+        const Self = @This();
+        ptr: *const []const T,
+        start: u32,
+        len: u32,
+
+        pub fn get(self: Self, i: usize) T {
+            const slice = self.ptr.*;
+            return slice[self.start+i];
+        }
+
+        pub fn init(arr: *const []const T) Self {
+            return .{
+                .ptr = arr,
+                .start = 0,
+                .len = @intCast(arr.*.len),
+            };
+        }
+    };
+}
 
 pub const TypeStorage = struct {
     kind: Kind,
@@ -46,7 +84,9 @@ pub const Kind = enum(u8) {
     section,
     list,
     splat,
+    sym_set,
 };
+
 pub const TypeFull = union(Kind) {
     void,
     int,
@@ -54,10 +94,11 @@ pub const TypeFull = union(Kind) {
     mode,
     pitch,
     fraction,
-    note,
-    section,
+    note: Type,
+    section: Type,
     list: Type,
     splat: Type,
+    sym_set: Span(Symbol),
   
     //pub const Ptr = struct {
     //    el: Type
@@ -78,7 +119,7 @@ pub const TypeFull = union(Kind) {
     //    ret: Type,
     //};
     pub const Adapter = struct {
-        extras: *std.array_list.Managed(u32),
+        extras: *std.ArrayList(u32),
         pub fn eql(ctx: Adapter, a: TypeFull, b: TypeStorage, b_idx: usize) bool {
             _ = b_idx;
             if (std.meta.activeTag(a) != b.kind) return false;
@@ -89,10 +130,15 @@ pub const TypeFull = union(Kind) {
                 .bool,
                 .mode,
                 .pitch,
-                .fraction,
-                .note,
-                .section => return true,
-                .list, .splat, => |el_ty| return el_ty.t == extras[b.more],
+                .fraction => return true,
+                .note, .section, .list, .splat, => |el_ty| return el_ty.t == extras[b.more],
+                .sym_set => |set| {
+                    if (set.len != extras[b.more]) return false;
+                    for (0..set.len) |i| {
+                       if (set.get(i) != extras[b.more+1 + i]) return false;
+                    }
+                    return true;
+                },
             }
         }
         pub fn hash(ctx: Adapter, a: TypeFull) u32 {
@@ -103,13 +149,20 @@ pub const TypeFull = union(Kind) {
                 .bool,
                 .mode,
                 .pitch,
-                .fraction,
-                .note,
-                .section => return std.hash.int(@intFromEnum(a)),
-                .list, .splat => |el_ty| {
+                .fraction => return std.hash.int(@intFromEnum(a)),
+                .note, .section, .list, .splat => |el_ty| {
                     var hasher = std.hash.Wyhash.init(0);
                     hasher.update(std.mem.asBytes(&el_ty));
                     hasher.update(std.mem.asBytes(&@intFromEnum(a)));
+                    return @truncate(hasher.final());
+                },
+                .sym_set => |set| {
+                    var hasher = std.hash.Wyhash.init(0);
+                        hasher.update(std.mem.asBytes(&set.len));
+                    for (0..set.len) |i| {
+                        const sym = set.get(i);
+                        hasher.update(std.mem.asBytes(&sym));
+                    }
                     return @truncate(hasher.final());
                 },
                 //inline .ptr, .array => |x| @truncate(std.hash.Wyhash.hash(0, std.mem.asBytes(&x))),
@@ -150,70 +203,80 @@ pub const TypeFull = union(Kind) {
             .bool,
             .mode,
             .pitch,
-            .fraction,
-            .note,
-            .section => _ = try writer.write(@tagName(value)),
+            .fraction => _ = try writer.write(@tagName(value)),
+            .note => |el_ty| {
+                _ = try writer.print("Note<{f}>", .{lookup(el_ty)});
+            },
+            .section => |el_ty| {
+                _ = try writer.print("Note<{f}>", .{lookup(el_ty)});
+            },
             .list => |el_ty| {
                 _ = try writer.print("[{f}]", .{lookup(el_ty)});
             },
             .splat => |el_ty| {
                 _ = try writer.print("for<{f}>", .{lookup(el_ty)});
-            }
+            },
+            .sym_set => |set| {
+                _ = try writer.print("{{ ", .{});
+                for (0..set.len) |i| {
+                _ = try writer.print("{s}, ", .{InternPool.string_pool.lookup(set.get(i))});
+                }
+                _ = try writer.print("}}", .{});
+            },
         }
     }
 };
 pub const TypeIntern = struct {
     const Self = @This();
     map: std.AutoArrayHashMap(TypeStorage, void),
-    extras: std.array_list.Managed(u32),
+    extras: std.ArrayList(u32),
+    a: std.mem.Allocator,
+
     pub fn get_new_extra(self: TypeIntern) u32 {
         return @intCast(self.extras.items.len);
     }
+
     pub fn init(a: Allocator) Self {
-        return TypeIntern { .map = std.AutoArrayHashMap(TypeStorage, void).init(a), .extras = std.array_list.Managed(u32).init(a) };
+        return TypeIntern { .map = std.AutoArrayHashMap(TypeStorage, void).init(a), .extras = .empty, .a = a };
     }
+
     pub fn deinit(self: *Self) void {
         self.map.deinit();
-        self.extras.deinit();
+        self.extras.deinit(self.a);
     }
+
     pub fn intern(self: *Self, s: TypeFull) Type {
-        const gop = self.map.getOrPutAdapted(s, TypeFull.Adapter {.extras = &self.extras}) catch unreachable; // ignore out of memory
+        const gop = self.map.getOrPutAdapted(s, TypeFull.Adapter {.extras = &self.extras}) catch unreachable;
         const more = switch (s) {
             .void,
             .int,
             .bool,
             .mode,
             .pitch,
-            .note,
-            .fraction,
-            .section => undefined,
-            .list, .splat => |el_ty| blk: {
+            .fraction => undefined,
+            .note, .section, .list, .splat => |el_ty| blk: {
                 const extra_idx = self.get_new_extra();
-                self.extras.append(el_ty.t) catch unreachable;
+                self.extras.append(self.a, el_ty.t) catch unreachable;
                 break :blk extra_idx;
-            }
+            },
+            .sym_set => |set| blk: {
+                const extra_idx = self.get_new_extra();
+                self.extras.append(self.a, set.len) catch unreachable;
+                for (0..set.len) |i| {
+                    self.extras.append(self.a, set.get(i)) catch unreachable;
+                }
+                break :blk extra_idx;
+            },
        };
         gop.key_ptr.* = TypeStorage {.more = more, .kind = std.meta.activeTag(s)};
         return Type {.t = @intCast(gop.index) };
     }
+
     pub fn intern_exist(self: *Self, s: TypeFull) Type {
         return self.map.getIndex(s);
     }
-    // assume the i is valid
-    //pub fn lookup_alloc(self: Self, i: Type, a: Allocator) TypeFull {
-    //    _ = a;
-    //    const storage = self.map.keys()[i];
-    //    const more = storage.more;
-    //    _ = more;
-    //    switch (storage.kind) {
-    //        .void => return .void,
-    //        .int => return .int,
-    //        .fraction => return .fraction,
-    //        .note => return .note,
-    //        .section => return .section,
-    //      }
-    //}
-    pub fn lookup(self: Self, i: Type) TypeFull {
+
+    pub fn lookup(self: *const Self, i: Type) TypeFull {
         const storage = self.map.keys()[i.t];
         const more = storage.more;
         const extras = self.extras.items;
@@ -224,12 +287,17 @@ pub const TypeIntern = struct {
             .pitch => return .pitch,
             .mode => return .mode,
             .fraction => return .fraction,
-            .note => return .note,
-            .section => return .section,
+            .note => return .{.note = Type {.t=extras[more]}},
+            .section => return .{.section = Type {.t=extras[more]}},
             .list  => return .{.list = Type {.t=extras[more]}},
             .splat => return .{.splat = Type {.t=extras[more]}},
+            .sym_set => {
+                const sym_set = Span(Symbol) { .ptr = &self.extras.items, .start = more+1, .len = extras[more] };
+                return .{ .sym_set = sym_set };
+            },
         }
     }
+
     pub fn len(self: Self) usize {
         return self.map.keys().len;
     }
@@ -241,7 +309,7 @@ pub const TypeIntern = struct {
 
 pub var type_pool: TypeIntern = undefined;
 
-pub fn init(a: std.mem.Allocator) void {
+pub fn init_global_type_pool(a: std.mem.Allocator) void {
     type_pool = TypeIntern.init(a);
     Type.@"void" = intern(TypeFull.void);
     Type.int = intern(TypeFull.int);
@@ -249,9 +317,13 @@ pub fn init(a: std.mem.Allocator) void {
     Type.pitch = intern(TypeFull.pitch);
     Type.mode = intern(TypeFull.mode);
     Type.fraction = intern(TypeFull.fraction);
-    Type.note = intern(TypeFull.note);
-    Type.chord = intern(TypeFull {.list = Type.pitch });
-    Type.section = intern(TypeFull.section);
+    Type.pitch_note = intern(TypeFull { .note = Type.pitch });
+    Type.chord = intern(TypeFull { .list = Type.pitch });
+    Type.pitch_section = intern(TypeFull { .section = Type.pitch });
+}
+
+pub fn deinit() void {
+    type_pool.deinit();
 }
 
 pub fn intern(s: TypeFull) Type {

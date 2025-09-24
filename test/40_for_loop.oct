@@ -1,4 +1,4 @@
-main = Section
+main = Section(Pitch)
     c1={ [1] [1 3 7] }, c2={ [2] [2 4 ^1] }, c5={ [5] [5 7 ^2] },
     c1m={ [1] [1 ~3 ~7] };
     tonic=A, octave=5, mode=major, tempo=8/8; {

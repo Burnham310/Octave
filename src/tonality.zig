@@ -55,3 +55,9 @@ pub fn abspitch_to_freq(abspitch: isize) f32 {
     return 130.81 * @exp2(@as(f32, @floatFromInt(abspitch - 60))/12.0);
 }
 
+pub const DrumSymbol = enum {
+    S, // snare
+    B, // bass drum
+    H, // hi-hat
+};
+

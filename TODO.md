@@ -91,6 +91,9 @@ Note(1, 1/4, 0); Note(2, 1/4, 1/4), Note(3, 1/2, 1/2);
 { for 0~<2 loop [1 2 3] end [2 4 5] }
 
 ```
+Note is generic. They can have conceptually anything as a the "content" of the note, 
+though only a few of them have well-defined meaning to an instrument. 
+Different content of the note can also define different config parameters.
 
 ### Instruments
 
@@ -102,6 +105,11 @@ Defining instruments as part the implementation of the compiler is not that hard
 
 Note that many instruments is "stateful". For example, a piano only has one key for a pitch. 
 Playing the same pitch twice would cause the second note to overwrite the first one.
+
+One thing that we are sure of is all of them must have the notion of timing. However, different instrument is played differently. 
+For a keyboard, the "body" of note is a midi note number. For a guitar, it is a string and a fret. For a drumset, it is a the tom, bass drum, hi-hat, etc.
+
+
 
  
 ## Other

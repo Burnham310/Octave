@@ -14,19 +14,24 @@ const Instrument = @import("instrument.zig");
 const Zynth = @import("zynth");
 
 pub const Note = struct {
-    // freq: f32,
-    note_num: i32,
+    content: Content,
     duration: f32,
     gap: f32, // gap since last note
     amp: f32,
     inst: Instrument,
 
+    pub const Content = union(enum) {
+        i: i32,
+        u: u32,
+        f: f32,
+    };
+
     pub fn is_eof(self: Note) bool {
-        return self.note_num == 0 and self.duration == 0;
+        return self.duration == 0;
     }
 
     pub fn eof(gap: f32) Note {
-        return .{ .note_num = 0,. duration = 0, .gap = gap, .amp = 0, .inst = Instrument.dummy };
+        return .{ .content = .{ .i = 0 },. duration = 0, .gap = gap, .amp = 0, .inst = Instrument.dummy };
     }
 };
 
@@ -87,6 +92,8 @@ const Fraction = struct {
 pub const SectionEvaluator = struct {
     ast: *Ast,
     anno: *Sema.Annotations,
+    content_ty: Type,
+    content_ty_full: TypePool.TypeFull,
     sec: *Ast.Expr,
 
     // state
@@ -108,10 +115,16 @@ pub const SectionEvaluator = struct {
 
     pub fn init(ast: *Ast, anno: *Sema.Annotations, sec: *Ast.Expr, a: Allocator) SectionEvaluator {
         const its = a.alloc(u32, anno.expr_extras.len) catch unreachable;
+        const sec_anno = anno.expr_extras[sec.anno_extra];
+        const sec_ty = sec_anno.ty;
+        const sec_content_ty = TypePool.lookup(sec_ty).section;
+
         @memset(its, 0);
         return .{
             .ast = ast,
             .anno = anno,
+            .content_ty = sec_content_ty, 
+            .content_ty_full = TypePool.lookup(sec_content_ty),
             .sec = sec,
             .its = its,
             .instrument = Instrument.dummy,
@@ -122,6 +135,7 @@ pub const SectionEvaluator = struct {
         guitar,
         sine,
         triangle,
+        drum,
     };
 
     const SectionConfig = struct {
@@ -155,11 +169,11 @@ pub const SectionEvaluator = struct {
     pub fn expr_implicit_cast(val: Val, to: Type, duration_infer: Fraction) Val {
         switch (val) {
             .num => |i| {
-                if (to == Type.pitch) return Val {.pitch = .{.deg = @intCast(i), .shift = 0, .parallel = false} };
-                if (to == Type.note) 
+                if (to == Type.pitch) 
+                    return Val { .pitch = .{ .deg = @intCast(i), .shift = 0, .parallel = false } };
+                if (to == Type.pitch_note) 
                     return Val { 
-                        .note = 
-                        .{ 
+                        .note = .{ 
                             .pitch = .{ .deg = @intCast(i), .shift = 0, .parallel = false }, 
                             .duration = duration_infer, 
                             .gap = duration_infer 
@@ -168,7 +182,7 @@ pub const SectionEvaluator = struct {
 
             },
             .pitch => |p| {
-                if (to == Type.note) 
+                if (to == Type.pitch_note) 
                     return Val {.note = .{.pitch = p, .duration = duration_infer, .gap = if (p.parallel) .zero else duration_infer }};
             },
             else => {},
@@ -183,7 +197,8 @@ pub const SectionEvaluator = struct {
     }
 
     pub fn eval_expr_strict_impl(self: *SectionEvaluator, expr: *Ast.Expr, duration_infer: Fraction) Val {
-        const t_full = TypePool.lookup(self.anno.expr_extras[expr.anno_extra].ty);
+        const extra = self.anno.expr_extras[expr.anno_extra]; 
+        const t_full = TypePool.lookup(extra.ty);
         _ = t_full;
         switch (expr.data) {
             .num => |i| return Val {.num = i},
@@ -215,7 +230,14 @@ pub const SectionEvaluator = struct {
                 if (self.anno.builtin_vars.get(ident.sym)) |builtin| {
                     return Val { .num = @intCast(builtin[1]) };
                 }
-                return self.eval_expr_strict(ident.sema_expr, duration_infer);
+                // std.log.debug("ident: {}", .{ident.sema_expr});
+                const var_loc = extra.data.formal_ref;
+                switch (var_loc) {
+                    .decl => |formal| 
+                        return self.eval_expr_strict(formal.expr, duration_infer),
+                    .builtin => |typed_value|
+                        return Val { .num = @intCast(typed_value[1]) },
+                }
             },
             .sec => unreachable,
             .@"for" => @panic("TODO"),
@@ -223,15 +245,22 @@ pub const SectionEvaluator = struct {
                 const cond = self.eval_expr_strict(@"if".cond, .zero).num;
                 if (cond != 0) return self.eval_expr_strict(@"if".then, duration_infer)
                 else return self.eval_expr_strict(@"if".@"else", duration_infer);
-            }
+            },
+            .tag_decl, .tag_use => unreachable,
         }  
     }
 
     pub fn reset(self: *SectionEvaluator, expr: *Ast.Expr) void {
         self.its[expr.anno_extra] = 0;
+        const extra = self.anno.expr_extras[expr.anno_extra]; 
         switch (expr.data) {
             .num => {},
-            .ident => |ident| self.reset(ident.sema_expr),
+            .ident => {
+                switch (extra.data.formal_ref) {
+                    .decl => |formal| self.reset(formal.expr),
+                    .builtin => {},
+                }
+            },
             .sec => unreachable,
             .prefix => |prefix| self.reset(prefix.rhs),
             .infix => |infix| {
@@ -243,7 +272,8 @@ pub const SectionEvaluator = struct {
             .@"if" => |@"if"| {
                 self.reset(@"if".then);
                 self.reset(@"if".@"else");
-            }
+            },
+            .tag_decl, .tag_use => unreachable,
         }
     }
 
@@ -254,7 +284,8 @@ pub const SectionEvaluator = struct {
     }
 
     pub fn eval_expr_impl(self: *SectionEvaluator, expr: *Ast.Expr, duration_infer: Fraction) ?Val {
-        const ty = self.anno.expr_extras[expr.anno_extra].ty;
+        const extra = self.anno.expr_extras[expr.anno_extra];
+        const ty = extra.ty;
         const t_full = TypePool.lookup(ty);
         _ = t_full;
         const it = &self.its[expr.anno_extra]; 
@@ -262,7 +293,7 @@ pub const SectionEvaluator = struct {
             .num => |i| {
                 if (it.* > 0) return null;
                 it.* += 1;
-                return Val {.num = @intCast(i)};
+                return Val { .num = @intCast(i) };
             },
             .prefix => |prefix| {
                 if (it.* > 0) return null;
@@ -329,11 +360,21 @@ pub const SectionEvaluator = struct {
                 return null;
 
             },
-            .ident => |ident| {
-                return self.eval_expr(ident.sema_expr, duration_infer) orelse {
-                    self.reset(ident.sema_expr);
-                    return null;
-                };
+            .ident => {
+                const var_loc = extra.data.formal_ref;
+                switch (var_loc) {
+                    .decl => |formal| 
+                        return self.eval_expr(formal.expr, duration_infer) orelse {
+                            self.reset(formal.expr);
+                            return null;
+                        },
+                    .builtin => |typed_value| 
+                        if (it.* == 0) { 
+                            it.* += 1;
+                            return Val { .num = @intCast(typed_value[1]) };
+                        }
+                        else return null,
+                }
             },
             .sec => unreachable,
             .@"for" => |@"for"| {
@@ -358,12 +399,14 @@ pub const SectionEvaluator = struct {
                 const cond = self.eval_expr_strict(@"if".cond, .zero).num;
                 if (cond != 0) return self.eval_expr(@"if".then, duration_infer)
                 else return self.eval_expr(@"if".@"else", duration_infer);
-            }
+            },
+            .tag_decl, .tag_use => unreachable,
         }  
     } 
 
     pub fn eval_config(self: *SectionEvaluator, a: Allocator) void {
         const config = &self.config;
+        // const config_tys = self.anno.expr_extras[self.sec.anno_extra].config_tys;
         for (self.sec.data.sec.config) |formal| {
             if (formal.ident == BS.tonic) config.scale.tonic = @enumFromInt(self.eval_expr_strict(formal.expr, .zero).pitch.deg)
             else if (formal.ident == BS.octave) config.scale.octave = @intCast(self.eval_expr_strict(formal.expr, .zero).num)
@@ -371,7 +414,8 @@ pub const SectionEvaluator = struct {
             else if (formal.ident == BS.bpm) config.bpm = @floatFromInt(self.eval_expr_strict(formal.expr, .zero).num)
             else if (formal.ident == BS.tempo) config.tempo = self.eval_expr_strict(formal.expr, .zero).frac
             else if (formal.ident == BS.instrument) {
-                config.inst = std.enums.fromInt(InstrumentNo, self.eval_expr_strict(formal.expr, .zero).num) 
+                const inst_no = self.eval_expr_strict(formal.expr, .zero).num;
+                config.inst = std.enums.fromInt(InstrumentNo, inst_no)
                     orelse @panic("TODO: handle error");
            
             }
@@ -398,6 +442,11 @@ pub const SectionEvaluator = struct {
                 midi_keyboard.* = Instrument.MidiKeyboard { .shape = .Triangle };
                 self.instrument = Instrument.make(Instrument.MidiKeyboard, midi_keyboard);
             },
+            .drum => {
+                const drum_set = a.create(Instrument.DrumSet) catch unreachable;
+                drum_set.* = Instrument.DrumSet { .mixer = .{}, .a = a };
+                self.instrument = Instrument.make(Instrument.DrumSet, drum_set);
+            },
         }
     }
 
@@ -417,16 +466,25 @@ pub const SectionEvaluator = struct {
         const config = &self.config;
         const note_exprs = sec.notes;
         
-        const default_dura = Fraction {.numerator = 1, .dominator = config.tempo.dominator};
+        const default_dura = Fraction { .numerator = 1, .dominator = config.tempo.dominator };
         const it = &self.its[self.sec.anno_extra]; 
-        // const ty = self.anno.expr_extras[note_exprs[it.*].anno_extra].ty;
         while (it.* < note_exprs.len): (it.* += 1) {
             while (self.eval_expr(note_exprs[it.*], default_dura)) |val| {
-                const pre_note = expr_implicit_cast(val, Type.note, default_dura).note;
-                const abspitch = config.scale.get_abspitch(@intCast(pre_note.pitch.deg)) + pre_note.pitch.shift;
-                // const freq = Tonality.abspitch_to_freq(abspitch);
+                // std.log.debug("val: {}", .{val});
+                // const note_content = ) 
+                const pre_note = expr_implicit_cast(val, Type.pitch_note, default_dura).note;
+                const note_content = switch (self.content_ty_full) {
+                    .pitch, .int => blk: {
+                        const abspitch = config.scale.get_abspitch(@intCast(pre_note.pitch.deg)) + pre_note.pitch.shift;
+                        break :blk Note.Content { .i = @intCast(abspitch) };
+                    },
+                    .sym_set => Note.Content { .u = @intCast(pre_note.pitch.deg) },
+                    else => unreachable,
+                };
+
+                       // const freq = Tonality.abspitch_to_freq(abspitch);
                 const note = Note {
-                    .note_num = @intCast(abspitch),
+                    .content = note_content,
                     .duration = pre_note.duration.to_sec(config.bpm),
                     .gap = pre_note.gap.to_sec(config.bpm),
                     .amp = pre_note.pitch.amp * config.volume,
@@ -459,7 +517,8 @@ pub const Evaluator = struct {
                 sec_evals = a.alloc(SectionProgress, list.els.len) catch unreachable;
                 for (list.els, 0..) |expr, i| {
                     assert(expr.data == .ident);
-                    const sema_expr = expr.data.ident.sema_expr;
+                    const extra = anno.expr_extras[expr.anno_extra];
+                    const sema_expr = extra.data.formal_ref.decl.expr;
                     assert(sema_expr.data == .sec);
                     sec_evals[i] = .{.eval = SectionEvaluator.init(ast, anno, sema_expr, a)};
                     sec_evals[i].eval.eval_config(a);

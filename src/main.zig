@@ -16,7 +16,7 @@ const Zynth = @import("zynth");
 const Cli = @import("cli.zig");
 
 pub const TestNote = struct {
-    freq: f32,
+    content: f32,
     duration: f32,
     gap: f32,
     amp: f32,
@@ -146,7 +146,7 @@ pub fn main() !void  {
         return;
     }
     // ----- Sema -----
-    TypePool.init(alloc);
+    TypePool.init_global_type_pool(alloc);
     var sema = Sema {.lexer = &lexer, .ast = &ast, .a = alloc };
     var anno = sema.sema() catch |e| exit_or_dump_trace(e);
     defer anno.deinit(alloc);
@@ -156,12 +156,15 @@ pub fn main() !void  {
     // ----- Compile -----
     var eval = Eval.Evaluator.init(&ast, &anno, alloc);
     if (opts.debug) {
-        const Tonality = @import("tonality.zig");
         try stdout.writeAll("[\n");
         while (true) {
             const note = eval.eval();
             const test_note = TestNote {
-                .freq = if (note.is_eof()) 0 else Tonality.abspitch_to_freq(@intCast(note.note_num)),
+                .content = switch(note.content) {
+                    .i => |i| @floatFromInt(i),
+                    .u => |u| @floatFromInt(u),
+                    .f => |f| f,
+                },
                 .amp = note.amp,
                 .duration = note.duration,
                 .gap = note.gap,

@@ -6,6 +6,7 @@ const TypePool = @import("type_pool.zig");
 
 const Ast = @This();
 
+
 pub const Expr = struct {
     anno_extra: u32 = undefined,
     off: u32,
@@ -19,11 +20,12 @@ pub const Expr = struct {
         sequence: List,
         @"for": For,
         @"if": If,
+        tag_decl: TagDecl,
+        tag_use: TagUse,
     },
 
     pub const Ident = struct {
         sym: Symbol,
-        sema_expr: *Expr = undefined,
     };
 
     pub const Section = struct {
@@ -31,7 +33,9 @@ pub const Expr = struct {
         variable: []*Formal,
         config: []*Formal,
         notes: []*Expr,
+        ty: *TypeExpr,
         pub fn dump(self: Section, writer: *std.Io.Writer, lexer: Lexer, level: u32) void {
+            self.ty.dump(writer, lexer, level+1);
             for (self.variable) |formal| {
                 formal.dump(writer, lexer, level+1);
             }
@@ -75,10 +79,19 @@ pub const Expr = struct {
 
     };
 
+    pub const TagDecl = struct {
+        ident: Symbol,
+    };
+
+    pub const TagUse = struct {
+        ident: Symbol,
+    };
+
     pub fn first_off(self: Expr) u32 {
         switch (self.data) {
             .num, .ident, .sec, .list, .sequence, .prefix, .@"for", .@"if" => return self.off,
             .infix => |infix| return infix.lhs.first_off(),
+            inline .tag_decl, .tag_use => return self.off,
         }
     }
     
@@ -92,6 +105,7 @@ pub const Expr = struct {
            .list, .sequence => |list| return list.rbrac_off,
            .@"for" => |@"for"| return @"for".end_off,
            .@"if" => |@"if"| return @"if".@"else".last_off(lexer),
+           inline .tag_decl, .tag_use => return self.off,
         }
     }
 
@@ -111,7 +125,7 @@ pub const Expr = struct {
             .sec => |section| {
                 _ = writer.write("Section") catch unreachable;
                 writer.writeByte('\n') catch unreachable; 
-                section.dump(writer, lexer, level);
+                section.dump(writer, lexer, level+1);
             },
             .prefix => |prefix| {
                 _ = writer.print("Prefix<{s}>", .{@tagName(prefix.op)}) catch unreachable;
@@ -153,6 +167,12 @@ pub const Expr = struct {
                 @"if".then.dump(writer, lexer, level+1);
                 @"if".@"else".dump(writer, lexer, level+1);
             },
+            .tag_decl => |tag_decl| {
+                _ = writer.print("TagDecl<{s}>", .{lexer.lookup(tag_decl.ident)}) catch unreachable;
+            },
+            .tag_use => |tag_use| {
+                _ = writer.print("TagUse<{s}>", .{lexer.lookup(tag_use.ident)}) catch unreachable;
+            }
 
         }
     }
@@ -190,6 +210,7 @@ pub const Formal = struct {
 toplevels: []*Formal,
 formals: std.SegmentedList(Formal, 1),
 exprs: std.SegmentedList(Expr, 0),
+ty_exprs: std.SegmentedList(TypeExpr, 0),
 secs: std.SegmentedList(Expr.Section, 1),
 
 pub fn dump(self: Ast, writer: *std.Io.Writer, lexer: Lexer) void {
@@ -197,3 +218,35 @@ pub fn dump(self: Ast, writer: *std.Io.Writer, lexer: Lexer) void {
         toplevel.dump(writer, lexer, 0);
     }
 }
+
+pub const TypeExpr = struct {
+    data: union(enum) {
+        ident: Symbol,
+    },
+    off: u32,
+
+    pub fn first_off(self: TypeExpr) u32 {
+        switch (self.data) {
+            .ident => return self.off, 
+        }
+    }
+
+    pub fn last_off(self: TypeExpr, lexer: *Lexer) u32 {
+        switch (self.data) {
+           .ident => return @as(u32, @intCast(lexer.re_ident_impl(self.off).len)) + self.off,
+        }
+    }
+
+    pub fn dump(self: TypeExpr, writer: *std.Io.Writer, lexer: Lexer, level: u32) void {
+        for (0..level) |_|
+            writer.writeByte(' ') catch unreachable; 
+        _ = writer.write("|-Type ") catch unreachable;
+        switch (self.data) {
+            .ident => |sym| {
+                _ = writer.print("Ident<{s}>", .{lexer.lookup(sym)}) catch unreachable;
+                writer.writeByte('\n') catch unreachable; 
+
+            },
+        }
+    }
+};

@@ -3,6 +3,7 @@ const std = @import("std");
 const Ast = @import("ast.zig");
 const Formal = Ast.Formal;
 const Expr = Ast.Expr;
+const TypeExpr = Ast.TypeExpr;
 const Section = Expr.Section;
 
 const Lexer = @import("lexer.zig");
@@ -13,6 +14,7 @@ const Parser = @This();
 
 formals: std.SegmentedList(Formal, 1) = .{},
 exprs: std.SegmentedList(Expr, 0) = .{},
+ty_exprs: std.SegmentedList(TypeExpr, 0) = .{},
 secs: std.SegmentedList(Section, 1) = .{},
 
 lexer: *Lexer,
@@ -44,13 +46,19 @@ pub fn parse(self: *Parser) ErrorBoth!Ast {
         .toplevels = toplevels.toOwnedSlice(self.a) catch unreachable,
         .formals = self.formals,
         .exprs = self.exprs,
+        .ty_exprs = self.ty_exprs,
         .secs = self.secs,
     };
 }
 
 pub inline fn create(self: *Parser, el: anytype) *@TypeOf(el)  {
     const T = @TypeOf(el);
-    const list = if (T == Expr) &self.exprs else if (T == Formal) &self.formals else if (T == Section) &self.secs else @compileError("Unknown el type " ++ @typeName(T));
+    const list = 
+        if (T == Expr) &self.exprs
+        else if (T == TypeExpr) &self.ty_exprs
+        else if (T == Formal) &self.formals
+        else if (T == Section) &self.secs
+        else @compileError("Unknown el type " ++ @typeName(T));
     list.append(self.a, el) catch unreachable;
     return list.uncheckedAt(list.count()-1);
 }
@@ -93,11 +101,17 @@ pub fn parse_atomic_expr(self: *Parser) ErrorBoth!?*Expr {
     switch (tok.tag) {
         .ident => {
             self.lexer.consume();
-            return self.create(Expr {.off = tok.off, .data = .{ .ident = .{.sym = self.lexer.re_ident(tok.off) }}});
+            return self.create(Expr {
+                .off = tok.off,
+                .data = .{ .ident = .{.sym = self.lexer.re_ident(tok.off) }}
+            });
         },
         .int => {
             self.lexer.consume();
-            return self.create(Expr {.off = tok.off, .data = .{.num = self.lexer.re_int(tok.off) }});
+            return self.create(Expr {
+                .off = tok.off,
+                .data = .{.num = self.lexer.re_int(tok.off) }
+            });
         },
         .lparen => {
             self.lexer.consume();
@@ -112,6 +126,22 @@ pub fn parse_atomic_expr(self: *Parser) ErrorBoth!?*Expr {
             return expr;
 
         },
+        .exclamation => {
+            self.lexer.consume();
+            const ident = try self.expect_token_crit(.ident, tok);
+            return self.create(Expr {
+                .data = .{ .tag_decl = .{ .ident = self.lexer.re_ident(ident.off) } },
+                .off = tok.off,
+            });
+        },
+        .at => {
+            self.lexer.consume();
+            const ident = try self.expect_token_crit(.ident, tok);
+            return self.create(Expr {
+                .data = .{ .tag_use = .{ .ident = self.lexer.re_ident(ident.off) } },
+                .off = tok.off
+            });
+        },
         else => return null,
     }
 }
@@ -119,6 +149,26 @@ pub fn parse_atomic_expr(self: *Parser) ErrorBoth!?*Expr {
 pub fn parse_expr(self: *Parser) ErrorBoth!?*Expr {
     return self.parse_expr_climb(0);
 }
+
+pub fn parse_type_expr(self: *Parser) ErrorBoth!?*TypeExpr {
+    return self.parse_type_expr_atomic();
+}
+
+pub fn parse_type_expr_atomic(self: *Parser) ErrorBoth!?*TypeExpr {
+    const tok = try self.lexer.peek();
+    switch (tok.tag) {
+        .ident => {
+            self.lexer.consume();
+            return self.create(TypeExpr {
+                .off = tok.off, 
+                .data = .{ .ident = self.lexer.re_ident(tok.off) }
+            });
+        },
+        else => return null,
+    }
+
+}
+
 
 const Sequence = struct {
     loff: u32,
@@ -159,8 +209,16 @@ pub fn parse_prefix(self: *Parser) ErrorBoth!?*Expr {
     switch (tok.tag) {
         .section => {
             self.lexer.consume();
+
+            const lparen = try self.expect_token_crit(.lparen, tok);
+            const ty_expr = try self.parse_type_expr() orelse {
+                self.lexer.report_err_line(lparen.off, "expect expression after `(`", .{});
+                return Error.UnexpectedToken;
+            };
+            const rparen = try self.expect_token_crit_off(.rparen, ty_expr.last_off(self.lexer), "expr");
+
             const formal_list1 = try self.parse_list_of(*Formal, parse_formal);
-            const last_formal1, const last_formal_name1 = self.get_slice_last_or_tok(formal_list1, tok);
+            const last_formal1, const last_formal_name1 = self.get_slice_last_or_tok(formal_list1, rparen);
             const semi_colon1 = try self.expect_token_crit_off(.semi_colon, last_formal1, last_formal_name1);
 
             const formal_list2 = try self.parse_list_of(*Formal, parse_formal);
@@ -174,6 +232,7 @@ pub fn parse_prefix(self: *Parser) ErrorBoth!?*Expr {
                 .variable = formal_list1,
                 .config = formal_list2,
                 .notes = seq.exprs,
+                .ty = ty_expr,
             };
             return self.create(Expr {.off = tok.off, .data = .{.sec = self.create(sec) }});
         },

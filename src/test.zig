@@ -41,7 +41,7 @@ const NoteContext = struct {
 
     pub fn eql(_: NoteContext, a: Note, b: Note) bool {
         return 
-            a.freq == b.freq and 
+            a.content == b.content and 
             a.duration == b.duration and 
             a.gap == b.gap and
             a.amp == b.amp;
