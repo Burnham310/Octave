@@ -1,0 +1,9 @@
+trigger = Section(Pitch) ;; {
+    1 2 3 !tag
+}
+
+triggered = Section(Pitch) ;; {
+    @tag 4 5
+}
+
+main = [trigger triggered]
