@@ -1,15 +1,15 @@
 [
+  "20_two_sections.oct",
+  "12_variable.oct",
+  "41_for_loop_capture.oct",
+  "01_triplet.oct",
+  "13_drum_set.oct",
+  "02_config.oct",
   "31_if.oct",
-  "00_twinkle.oct",
+  "30_sequence.oct",
+  "40_for_loop.oct",
   "10_chord.oct",
   "11_qualifier.oct",
-  "41_for_loop_capture.oct",
-  "12_variable.oct",
-  "20_two_sections.oct",
   "03_arithmetic.oct",
-  "30_sequence.oct",
-  "01_triplet.oct",
-  "40_for_loop.oct",
-  "50_tag.oct",
-  "02_config.oct"
+  "00_twinkle.oct"
 ]
