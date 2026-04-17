@@ -324,6 +324,29 @@ pub const ArgParser = struct {
     }
 };
 
+fn enum_desc_len(comptime E: type) usize {
+    const fields = @typeInfo(E).@"enum".fields;
+    if (fields.len == 0) return 0;
+    var len: usize = 0;
+    inline for (fields) |field| {
+        len += field.name.len;
+    }
+    len += fields.len - 1;
+    return len;
+}
+
+pub fn enum_desc(comptime E: type) []const u8 {
+    const fields = @typeInfo(E).@"enum".fields;
+    if (fields.len == 0) return "";
+    var desc: []const u8 = fields[0].name;
+    inline for (fields[1..]) |field| {
+        desc = desc ++ "|";
+        desc = desc ++ field.name;
+    }
+    return desc;
+
+}
+
 pub const ErrorReturnCode = enum(u8) {
     success = 0,
     cli,
@@ -351,33 +374,9 @@ pub const ErrorReturnCode = enum(u8) {
     }
 };
 
-
 pub const CompileStage = enum {
     lex,
     parse,
     sema,
     play,
 };
-
-fn enum_desc_len(comptime E: type) usize {
-    const fields = @typeInfo(E).@"enum".fields;
-    if (fields.len == 0) return 0;
-    var len: usize = 0;
-    inline for (fields) |field| {
-        len += field.name.len;
-    }
-    len += fields.len - 1;
-    return len;
-}
-
-pub fn enum_desc(comptime E: type) []const u8 {
-    const fields = @typeInfo(E).@"enum".fields;
-    if (fields.len == 0) return "";
-    var desc: []const u8 = fields[0].name;
-    inline for (fields[1..]) |field| {
-        desc = desc ++ "|";
-        desc = desc ++ field.name;
-    }
-    return desc;
-
-}

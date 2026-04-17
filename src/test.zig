@@ -113,7 +113,7 @@ fn check_stdout(stdout_file: std.fs.File, expected_file: std.fs.File, record_pla
         //
         // When a note has `gap = 0`, it is the start of the staging sequence.
         // The staging sequence ends when a note has `gap > 0` (this end note is also in the staging sequence).
-        // We then compare the expected and outputted s6d6ead44fc739eeb40fe67e3ac696dfa313b1d20taging sequences in a orderless manner.
+        // We then compare the expected and outputted staging sequences in a orderless manner.
         //
         // To do this, we put note in the staging sequence inside a map (Note -> i32).
         // An expected note increments the count, an outputted note decrements it.

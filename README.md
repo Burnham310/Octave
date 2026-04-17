@@ -17,7 +17,7 @@ This language is designed to make music in a programmable way. In this language,
   - [ ] tag that the can mark a certain position
     - [ ] "wait" for the tag to be reached
     - [ ] volume interpolation based on tag
-  - [ ] if condition
+  - [x] if condition
   - [ ] arithmetic on fraction
 
 ## Build
